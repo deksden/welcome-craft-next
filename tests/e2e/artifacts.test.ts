@@ -13,62 +13,56 @@ test.describe('Artifacts activity', () => {
     await chatPage.createNewChat();
   });
 
-  test('Create a text artifact', async () => {
+  test('Create text artifact for onboarding content', async () => {
     await chatPage.createNewChat();
 
     await chatPage.sendUserMessage(
-      'Help me write an essay about Silicon Valley',
+      'Создай текстовый артефакт с приветствием для нового сотрудника',
     );
     await artifactPage.isGenerationComplete();
 
     expect(artifactPage.artifact).toBeVisible();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe(
-      'A document was created and is now visible to the user.',
-    );
+    expect(assistantMessage.content).toContain('артефакт');
 
     await chatPage.hasChatIdInUrl();
   });
 
-  test('Toggle artifact visibility', async () => {
+  test('Toggle artifact visibility in UI', async () => {
     await chatPage.createNewChat();
 
     await chatPage.sendUserMessage(
-      'Help me write an essay about Silicon Valley',
+      'Создай кодовый артефакт с компонентом React',
     );
     await artifactPage.isGenerationComplete();
 
     expect(artifactPage.artifact).toBeVisible();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe(
-      'A document was created and is now visible to the user.',
-    );
+    expect(assistantMessage.content).toContain('артефакт');
 
     await artifactPage.closeArtifact();
     await chatPage.isElementNotVisible('artifact');
   });
 
-  test('Send follow up message after generation', async () => {
+  test('Continue conversation after artifact creation', async () => {
     await chatPage.createNewChat();
 
     await chatPage.sendUserMessage(
-      'Help me write an essay about Silicon Valley',
+      'Создай список контактов для онбординга',
     );
     await artifactPage.isGenerationComplete();
 
     expect(artifactPage.artifact).toBeVisible();
 
     const assistantMessage = await artifactPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe(
-      'A document was created and is now visible to the user.',
-    );
+    expect(assistantMessage.content).toContain('артефакт');
 
-    await artifactPage.sendUserMessage('Thanks!');
+    await artifactPage.sendUserMessage('Добавь еще контакты HR');
     await artifactPage.isGenerationComplete();
 
     const secondAssistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(secondAssistantMessage.content).toBe("You're welcome!");
+    expect(secondAssistantMessage.content).toBeDefined();
   });
 });

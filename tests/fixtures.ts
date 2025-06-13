@@ -1,14 +1,18 @@
 import { expect as baseExpect, test as baseTest } from '@playwright/test';
 import { createAuthenticatedContext, type UserContext } from './helpers';
 import { getUnixTime } from 'date-fns';
+import { TestUtils } from './helpers/test-utils';
+import { AIMockHelper } from './helpers/ai-mock';
 
 interface Fixtures {
   adaContext: UserContext;
   babbageContext: UserContext;
   curieContext: UserContext;
+  testUtils: TestUtils;
+  aiMock: typeof AIMockHelper;
 }
 
-export const test = baseTest.extend<{}, Fixtures>({
+export const test = baseTest.extend<Fixtures>({
   adaContext: [
     async ({ browser }, use, workerInfo) => {
       const ada = await createAuthenticatedContext({
@@ -46,6 +50,15 @@ export const test = baseTest.extend<{}, Fixtures>({
     },
     { scope: 'worker' },
   ],
+  
+  testUtils: async ({ page }, use) => {
+    const testUtils = new TestUtils(page);
+    await use(testUtils);
+  },
+  
+  aiMock: async ({}, use) => {
+    await use(AIMockHelper);
+  },
 });
 
 export const expect = baseExpect;

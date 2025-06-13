@@ -11,7 +11,7 @@
  * v1.1.0 (2025-06-07): Заменен `Response.json` на `NextResponse.json` в `toResponse`.
  */
 
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 
 export type ErrorType =
   | 'bad_request'

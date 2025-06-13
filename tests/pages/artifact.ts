@@ -15,8 +15,8 @@ export class ArtifactPage {
     return this.page.getByTestId('stop-button');
   }
 
-  public get multimodalInput() {
-    return this.page.getByTestId('multimodal-input');
+  public get chatInput() {
+    return this.page.getByTestId('chat-input');
   }
 
   async isGenerationComplete() {
@@ -25,11 +25,14 @@ export class ArtifactPage {
     );
 
     await response.finished();
+    
+    // Дополнительное ожидание для стабилизации артефакта
+    await this.page.waitForTimeout(1000);
   }
 
   async sendUserMessage(message: string) {
-    await this.artifact.getByTestId('multimodal-input').click();
-    await this.artifact.getByTestId('multimodal-input').fill(message);
+    await this.artifact.getByTestId('chat-input').click();
+    await this.artifact.getByTestId('chat-input').fill(message);
     await this.artifact.getByTestId('send-button').click();
   }
 
@@ -104,5 +107,31 @@ export class ArtifactPage {
 
   async closeArtifact() {
     return this.page.getByTestId('artifact-close-button').click();
+  }
+
+  async waitForArtifactType(type: string) {
+    return this.page.getByTestId(`artifact-type-${type}`).waitFor({ state: 'visible' });
+  }
+
+  async getArtifactContent() {
+    const contentElement = this.artifact.locator('[data-testid="artifact-content"]');
+    return await contentElement.textContent();
+  }
+
+  async editArtifact() {
+    const editButton = this.page.getByTestId('artifact-edit-button');
+    await editButton.click();
+    return this.page.getByTestId('artifact-editor');
+  }
+
+  async previewSite() {
+    const previewButton = this.page.getByTestId('site-preview-button');
+    await previewButton.click();
+  }
+
+  async shareSite() {
+    const shareButton = this.page.getByTestId('site-share-button');
+    await shareButton.click();
+    return this.page.getByTestId('share-modal');
   }
 }

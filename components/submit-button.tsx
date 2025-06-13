@@ -21,6 +21,7 @@ export function SubmitButton({
       aria-disabled={pending || isSuccessful}
       disabled={pending || isSuccessful}
       className="relative"
+      data-testid="auth-submit-button"
     >
       {children}
 

@@ -1,5 +1,3 @@
-import Form from 'next/form';
-
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
@@ -15,7 +13,7 @@ export function AuthForm({
   defaultEmail?: string;
 }) {
   return (
-    <Form action={action} className="flex flex-col gap-4 px-4 sm:px-16">
+    <form action={action} className="flex flex-col gap-4 px-4 sm:px-16">
       <div className="flex flex-col gap-2">
         <Label
           htmlFor="email"
@@ -34,6 +32,7 @@ export function AuthForm({
           required
           autoFocus
           defaultValue={defaultEmail}
+          data-testid="auth-email-input"
         />
       </div>
 
@@ -51,10 +50,11 @@ export function AuthForm({
           className="bg-muted text-md md:text-sm"
           type="password"
           required
+          data-testid="auth-password-input"
         />
       </div>
 
       {children}
-    </Form>
+    </form>
   );
 }

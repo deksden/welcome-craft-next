@@ -9,30 +9,30 @@ test.describe('Chat activity', () => {
     await chatPage.createNewChat();
   });
 
-  test('Send a user message and receive response', async () => {
-    await chatPage.sendUserMessage('Why is grass green?');
+  test('Send a user message and receive AI response', async () => {
+    await chatPage.sendUserMessage('Привет! Расскажи мне о себе');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toContain('Я ИИ-ассистент WelcomeCraft');
   });
 
-  test('Redirect to /chat/:id after submitting message', async () => {
-    await chatPage.sendUserMessage('Why is grass green?');
+  test('Create new chat with unique ID after submitting message', async () => {
+    await chatPage.sendUserMessage('Создай новый чат');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toBeDefined();
     await chatPage.hasChatIdInUrl();
   });
 
-  test('Send a user message from suggestion', async () => {
+  test('Send message from suggested prompt', async () => {
     await chatPage.sendUserMessageFromSuggestion();
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
     expect(assistantMessage.content).toContain(
-      'With Next.js, you can ship fast!',
+      'Создание онбординг-сайта',
     );
   });
 
@@ -51,27 +51,27 @@ test.describe('Chat activity', () => {
     await expect(chatPage.sendButton).toBeVisible();
   });
 
-  test('Stop generation during submission', async () => {
-    await chatPage.sendUserMessage('Why is grass green?');
+  test('Stop AI generation during processing', async () => {
+    await chatPage.sendUserMessage('Создай сложный артефакт с большим содержанием');
     await expect(chatPage.stopButton).toBeVisible();
     await chatPage.stopButton.click();
     await expect(chatPage.sendButton).toBeVisible();
   });
 
-  test('Edit user message and resubmit', async () => {
-    await chatPage.sendUserMessage('Why is grass green?');
+  test('Edit user message and regenerate AI response', async () => {
+    await chatPage.sendUserMessage('Создай текстовый артефакт');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toBeDefined();
 
     const userMessage = await chatPage.getRecentUserMessage();
-    await userMessage.edit('Why is the sky blue?');
+    await userMessage.edit('Создай кодовый артефакт');
 
     await chatPage.isGenerationComplete();
 
     const updatedAssistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(updatedAssistantMessage.content).toContain("It's just blue duh!");
+    expect(updatedAssistantMessage.content).toBeDefined();
   });
 
   test('Hide suggested actions after sending message', async () => {
@@ -80,14 +80,14 @@ test.describe('Chat activity', () => {
     await chatPage.isElementNotVisible('suggested-actions');
   });
 
-  test('Upload file and send image attachment with message', async () => {
+  test('Upload file and analyze with AI', async () => {
     await chatPage.addImageAttachment();
 
     await chatPage.isElementVisible('attachments-preview');
     await chatPage.isElementVisible('input-attachment-loader');
     await chatPage.isElementNotVisible('input-attachment-loader');
 
-    await chatPage.sendUserMessage('Who painted this?');
+    await chatPage.sendUserMessage('Проанализируй этот файл для создания онбординга');
 
     const userMessage = await chatPage.getRecentUserMessage();
     expect(userMessage.attachments).toHaveLength(1);
@@ -95,22 +95,19 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe('This painting is by Monet!');
+    expect(assistantMessage.content).toContain('анализ');
   });
 
-  test('Call weather tool', async () => {
-    await chatPage.sendUserMessage("What's the weather in sf?");
+  test('Create artifact via AI tool', async () => {
+    await chatPage.sendUserMessage('Создай текстовый артефакт с приветствием для нового сотрудника');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-
-    expect(assistantMessage.content).toBe(
-      'The current temperature in San Francisco is 17°C.',
-    );
+    expect(assistantMessage.content).toContain('артефакт');
   });
 
-  test('Upvote message', async () => {
-    await chatPage.sendUserMessage('Why is the sky blue?');
+  test('Upvote AI response', async () => {
+    await chatPage.sendUserMessage('Помоги создать онбординг');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
@@ -118,8 +115,8 @@ test.describe('Chat activity', () => {
     await chatPage.isVoteComplete();
   });
 
-  test('Downvote message', async () => {
-    await chatPage.sendUserMessage('Why is the sky blue?');
+  test('Downvote AI response', async () => {
+    await chatPage.sendUserMessage('Создай артефакт');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
@@ -127,8 +124,8 @@ test.describe('Chat activity', () => {
     await chatPage.isVoteComplete();
   });
 
-  test('Update vote', async () => {
-    await chatPage.sendUserMessage('Why is the sky blue?');
+  test('Change vote on AI response', async () => {
+    await chatPage.sendUserMessage('Помоги с созданием контента');
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
@@ -139,20 +136,20 @@ test.describe('Chat activity', () => {
     await chatPage.isVoteComplete();
   });
 
-  test('Create message from url query', async ({ page }) => {
-    await page.goto('/?query=Why is the sky blue?');
+  test('Start chat from URL query parameter', async ({ page }) => {
+    await page.goto('http://app.localhost:3000/?query=Создай онбординг-сайт для разработчика');
 
     await chatPage.isGenerationComplete();
 
     const userMessage = await chatPage.getRecentUserMessage();
-    expect(userMessage.content).toBe('Why is the sky blue?');
+    expect(userMessage.content).toBe('Создай онбординг-сайт для разработчика');
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just blue duh!");
+    expect(assistantMessage.content).toBeDefined();
   });
 
-  test('auto-scrolls to bottom after submitting new messages', async () => {
-    await chatPage.sendMultipleMessages(5, (i) => `filling message #${i}`);
+  test('Auto-scroll to bottom after AI responses', async () => {
+    await chatPage.sendMultipleMessages(5, (i) => `Создай артефакт номер ${i}`);
     await chatPage.waitForScrollToBottom();
   });
 

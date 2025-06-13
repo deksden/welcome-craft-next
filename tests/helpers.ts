@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   type APIRequestContext,
   type Browser,
@@ -10,6 +11,7 @@ import {
 import { generateId } from 'ai';
 import { ChatPage } from './pages/chat';
 import { getUnixTime } from 'date-fns';
+import { mockAuthentication } from './helpers/auth-mock';
 
 export type UserContext = {
   context: BrowserContext;
@@ -26,6 +28,7 @@ export async function createAuthenticatedContext({
   name: string;
   chatModel?: 'chat-model' | 'chat-model-reasoning';
 }): Promise<UserContext> {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const directory = path.join(__dirname, '../playwright/.sessions');
 
   if (!fs.existsSync(directory)) {
@@ -37,15 +40,18 @@ export async function createAuthenticatedContext({
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  const email = `test-${name}@playwright.com`;
+  const timestamp = getUnixTime(new Date());
+  const email = `test-${name}-${timestamp}@playwright.com`;
   const password = generateId(16);
 
-  await page.goto('http://localhost:3000/register');
-  await page.getByPlaceholder('user@acme.com').click();
-  await page.getByPlaceholder('user@acme.com').fill(email);
-  await page.getByLabel('Password').click();
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign Up' }).click();
+  await page.goto('http://app.localhost:3000/register');
+  
+  // Ждем загрузки формы с новыми надежными селекторами
+  await page.waitForSelector('[data-testid="auth-email-input"]', { timeout: 10000 });
+  
+  await page.getByTestId('auth-email-input').fill(email);
+  await page.getByTestId('auth-password-input').fill(password);
+  await page.getByTestId('auth-submit-button').click();
 
   await expect(page.getByTestId('toast')).toContainText(
     'Account created successfully!',
@@ -77,5 +83,31 @@ export function generateRandomTestUser() {
   return {
     email,
     password,
+  };
+}
+
+/**
+ * Создает аутентифицированный контекст с mock сессией (быстрее для тестирования)
+ */
+export async function createMockAuthenticatedContext({
+  browser,
+  name,
+}: {
+  browser: Browser;
+  name: string;
+}): Promise<UserContext> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  const timestamp = getUnixTime(new Date());
+  const email = `test-${name}-${timestamp}@playwright.com`;
+
+  // Используем mock аутентификацию вместо реальной регистрации
+  await mockAuthentication(page, email);
+
+  return {
+    context,
+    page,
+    request: context.request,
   };
 }

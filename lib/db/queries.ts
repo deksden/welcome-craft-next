@@ -55,10 +55,23 @@ export async function getUser (email: string): Promise<Array<User>> {
 
 export async function createUser (email: string, password: string) {
   logger.trace({ email }, 'Entering createUser')
-  // const hashedPassword = generateHashedPassword(password); // TODO: Hashing needed
-  // For now, to resolve TS error, using plain password. THIS IS INSECURE.
-  console.warn('TODO: Password hashing is not implemented in createUser. Storing plain password temporarily.')
-  return await db.insert(user).values({ email, password })
+  
+  try {
+    // const hashedPassword = generateHashedPassword(password); // TODO: Hashing needed
+    // For now, to resolve TS error, using plain password. THIS IS INSECURE.
+    console.warn('TODO: Password hashing is not implemented in createUser. Storing plain password temporarily.')
+    
+    const result = await db.insert(user).values({ email, password }).returning({
+      id: user.id,
+      email: user.email,
+    })
+    
+    logger.info({ email, userId: result[0]?.id }, 'User created successfully')
+    return result
+  } catch (error) {
+    logger.error({ email, error: error instanceof Error ? error.message : String(error) }, 'Failed to create user')
+    throw error
+  }
 }
 
 export async function createGuestUser () {

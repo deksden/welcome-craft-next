@@ -26,7 +26,7 @@ test.describe
       const response = await adaContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: TEST_PROMPTS.SKY.MESSAGE,
+          messages: [TEST_PROMPTS.SKY.MESSAGE],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'private',
         },
@@ -50,7 +50,7 @@ test.describe
       const response = await babbageContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: TEST_PROMPTS.GRASS.MESSAGE,
+          messages: [TEST_PROMPTS.GRASS.MESSAGE],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'private',
         },
@@ -102,10 +102,10 @@ test.describe
       const firstRequest = adaContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: {
+          messages: [{
             id: generateUUID(),
             role: 'user',
-            content: 'Help me write an essay about Silcon Valley',
+            content: 'Help me write an essay about Silicon Valley',
             parts: [
               {
                 type: 'text',
@@ -113,7 +113,7 @@ test.describe
               },
             ],
             createdAt: new Date().toISOString(),
-          },
+          }],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'private',
         },
@@ -156,10 +156,10 @@ test.describe
       const firstRequest = await adaContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: {
+          messages: [{
             id: generateUUID(),
             role: 'user',
-            content: 'Help me write an essay about Silcon Valley',
+            content: 'Help me write an essay about Silicon Valley',
             parts: [
               {
                 type: 'text',
@@ -167,7 +167,7 @@ test.describe
               },
             ],
             createdAt: new Date().toISOString(),
-          },
+          }],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'private',
         },
@@ -206,10 +206,10 @@ test.describe
       const firstResponse = await adaContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: {
+          messages: [{
             id: generateUUID(),
             role: 'user',
-            content: 'Help me write an essay about Silcon Valley',
+            content: 'Help me write an essay about Silicon Valley',
             parts: [
               {
                 type: 'text',
@@ -217,7 +217,7 @@ test.describe
               },
             ],
             createdAt: new Date().toISOString(),
-          },
+          }],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'private',
         },
@@ -249,10 +249,10 @@ test.describe
       const firstRequest = adaContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: {
+          messages: [{
             id: generateUUID(),
             role: 'user',
-            content: 'Help me write an essay about Silcon Valley',
+            content: 'Help me write an essay about Silicon Valley',
             parts: [
               {
                 type: 'text',
@@ -260,7 +260,7 @@ test.describe
               },
             ],
             createdAt: new Date().toISOString(),
-          },
+          }],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'private',
         },
@@ -295,7 +295,7 @@ test.describe
       const firstRequest = adaContext.request.post('/api/chat', {
         data: {
           id: chatId,
-          message: {
+          messages: [{
             id: generateUUID(),
             role: 'user',
             content: 'Help me write an essay about Silicon Valley',
@@ -306,7 +306,7 @@ test.describe
               },
             ],
             createdAt: new Date().toISOString(),
-          },
+          }],
           selectedChatModel: 'chat-model',
           selectedVisibilityType: 'public',
         },

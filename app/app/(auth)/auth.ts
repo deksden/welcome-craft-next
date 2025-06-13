@@ -68,7 +68,9 @@ export const {
           return null;
         }
 
-        const passwordsMatch = await compare(password, user.password);
+        // TODO: Temporary fix for plain text passwords during development
+        // Remove this when password hashing is implemented
+        const passwordsMatch = password === user.password || await compare(password, user.password);
 
         if (!passwordsMatch) return null;
 

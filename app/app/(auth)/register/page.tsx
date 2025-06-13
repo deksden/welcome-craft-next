@@ -14,7 +14,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { AuthForm } from '@/components/auth-form'
 import { SubmitButton } from '@/components/submit-button'
@@ -28,35 +28,40 @@ export default function Page () {
   const [email, setEmail] = useState('')
   const [isSuccessful, setIsSuccessful] = useState(false)
 
-  const [state, formAction] = useActionState<RegisterActionState, FormData>(
-    register,
-    {
-      status: 'idle',
-    },
-  )
-
-  useEffect(() => {
-    if (state.status === 'user_exists') {
-      toast({ type: 'error', description: 'Account already exists!' })
-    } else if (state.status === 'failed') {
-      toast({ type: 'error', description: 'Failed to create account!' })
-    } else if (state.status === 'invalid_data') {
-      toast({
-        type: 'error',
-        description: 'Failed validating your submission!',
-      })
-    } else if (state.status === 'success') {
-      toast({ type: 'success', description: 'Account created successfully!' })
-
-      setIsSuccessful(true)
-      // Прямое перенаправление на главную страницу вместо обновления текущей
-      router.push('/')
-    }
-  }, [state, router])
-
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = async (formData: FormData) => {
+    console.log('handleSubmit called with:', formData.get('email'))
     setEmail(formData.get('email') as string)
-    formAction(formData)
+    console.log('calling register server action...')
+    
+    try {
+      const result = await register({ status: 'idle' }, formData)
+      console.log('register result:', result)
+      
+      if (result.status === 'user_exists') {
+        console.log('❌ User already exists')
+        toast({ type: 'error', description: 'Account already exists!' })
+      } else if (result.status === 'failed') {
+        console.log('❌ Registration failed')
+        toast({ type: 'error', description: 'Failed to create account!' })
+      } else if (result.status === 'invalid_data') {
+        console.log('❌ Invalid data')
+        toast({
+          type: 'error',
+          description: 'Failed validating your submission!',
+        })
+      } else if (result.status === 'success') {
+        console.log('✅ SUCCESS! Showing toast and redirecting...')
+        toast({ type: 'success', description: 'Account created successfully!' })
+        setIsSuccessful(true)
+        console.log('🔄 Calling router.push...')
+        setTimeout(() => {
+          router.push('/')
+        }, 1000) // небольшая задержка чтобы toast успел показаться
+      }
+    } catch (error) {
+      console.error('Registration error:', error)
+      toast({ type: 'error', description: 'An unexpected error occurred!' })
+    }
   }
 
   return (

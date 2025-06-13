@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { chatModels } from '@/lib/ai/models';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Locator } from '@playwright/test';
 
 export class ChatPage {
   constructor(private page: Page) {}
@@ -14,8 +14,8 @@ export class ChatPage {
     return this.page.getByTestId('stop-button');
   }
 
-  public get multimodalInput() {
-    return this.page.getByTestId('multimodal-input');
+  public get chatInput() {
+    return this.page.getByTestId('chat-input');
   }
 
   public get scrollContainer() {
@@ -27,7 +27,7 @@ export class ChatPage {
   }
 
   async createNewChat() {
-    await this.page.goto('/');
+    await this.page.goto('http://app.localhost:3000/');
   }
 
   public getCurrentURL(): string {
@@ -35,8 +35,8 @@ export class ChatPage {
   }
 
   async sendUserMessage(message: string) {
-    await this.multimodalInput.click();
-    await this.multimodalInput.fill(message);
+    await this.chatInput.click();
+    await this.chatInput.fill(message);
     await this.sendButton.click();
   }
 
@@ -46,6 +46,53 @@ export class ChatPage {
     );
 
     await response.finished();
+
+    // Дополнительное ожидание для стабилизации DOM
+    await this.page.waitForTimeout(500);
+  }
+
+  async getAllMessages() {
+    await this.page.waitForTimeout(1000); // Ожидание рендера
+    const messages = await this.page.locator('[data-testid="message"]').all();
+    
+    return Promise.all(messages.map(async (message) => {
+      const role = await message.getAttribute('data-role') || 'unknown';
+      const content = await message.locator('[data-testid="message-content"]').textContent() || '';
+      const attachments = await message.locator('[data-testid="attachment"]').count();
+      
+      return {
+        role,
+        content: content.trim(),
+        attachments: Array.from({ length: attachments }, (_, i) => ({ id: i }))
+      };
+    }));
+  }
+
+  async isScrolledToBottom(): Promise<boolean> {
+    return await this.page.evaluate(() => {
+      const container = document.querySelector('.overflow-y-scroll');
+      if (!container) return false;
+      
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      return Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+    });
+  }
+
+  async scrollToTop() {
+    await this.scrollContainer.evaluate(element => {
+      element.scrollTop = 0;
+    });
+    await this.page.waitForTimeout(300);
+  }
+
+  async waitForScrollToBottom() {
+    await this.page.waitForFunction(() => {
+      const container = document.querySelector('.overflow-y-scroll');
+      if (!container) return false;
+      
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      return Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+    }, { timeout: 5000 });
   }
 
   async isVoteComplete() {
