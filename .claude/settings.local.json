@@ -26,7 +26,8 @@
       "WebFetch(domain:sdk.vercel.ai)",
       "Bash(true)",
       "Bash(sed:*)",
-      "Bash(timeout 180 pnpm test tests/e2e/registration-test.test.ts)"
+      "Bash(timeout 180 pnpm test tests/e2e/registration-test.test.ts)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

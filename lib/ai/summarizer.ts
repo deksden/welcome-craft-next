@@ -15,7 +15,7 @@
 import 'server-only'
 import { generateText } from 'ai'
 import { myProvider } from './providers'
-import { db } from '../db/queries'
+import { db } from '@/lib/db'
 import { artifact } from '../db/schema'
 import { desc, eq } from 'drizzle-orm'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ

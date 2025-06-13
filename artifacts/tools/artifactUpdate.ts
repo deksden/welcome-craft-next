@@ -1,13 +1,14 @@
 /**
  * @file artifacts/tools/artifactUpdate.ts
  * @description AI-инструмент для обновления существующего артефакта.
- * @version 2.0.1
- * @date 2025-06-11
- * @updated Added a guard clause to safely handle session.user.id.
+ * @version 2.1.0
+ * @date 2025-06-13
+ * @updated Добавлена проверка прав доступа (userId) перед обновлением.
  */
 
 /** HISTORY:
- * v2.0.1 (2025-06-11): Replaced non-null assertion with a guard clause for session.user.id.
+ * v2.1.0 (2025-06-13): Added user access rights check.
+ * v2.0.1 (2025-06-11): Added a guard clause to safely handle session.user.id.
  * v2.0.0 (2025-06-10): Refactored to use the ArtifactTool registry for dispatching update logic.
  */
 
@@ -44,9 +45,9 @@ export const artifactUpdate = ({ session }: UpdateArtifactProps) =>
 
       const artifactResult = await getArtifactById({ id })
 
-      if (!artifactResult) {
-        childLogger.warn('Artifact not found')
-        return { error: `Artifact with ID '${id}' not found.` }
+      if (!artifactResult || artifactResult.doc.userId !== session.user.id) {
+        childLogger.warn('Artifact not found or permission denied')
+        return { error: `Artifact with ID '${id}' not found or you do not have permission to update it.` }
       }
 
       const { doc: artifact, totalVersions } = artifactResult

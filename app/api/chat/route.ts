@@ -1,12 +1,13 @@
 /**
  * @file app/api/chat/route.ts
  * @description API маршрут для обработки запросов чата, переписанный под новую архитектуру.
- * @version 5.4.1
- * @date 2025-06-10
- * @updated Добавлена отказоустойчивость: улучшена обработка ошибок InvalidToolArgumentsError и добавлена проверка в onFinish для предотвращения падений.
- */
-
-/** HISTORY:
+ * @version 5.5.0
+ * @date 2025-06-13
+ * @updated Удален инструмент siteGenerate, так как его логика перенесена в artifactCreate.
+ *
+ * ## HISTORY:
+ *
+ * v5.5.0 (2025-06-13): Removed siteGenerate tool.
  * v5.4.1 (2025-06-10): Улучшена обработка ошибок InvalidToolArgumentsError и добавлена проверка в onFinish.
  * v5.4.0 (2025-06-10): Исправлены ошибки типизации (TS18046, TS2322, TS2769, TS2345) через явный парсинг `postRequestBodySchema`.
  * v5.3.0 (2025-06-10): Updated tool imports to reflect new directory structure.
@@ -37,7 +38,6 @@ import { getWeather } from '@/lib/ai/tools/get-weather'
 import { artifactContent } from '@/artifacts/tools/artifactContent'
 import { artifactDelete } from '@/artifacts/tools/artifactDelete'
 import { artifactRestore } from '@/artifacts/tools/artifactRestore'
-import { siteGenerate } from '@/artifacts/tools/siteGenerate'
 import { myProvider } from '@/lib/ai/providers'
 import { entitlementsByUserType } from '@/lib/ai/entitlements'
 import { type PostRequestBody, postRequestBodySchema } from './schema'
@@ -142,7 +142,6 @@ export async function POST (request: Request) {
         artifactEnhance: artifactEnhance({ session }),
         artifactDelete: artifactDelete({ session }),
         artifactRestore: artifactRestore({ session }),
-        siteGenerate: siteGenerate({ session }),
       },
       onFinish: async ({ response, finishReason, usage }) => {
         childLogger.info({ finishReason, usage }, 'Text stream finished, saving assistant response')

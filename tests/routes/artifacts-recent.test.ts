@@ -23,18 +23,20 @@ test.describe.serial('/api/artifacts/recent', () => {
     const response = await adaContext.request.get('/api/artifacts/recent?limit=0');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Invalid limit parameter');
+    expect(message).toEqual(getMessageByErrorCode('bad_request:api'));
+    expect(cause).toContain('Invalid limit parameter');
   });
 
   test('Ada cannot use limit greater than 20', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts/recent?limit=25');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Invalid limit parameter');
+    expect(message).toEqual(getMessageByErrorCode('bad_request:api'));
+    expect(cause).toContain('Invalid limit parameter');
   });
 
   test('Ada can filter recent artifacts by kind', async ({ adaContext }) => {
@@ -77,8 +79,9 @@ test.describe.serial('/api/artifacts/recent', () => {
     const response = await adaContext.request.get('/api/artifacts/recent?limit=invalid');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Invalid limit parameter');
+    expect(message).toEqual(getMessageByErrorCode('bad_request:api'));
+    expect(cause).toContain('Invalid limit parameter');
   });
 });
