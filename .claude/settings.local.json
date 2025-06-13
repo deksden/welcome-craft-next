@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:*)",
+      "Bash(pnpm exec playwright test:*)",
+      "Bash(mv:*)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(timeout 60s pnpm exec playwright test tests/routes --project=routes)",
+      "Bash(gtimeout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(PLAYWRIGHT=true NODE_ENV=test pnpm exec playwright test tests/routes/chat.test.ts --headed=false --timeout=30000)",
+      "Bash(PLAYWRIGHT=true NODE_ENV=test pnpm exec playwright test tests/routes/chat.test.ts --timeout=30000)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(pkill:*)",
+      "Bash(pnpm exec playwright show-trace:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx:*)"
+    ],
+    "deny": []
+  }
+}
