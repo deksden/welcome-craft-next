@@ -3,9 +3,9 @@
  * Создает фиктивную сессию без реальной регистрации
  */
 
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-export async function mockAuthentication(page: Page, userEmail: string = 'test@playwright.com') {
+export async function mockAuthentication(page: Page, userEmail = 'test@playwright.com') {
   // Создаем моковую сессию через localStorage для обхода аутентификации
   await page.goto('http://app.localhost:3000/');
   

@@ -1,14 +1,16 @@
 /**
  * @file lib/db/queries.ts
  * @description Функции для выполнения запросов к базе данных.
- * @version 2.3.0
- * @date 2025-06-12
- * @updated getArtifactById now accepts versionTimestamp for precise retrieval.
+ * @version 2.4.1
+ * @date 2025-06-13
+ * @updated Добавлен await к вызову query() для корректной работы.
  */
 
 /** HISTORY:
+ * v2.4.1 (2025-06-13): Добавлен await к вызову query().
+ * v2.4.0 (2025-06-13): Инстанс db теперь импортируется из @/lib/db.
  * v2.3.0 (2025-06-12): Added versionTimestamp param to getArtifactById.
- * v2.2.0 (2025-06-10): Импорт ArtifactKind теперь из lib/types.
+ * v2.2.0 (2025-06-10): Импорт ArtifactKind теперь из общего файла lib/types.
  * v2.1.1 (2025-06-10): Temporarily commented out generateHashedPassword usage to resolve TS2305.
  * v2.1.0 (2025-06-09): Восстановлены экспорты getMessageById, deleteMessageById и др.
  * v2.0.0 (2025-06-09): Переименованы Document->Artifact, мягкое удаление, новые функции rename/restore/dismiss.
@@ -17,8 +19,6 @@
 import 'server-only'
 
 import { and, asc, count, desc, eq, gt, gte, ilike, inArray, isNull, sql, type SQL, } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
 import { createLogger } from '@fab33/fab-logger'
 
 import {
@@ -33,20 +33,14 @@ import {
   user,
   type User,
 } from './schema'
-import type { ArtifactKind, VisibilityType } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
+import type { ArtifactKind, VisibilityType } from '@/lib/types'
 import { generateUUID } from '../utils'
 // import { generateHashedPassword } from './utils'; // TODO: Restore when generateHashedPassword is available
 import { generateAndSaveSummary } from '../ai/summarizer'
+import { db } from '@/lib/db'
 
 console.log(`process.env.TRANSPORT1=${process.env.TRANSPORT1}`)
 const logger = createLogger('lib:db:queries')
-
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!, {
-  idle_timeout: 20,
-  max_lifetime: 60 * 5,
-})
-export const db = drizzle(client)
 
 // --- User Queries ---
 export async function getUser (email: string): Promise<Array<User>> {
@@ -56,17 +50,17 @@ export async function getUser (email: string): Promise<Array<User>> {
 
 export async function createUser (email: string, password: string) {
   logger.trace({ email }, 'Entering createUser')
-  
+
   try {
     // const hashedPassword = generateHashedPassword(password); // TODO: Hashing needed
     // For now, to resolve TS error, using plain password. THIS IS INSECURE.
     console.warn('TODO: Password hashing is not implemented in createUser. Storing plain password temporarily.')
-    
+
     const result = await db.insert(user).values({ email, password }).returning({
       id: user.id,
       email: user.email,
     })
-    
+
     logger.info({ email, userId: result[0]?.id }, 'User created successfully')
     return result
   } catch (error) {
@@ -147,7 +141,7 @@ export async function getChatsByUserId ({ id, limit, startingAfter, endingBefore
 
   let filteredChats: Array<Chat> = []
   if (startingAfter) { /* ... */ } else if (endingBefore) { /* ... */ } else {
-    filteredChats = await query()
+    filteredChats = await query() // ИЗМЕНЕНИЕ ЗДЕСЬ
   }
 
   const hasMore = filteredChats.length > limit
@@ -242,7 +236,11 @@ export async function getArtifactsById ({ id }: { id: string }): Promise<Array<A
   return await db.select().from(artifact).where(and(eq(artifact.id, id), isNull(artifact.deletedAt))).orderBy(asc(artifact.createdAt))
 }
 
-export async function getArtifactById ({ id, version, versionTimestamp }: { id: string; version?: number | null; versionTimestamp?: Date | null }): Promise<{
+export async function getArtifactById ({ id, version, versionTimestamp }: {
+  id: string;
+  version?: number | null;
+  versionTimestamp?: Date | null
+}): Promise<{
   doc: Artifact,
   totalVersions: number
 } | undefined> {

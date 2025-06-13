@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { chatModels } from '@/lib/ai/models';
-import { expect, type Page, type Locator } from '@playwright/test';
+import { expect, type Page, } from '@playwright/test';
 
 export class ChatPage {
   constructor(private page: Page) {}
@@ -268,23 +268,6 @@ export class ChatPage {
     await sidebarToggleButton.click();
   }
 
-  public async isScrolledToBottom(): Promise<boolean> {
-    return this.scrollContainer.evaluate(
-      (el) => Math.abs(el.scrollHeight - el.scrollTop - el.clientHeight) < 1,
-    );
-  }
-
-  public async waitForScrollToBottom(timeout = 5_000): Promise<void> {
-    const start = Date.now();
-
-    while (Date.now() - start < timeout) {
-      if (await this.isScrolledToBottom()) return;
-      await this.page.waitForTimeout(100);
-    }
-
-    throw new Error(`Timed out waiting for scroll bottom after ${timeout}ms`);
-  }
-
   public async sendMultipleMessages(
     count: number,
     makeMessage: (i: number) => string,
@@ -293,11 +276,5 @@ export class ChatPage {
       await this.sendUserMessage(makeMessage(i));
       await this.isGenerationComplete();
     }
-  }
-
-  public async scrollToTop(): Promise<void> {
-    await this.scrollContainer.evaluate((element) => {
-      element.scrollTop = 0;
-    });
   }
 }

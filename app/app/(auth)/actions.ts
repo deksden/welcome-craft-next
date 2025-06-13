@@ -85,14 +85,7 @@ export const register = async (
     logger.info('Creating new user', { email: validatedData.email });
     await createUser(validatedData.email, validatedData.password);
     
-    logger.info('User created successfully, attempting sign in', { email: validatedData.email });
-    await signIn('credentials', {
-      email: validatedData.email,
-      password: validatedData.password,
-      redirect: false,
-    });
-
-    logger.info('Registration completed successfully', { email: validatedData.email });
+    logger.info('User created successfully', { email: validatedData.email });
     return { status: 'success' };
   } catch (error) {
     logger.error('Registration failed', { 

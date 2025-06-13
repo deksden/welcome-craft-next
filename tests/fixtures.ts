@@ -13,50 +13,43 @@ interface Fixtures {
 }
 
 export const test = baseTest.extend<Fixtures>({
-  adaContext: [
-    async ({ browser }, use, workerInfo) => {
-      const ada = await createAuthenticatedContext({
-        browser,
-        name: `ada-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
-      });
+  adaContext: async ({ browser }, use, workerInfo) => {
+    const ada = await createAuthenticatedContext({
+      browser,
+      name: `ada-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
+    });
 
-      await use(ada);
-      await ada.context.close();
-    },
-    { scope: 'worker' },
-  ],
-  babbageContext: [
-    async ({ browser }, use, workerInfo) => {
-      const babbage = await createAuthenticatedContext({
-        browser,
-        name: `babbage-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
-      });
+    await use(ada);
+    await ada.context.close();
+  },
+  
+  babbageContext: async ({ browser }, use, workerInfo) => {
+    const babbage = await createAuthenticatedContext({
+      browser,
+      name: `babbage-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
+    });
 
-      await use(babbage);
-      await babbage.context.close();
-    },
-    { scope: 'worker' },
-  ],
-  curieContext: [
-    async ({ browser }, use, workerInfo) => {
-      const curie = await createAuthenticatedContext({
-        browser,
-        name: `curie-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
-        chatModel: 'chat-model-reasoning',
-      });
+    await use(babbage);
+    await babbage.context.close();
+  },
+  
+  curieContext: async ({ browser }, use, workerInfo) => {
+    const curie = await createAuthenticatedContext({
+      browser,
+      name: `curie-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
+      chatModel: 'chat-model-reasoning',
+    });
 
-      await use(curie);
-      await curie.context.close();
-    },
-    { scope: 'worker' },
-  ],
+    await use(curie);
+    await curie.context.close();
+  },
   
   testUtils: async ({ page }, use) => {
     const testUtils = new TestUtils(page);
     await use(testUtils);
   },
   
-  aiMock: async ({}, use) => {
+  aiMock: async ({ page }, use) => {
     await use(AIMockHelper);
   },
 });

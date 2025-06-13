@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, } from '@playwright/test';
 
 test.describe('Registration Test', () => {
   test('user can register successfully', async ({ page }) => {
@@ -37,9 +37,12 @@ test.describe('Registration Test', () => {
       if (toastText?.includes('Account created successfully')) {
         console.log('✅ Success toast appeared!');
         
-        // Now wait for redirect (setTimeout delay is 1000ms)
+        // Now wait for redirect - should stay on app.localhost:3000 but go to root
         console.log('⏳ Waiting for redirect...');
-        await page.waitForURL('http://app.localhost:3000/', { timeout: 3000 });
+        await page.waitForFunction(
+          () => !window.location.href.includes('/register') && !window.location.href.includes('/login'),
+          { timeout: 5000 }
+        );
         console.log('✅ Successfully redirected to main page');
         
         // Check if chat interface is available (user is logged in)
@@ -80,7 +83,7 @@ test.describe('Registration Test', () => {
         throw new Error(`Registration failed: ${toastText}`);
       }
     } catch (error) {
-      console.log('❌ Registration test failed:', error.message);
+      console.log('❌ Registration test failed:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   });

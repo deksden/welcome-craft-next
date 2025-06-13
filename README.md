@@ -1,8 +1,9 @@
-#. `README.md`
+# WelcomeCraft
 
-Документация по установке: ./SETUP.md
-Описание проекта: .docs/WELCOME-CRAFT.md
-Правила и стандарты проекта: .docs/RULEZZ.md
+Документация по установке: `./SETUP.md`  
+Описание проекта и архитектуры: `.memory-bank/`  
+Правила разработки: `.memory-bank/dev-rules.md`  
+Инструкции для Claude: `./CLAUDE.md`
 
 ---
 

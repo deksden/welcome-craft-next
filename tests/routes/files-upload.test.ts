@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures';
+import { expect, apiTest as test } from '../api-fixtures';
 import { getMessageByErrorCode } from '@/lib/errors';
 
 test.describe.serial('/api/files/upload', () => {

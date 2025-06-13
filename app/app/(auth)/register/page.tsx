@@ -19,7 +19,7 @@ import { useState } from 'react'
 import { AuthForm } from '@/components/auth-form'
 import { SubmitButton } from '@/components/submit-button'
 
-import { register, type RegisterActionState } from '../actions'
+import { register, } from '../actions'
 import { toast } from '@/components/toast'
 
 export default function Page () {
@@ -50,13 +50,29 @@ export default function Page () {
           description: 'Failed validating your submission!',
         })
       } else if (result.status === 'success') {
-        console.log('✅ SUCCESS! Showing toast and redirecting...')
+        console.log('✅ SUCCESS! Showing toast and signing in...')
         toast({ type: 'success', description: 'Account created successfully!' })
         setIsSuccessful(true)
-        console.log('🔄 Calling router.push...')
-        setTimeout(() => {
-          router.push('/')
-        }, 1000) // небольшая задержка чтобы toast успел показаться
+        
+        // Делаем signIn на клиенте после успешной регистрации
+        console.log('🔄 Calling signIn on client...')
+        const { signIn } = await import('next-auth/react')
+        const signInResult = await signIn('credentials', {
+          email: formData.get('email') as string,
+          password: formData.get('password') as string,
+          redirect: false,
+        })
+        
+        console.log('🔍 SignIn result:', signInResult)
+        
+        if (signInResult?.ok) {
+          console.log('🎉 SignIn successful, redirecting...')
+          // Редиректим на главную админки на том же домене где мы находимся
+          window.location.href = '/'
+        } else {
+          console.log('❌ SignIn failed, staying on register page')
+          toast({ type: 'error', description: 'Account created but login failed. Please try logging in manually.' })
+        }
       }
     } catch (error) {
       console.error('Registration error:', error)

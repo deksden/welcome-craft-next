@@ -21,7 +21,12 @@
       "Bash(pnpm exec:*)",
       "Bash(npm run test:e2e:*)",
       "Bash(npx playwright test:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(npm run lint)",
+      "WebFetch(domain:sdk.vercel.ai)",
+      "Bash(true)",
+      "Bash(sed:*)",
+      "Bash(timeout 180 pnpm test tests/e2e/registration-test.test.ts)"
     ],
     "deny": []
   }

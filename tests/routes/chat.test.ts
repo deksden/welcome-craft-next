@@ -1,5 +1,5 @@
 import { generateUUID } from '@/lib/utils';
-import { expect, test } from '../fixtures';
+import { expect, apiTest as test } from '../api-fixtures';
 import { TEST_PROMPTS } from '../prompts/routes';
 import { getMessageByErrorCode } from '@/lib/errors';
 

@@ -21,6 +21,9 @@ test.describe('AI-First Workflow', () => {
     
     await testUtils.cleanupTestData();
     
+    // Настройка AI mocks перед регистрацией
+    await testUtils.setupAIMocks();
+    
     // Регистрация пользователя перед каждым тестом
     const timestamp = Date.now();
     const email = `test${timestamp}@example.com`;
@@ -28,6 +31,7 @@ test.describe('AI-First Workflow', () => {
   });
 
   test.afterEach(async () => {
+    await testUtils.disableAIMocks();
     await testUtils.resetNetwork();
     AIMockHelper.clearCustomResponses();
   });
