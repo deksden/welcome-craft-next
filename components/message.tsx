@@ -21,7 +21,7 @@ import type { UIMessage } from 'ai'
 import cx from 'classnames'
 import { AnimatePresence, motion } from 'framer-motion'
 import { memo, useState } from 'react'
-import { DocumentToolCall } from './document'
+import { ArtifactToolCall } from './artifact-tool-results'
 import { CopyIcon, PencilEditIcon, RedoIcon, SparklesIcon, TrashIcon } from './icons'
 import { Markdown } from './markdown'
 import { PreviewAttachment } from './preview-attachment'
@@ -249,9 +249,9 @@ const PurePreviewMessage = ({
                     case AI_TOOL_NAMES.GET_WEATHER:
                       return <div key={toolCallId} className="skeleton"><Weather/></div>
                     case AI_TOOL_NAMES.ARTIFACT_CREATE:
-                      return <DocumentToolCall key={toolCallId} type="create" args={args} isReadonly={isReadonly}/>
+                      return <ArtifactToolCall key={toolCallId} type="create" args={args} isReadonly={isReadonly}/>
                     case AI_TOOL_NAMES.ARTIFACT_UPDATE:
-                      return <DocumentToolCall key={toolCallId} type="update" args={args} isReadonly={isReadonly}/>
+                      return <ArtifactToolCall key={toolCallId} type="update" args={args} isReadonly={isReadonly}/>
                     default:
                       return null
                   }

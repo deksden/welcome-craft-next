@@ -50,29 +50,16 @@ export default function Page () {
           description: 'Failed validating your submission!',
         })
       } else if (result.status === 'success') {
-        console.log('✅ SUCCESS! Showing toast and signing in...')
+        console.log('✅ SUCCESS! Registration and auto-login completed')
         toast({ type: 'success', description: 'Account created successfully!' })
         setIsSuccessful(true)
         
-        // Делаем signIn на клиенте после успешной регистрации
-        console.log('🔄 Calling signIn on client...')
-        const { signIn } = await import('next-auth/react')
-        const signInResult = await signIn('credentials', {
-          email: formData.get('email') as string,
-          password: formData.get('password') as string,
-          redirect: false,
-        })
-        
-        console.log('🔍 SignIn result:', signInResult)
-        
-        if (signInResult?.ok) {
-          console.log('🎉 SignIn successful, redirecting...')
-          // Редиректим на главную админки на том же домене где мы находимся
-          window.location.href = '/'
-        } else {
-          console.log('❌ SignIn failed, staying on register page')
-          toast({ type: 'error', description: 'Account created but login failed. Please try logging in manually.' })
-        }
+        // В тестовой среде server action возвращает success status без redirect
+        // Поэтому делаем клиентский redirect на тот же домен (app.localhost)
+        console.log('🎉 Registration successful - redirecting to main page')
+        setTimeout(() => {
+          window.location.href = window.location.origin + '/'
+        }, 1000) // Небольшая задержка для показа toast
       }
     } catch (error) {
       console.error('Registration error:', error)

@@ -6,7 +6,7 @@
  * @purpose ТЕСТОВЫЙ - создание пользователей для API тестов
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { createUser } from '@/lib/db/queries';
 
 export async function POST(request: NextRequest) {
@@ -27,9 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    await createUser(email, password);
+    const [user] = await createUser(email, password);
     
-    return NextResponse.json({ success: true, email });
+    return NextResponse.json({ 
+      success: true, 
+      email,
+      userId: user.id 
+    });
   } catch (error) {
     console.error('Test create user error:', error);
     return NextResponse.json({ 

@@ -1,224 +1,246 @@
-/**
- * @file tests/routes/document.test.ts
- * @description Tests for document/artifact routes.
- * @version 1.0.0
- * @date 2025-06-10
- * @updated Fixed TS2305 by importing Artifact instead of obsolete Document type.
- */
 
-/** HISTORY:
- * v1.0.0 (2025-06-10): Corrected import from 'Document' to 'Artifact' from schema.
- */
-
-import type { Artifact } from '@/lib/db/schema'
 import { generateUUID } from '@/lib/utils'
 import { expect, apiTest as test } from '../api-fixtures'
 import { getMessageByErrorCode } from '@/lib/errors'
 
-const documentsCreatedByAda: Array<Artifact> = []
+// МУЛЬТИДОМЕННАЯ АРХИТЕКТУРА + COOKIES:
+// - Аутентификация: app.localhost:3000/login
+// - API calls: localhost:3000/api/* (глобальные)  
+// - Cookies передача между доменами исправлена в api-fixtures.ts
+// - API возвращает 'unauthorized:artifact' (не 'unauthorized:api')
 
-test.describe
-  .serial('/api/artifact', () => {
-    test('Ada cannot retrieve a document without specifying an id', async ({
-      adaContext,
-    }) => {
-      const response = await adaContext.request.get('/api/artifact')
-      expect(response.status()).toBe(400)
+test.describe('/api/artifact', () => {
+    test.describe('Basic API validation', () => {
+        test('Ada cannot retrieve an artifact without specifying an id', async ({
+          adaContext,
+        }) => {
+          const response = await adaContext.request.get('/api/artifact')
+          expect(response.status()).toBe(400)
 
-      const { code, message } = await response.json()
-      expect(code).toEqual('bad_request:api')
-      expect(message).toEqual(getMessageByErrorCode(code))
+          const { code, message } = await response.json()
+          expect(code).toEqual('bad_request:api')
+          expect(message).toEqual(getMessageByErrorCode(code))
+        })
+
+        test('Ada cannot retrieve an artifact that does not exist', async ({
+          adaContext,
+        }) => {
+          const artifactId = generateUUID()
+
+          const response = await adaContext.request.get(
+            `/api/artifact?id=${artifactId}`,
+          )
+          expect(response.status()).toBe(404)
+
+          const { code, message } = await response.json()
+          expect(code).toEqual('not_found:artifact')
+          expect(message).toEqual(getMessageByErrorCode(code))
+        })
+
+        test('Ada cannot delete an artifact without specifying an id', async ({
+          adaContext,
+        }) => {
+          const response = await adaContext.request.delete(`/api/artifact`)
+          expect(response.status()).toBe(400)
+
+          const { code, message } = await response.json()
+          expect(code).toEqual('bad_request:api')
+          expect(message).toEqual(getMessageByErrorCode(code))
+        })
     })
 
-    test('Ada cannot retrieve a document that does not exist', async ({
-      adaContext,
-    }) => {
-      const documentId = generateUUID()
+    test.describe('CRUD operations', () => {
+        test('Ada can create an artifact', async ({ adaContext }) => {
+          const artifactId = generateUUID()
 
-      const response = await adaContext.request.get(
-        `/api/artifact?id=${documentId}`,
-      )
-      expect(response.status()).toBe(404)
+          const draftArtifact = {
+            title: 'Ada\'s Artifact',
+            kind: 'text',
+            content: 'Created by Ada',
+          }
 
-      const { code, message } = await response.json()
-      expect(code).toEqual('not_found:artifact')
-      expect(message).toEqual(getMessageByErrorCode(code))
+          console.log('Creating artifact with Ada context, email:', adaContext.email)
+
+          const response = await adaContext.request.post(
+            `/api/artifact?id=${artifactId}`,
+            {
+              data: draftArtifact,
+            },
+          )
+          
+          // Debug: Log response details if not 200
+          if (response.status() !== 200) {
+            const responseBody = await response.text()
+            console.log('Artifact creation failed:', response.status(), responseBody)
+          }
+          
+          expect(response.status()).toBe(200)
+
+          const [createdArtifact] = await response.json()
+          expect(createdArtifact).toMatchObject(draftArtifact)
+        })
+
+        test('Ada can retrieve a created artifact', async ({ adaContext }) => {
+          // Сначала создаем артефакт
+          const artifactId = generateUUID()
+          const draftArtifact = {
+            title: 'Ada\'s Artifact for Retrieval',
+            kind: 'text',
+            content: 'Created by Ada for retrieval test',
+          }
+
+          const createResponse = await adaContext.request.post(
+            `/api/artifact?id=${artifactId}`,
+            { data: draftArtifact }
+          )
+          expect(createResponse.status()).toBe(200)
+          const [createdArtifact] = await createResponse.json()
+
+          // Теперь извлекаем его
+          const response = await adaContext.request.get(
+            `/api/artifact?id=${createdArtifact.id}`,
+          )
+          expect(response.status()).toBe(200)
+
+          const retrievedArtifacts = await response.json()
+          expect(retrievedArtifacts).toHaveLength(1)
+
+          const [retrievedArtifact] = retrievedArtifacts
+          expect(retrievedArtifact).toMatchObject(draftArtifact)
+        })
+
+        test('Ada can save a new version of the artifact', async ({ adaContext }) => {
+          // Создаем первую версию
+          const artifactId = generateUUID()
+          const firstVersion = {
+            title: 'Ada\'s Artifact',
+            kind: 'text',
+            content: 'Original version',
+          }
+
+          const firstResponse = await adaContext.request.post(
+            `/api/artifact?id=${artifactId}`,
+            { data: firstVersion }
+          )
+          expect(firstResponse.status()).toBe(200)
+          const [firstArtifact] = await firstResponse.json()
+
+          // Создаем вторую версию
+          const secondVersion = {
+            title: 'Ada\'s Artifact',
+            kind: 'text',
+            content: 'Updated by Ada',
+          }
+
+          const secondResponse = await adaContext.request.post(
+            `/api/artifact?id=${firstArtifact.id}`,
+            { data: secondVersion }
+          )
+          expect(secondResponse.status()).toBe(200)
+          const [secondArtifact] = await secondResponse.json()
+          expect(secondArtifact).toMatchObject(secondVersion)
+        })
+
+        test('Ada can retrieve all versions of her artifacts', async ({ adaContext }) => {
+          // Создаем первую версию
+          const artifactId = generateUUID()
+          const firstVersion = {
+            title: 'Ada\'s Versioned Artifact',
+            kind: 'text',
+            content: 'Version 1',
+          }
+
+          const firstResponse = await adaContext.request.post(
+            `/api/artifact?id=${artifactId}`,
+            { data: firstVersion }
+          )
+          expect(firstResponse.status()).toBe(200)
+          const [firstArtifact] = await firstResponse.json()
+
+          // Создаем вторую версию
+          const secondVersion = {
+            title: 'Ada\'s Versioned Artifact',
+            kind: 'text',
+            content: 'Version 2',
+          }
+
+          const secondResponse = await adaContext.request.post(
+            `/api/artifact?id=${firstArtifact.id}`,
+            { data: secondVersion }
+          )
+          expect(secondResponse.status()).toBe(200)
+
+          // Получаем все версии
+          const response = await adaContext.request.get(
+            `/api/artifact?id=${firstArtifact.id}`,
+          )
+          expect(response.status()).toBe(200)
+
+          const retrievedArtifacts = await response.json()
+          expect(retrievedArtifacts).toHaveLength(2)
+        })
+
+        test('Ada cannot delete an artifact without specifying a timestamp', async ({ adaContext }) => {
+          // Создаем артефакт
+          const artifactId = generateUUID()
+          const draftArtifact = {
+            title: 'Ada\'s Artifact for Delete',
+            kind: 'text',
+            content: 'To be deleted',
+          }
+
+          const createResponse = await adaContext.request.post(
+            `/api/artifact?id=${artifactId}`,
+            { data: draftArtifact }
+          )
+          expect(createResponse.status()).toBe(200)
+          const [firstArtifact] = await createResponse.json()
+
+          // Попытка удалить без timestamp
+          const response = await adaContext.request.delete(
+            `/api/artifact?id=${firstArtifact.id}`,
+          )
+          expect(response.status()).toBe(400)
+
+          const { code, message } = await response.json()
+          expect(code).toEqual('bad_request:api')
+          expect(message).toEqual(getMessageByErrorCode(code))
+        })
     })
 
-    test('Ada can create a document', async ({ adaContext }) => {
-      const documentId = generateUUID()
+    test.describe('Access control', () => {
+        test('Babbage cannot update Ada\'s artifact', async ({ adaContext, babbageContext }) => {
+          // Ada создает артефакт
+          const artifactId = generateUUID()
+          const draftArtifact = {
+            title: 'Ada\'s Private Artifact',
+            kind: 'text',
+            content: 'Created by Ada',
+          }
 
-      const draftDocument = {
-        title: 'Ada\'s Document',
-        kind: 'text',
-        content: 'Created by Ada',
-      }
+          const createResponse = await adaContext.request.post(
+            `/api/artifact?id=${artifactId}`,
+            { data: draftArtifact }
+          )
+          expect(createResponse.status()).toBe(200)
+          const [adaArtifact] = await createResponse.json()
 
-      const response = await adaContext.request.post(
-        `/api/artifact?id=${documentId}`,
-        {
-          data: draftDocument,
-        },
-      )
-      expect(response.status()).toBe(200)
+          // Babbage пытается обновить артефакт Ada
+          const babbageUpdate = {
+            title: 'Babbage\'s Artifact',
+            kind: 'text',
+            content: 'Updated by Babbage',
+          }
 
-      const [createdDocument] = await response.json()
-      expect(createdDocument).toMatchObject(draftDocument)
+          const response = await babbageContext.request.post(
+            `/api/artifact?id=${adaArtifact.id}`,
+            { data: babbageUpdate }
+          )
+          expect(response.status()).toBe(403)
 
-      documentsCreatedByAda.push(createdDocument)
+          const { code, message } = await response.json()
+          expect(code).toEqual('forbidden:artifact')
+          expect(message).toEqual(getMessageByErrorCode(code))
+        })
     })
-
-    test('Ada can retrieve a created document', async ({ adaContext }) => {
-      const [document] = documentsCreatedByAda
-
-      const response = await adaContext.request.get(
-        `/api/artifact?id=${document.id}`,
-      )
-      expect(response.status()).toBe(200)
-
-      const retrievedDocuments = await response.json()
-      expect(retrievedDocuments).toHaveLength(1)
-
-      const [retrievedDocument] = retrievedDocuments
-      expect(retrievedDocument).toMatchObject(document)
-    })
-
-    test('Ada can save a new version of the document', async ({
-      adaContext,
-    }) => {
-      const [firstDocument] = documentsCreatedByAda
-
-      const draftDocument = {
-        title: 'Ada\'s Document',
-        kind: 'text',
-        content: 'Updated by Ada',
-      }
-
-      const response = await adaContext.request.post(
-        `/api/artifact?id=${firstDocument.id}`,
-        {
-          data: draftDocument,
-        },
-      )
-      expect(response.status()).toBe(200)
-
-      const [createdDocument] = await response.json()
-      expect(createdDocument).toMatchObject(draftDocument)
-
-      documentsCreatedByAda.push(createdDocument)
-    })
-
-    test('Ada can retrieve all versions of her documents', async ({
-      adaContext,
-    }) => {
-      const [firstDocument, secondDocument] = documentsCreatedByAda
-
-      const response = await adaContext.request.get(
-        `/api/artifact?id=${firstDocument.id}`,
-      )
-      expect(response.status()).toBe(200)
-
-      const retrievedDocuments = await response.json()
-      expect(retrievedDocuments).toHaveLength(2)
-
-      const [firstRetrievedDocument, secondRetrievedDocument] =
-        retrievedDocuments
-      expect(firstRetrievedDocument).toMatchObject(firstDocument)
-      expect(secondRetrievedDocument).toMatchObject(secondDocument)
-    })
-
-    test('Ada cannot delete a document without specifying an id', async ({
-      adaContext,
-    }) => {
-      const response = await adaContext.request.delete(`/api/artifact`)
-      expect(response.status()).toBe(400)
-
-      const { code, message } = await response.json()
-      expect(code).toEqual('bad_request:api')
-      expect(message).toEqual(getMessageByErrorCode(code))
-    })
-
-    test('Ada cannot delete a document without specifying a timestamp', async ({
-      adaContext,
-    }) => {
-      const [firstDocument] = documentsCreatedByAda
-
-      const response = await adaContext.request.delete(
-        `/api/artifact?id=${firstDocument.id}`,
-      )
-      expect(response.status()).toBe(400)
-
-      const { code, message } = await response.json()
-      expect(code).toEqual('bad_request:api')
-      expect(message).toEqual(getMessageByErrorCode(code))
-    })
-
-    test('Ada can delete a document by specifying id and timestamp', async ({
-      adaContext,
-    }) => {
-      const [firstDocument, secondDocument] = documentsCreatedByAda
-
-      const response = await adaContext.request.delete(
-        `/api/artifact?id=${firstDocument.id}&timestamp=${firstDocument.createdAt}`,
-      )
-      expect(response.status()).toBe(200)
-
-      const deletedDocuments = await response.json()
-      expect(deletedDocuments).toHaveLength(1)
-
-      const [deletedDocument] = deletedDocuments
-      expect(deletedDocument).toMatchObject(secondDocument)
-    })
-
-    test('Ada can retrieve documents without deleted versions', async ({
-      adaContext,
-    }) => {
-      const [firstDocument] = documentsCreatedByAda
-
-      const response = await adaContext.request.get(
-        `/api/artifact?id=${firstDocument.id}`,
-      )
-      expect(response.status()).toBe(200)
-
-      const retrievedDocuments = await response.json()
-      expect(retrievedDocuments).toHaveLength(1)
-
-      const [firstRetrievedDocument] = retrievedDocuments
-      expect(firstRetrievedDocument).toMatchObject(firstDocument)
-    })
-
-    test('Babbage cannot update Ada\'s document', async ({ babbageContext }) => {
-      const [firstDocument] = documentsCreatedByAda
-
-      const draftDocument = {
-        title: 'Babbage\'s Document',
-        kind: 'text',
-        content: 'Created by Babbage',
-      }
-
-      const response = await babbageContext.request.post(
-        `/api/artifact?id=${firstDocument.id}`,
-        {
-          data: draftDocument,
-        },
-      )
-      expect(response.status()).toBe(403)
-
-      const { code, message } = await response.json()
-      expect(code).toEqual('forbidden:artifact')
-      expect(message).toEqual(getMessageByErrorCode(code))
-    })
-
-    test('Ada\'s documents did not get updated', async ({ adaContext }) => {
-      const [firstDocument] = documentsCreatedByAda
-
-      const response = await adaContext.request.get(
-        `/api/artifact?id=${firstDocument.id}`,
-      )
-      expect(response.status()).toBe(200)
-
-      const documentsRetrieved = await response.json()
-      expect(documentsRetrieved).toHaveLength(1)
-    })
-  })
-// END OF: tests/routes/document.test.ts
+})

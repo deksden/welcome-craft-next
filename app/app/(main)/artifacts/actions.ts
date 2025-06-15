@@ -76,22 +76,36 @@ export async function copyArtifactToClipboard ({
   }
 }
 
-export async function getAndClearArtifactFromClipboard () {
+export async function getArtifactFromClipboard () {
   const session = await auth()
   if (!session?.user?.id) return null
 
   try {
     const result = await withRedis(async (client) => {
       const data = await client.get(`user-clipboard:${session.user.id}`)
-      if (data) {
-        await client.del(`user-clipboard:${session.user.id}`)
-      }
       return data
     })
     return result ? JSON.parse(result) : null
   } catch (error) {
     console.error('REDIS_CLIPBOARD_GET_ERROR', error)
     return null
+  }
+}
+
+export async function clearArtifactFromClipboard (): Promise<ActionResult> {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, error: 'Пользователь не авторизован.', errorCode: 'unauthorized:clipboard' }
+  }
+
+  try {
+    await withRedis(async (client) => {
+      await client.del(`user-clipboard:${session.user.id}`)
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('REDIS_CLIPBOARD_CLEAR_ERROR', error)
+    return { success: false, error: 'Не удалось очистить буфер.', errorCode: 'bad_request:clipboard' }
   }
 }
 

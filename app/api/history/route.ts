@@ -1,4 +1,5 @@
 import { auth } from '@/app/app/(auth)/auth';
+import { getTestSession } from '@/lib/test-auth';
 import type { NextRequest } from 'next/server';
 import { getChatsByUserId } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
@@ -17,10 +18,12 @@ export async function GET(request: NextRequest) {
     ).toResponse();
   }
 
-  const session = await auth();
-
+  let session = await auth();
   if (!session?.user) {
-    return new ChatSDKError('unauthorized:chat').toResponse();
+    session = await getTestSession();
+  }
+  if (!session?.user?.id) {
+    return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse();
   }
 
   const chats = await getChatsByUserId({

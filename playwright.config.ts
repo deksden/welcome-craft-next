@@ -1,112 +1,132 @@
-import { defineConfig, devices } from '@playwright/test';
+/**
+ * @file playwright.config.ts
+ * @description Playwright test configuration with environment variable for consistent port detection.
+ * @version 6.0.0
+ * @date 2025-06-14
+ */
+
+/** HISTORY:
+ * v6.0.0 (2025-06-14): Simplified approach using PLAYWRIGHT_PORT environment variable that can be set externally or defaults to available port.
+ * v5.0.0 (2025-06-14): Fixed async config issue by using globalSetup and reading port from file. This ensures port is detected once and reused consistently.
+ * v4.0.0 (2025-06-14): Re-implemented async config export. This is the canonical way to handle async setup in Playwright, ensuring the port is resolved once. Removed globalSetup.
+ * v3.2.0 (2025-06-14): Replaced require.resolve with a simple relative path for ES Module compatibility.
+ * v3.1.0 (2025-06-14): Fixed __dirname not defined in ES module scope error.
+ * v3.0.0 (2025-06-14): Refactored to use globalSetup for one-time port detection.
+ */
+
+import { defineConfig, devices } from '@playwright/test'
+import { config as dotenvConfig } from 'dotenv'
+import { createServer } from 'node:http'
+import { getTestUrls, getTestHeaders, getChromeConfig, logTestConfig } from './tests/helpers/test-config'
+
+// Load environment variables from .env.local
+dotenvConfig({ path: '.env.local' })
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Finds an available port to run the server on.
+ * @param basePort The starting port number.
+ * @returns A promise that resolves to an available port number.
  */
-import { config } from 'dotenv';
-
-config({
-  path: '.env.local',
-});
-
-/* Use process.env.PORT by default and fallback to port 3000 */
-const PORT = process.env.PORT || 3000;
+function findAvailablePort(basePort: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer()
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        server.close()
+        resolve(findAvailablePort(basePort + 1))
+      } else {
+        reject(err)
+      }
+    })
+    server.listen(basePort, () => {
+      server.close(() => {
+        resolve(basePort)
+      })
+    })
+  })
+}
 
 /**
- * Set webServer.url and use.baseURL with the location
- * of the WebServer respecting the correct set port
+ * Gets the port to use for testing.
+ * Uses PLAYWRIGHT_PORT environment variable if set, otherwise finds an available port.
  */
-const baseURL = `http://localhost:${PORT}`;
-
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
-export default defineConfig({
-  testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 2 : 8,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
-  use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL,
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'retain-on-failure',
-    
-    /* Set environment variables for all tests */
-    extraHTTPHeaders: {
-      'X-Test-Environment': 'playwright'
+async function getPort(): Promise<number> {
+  if (process.env.PLAYWRIGHT_PORT) {
+    const envPort = Number.parseInt(process.env.PLAYWRIGHT_PORT, 10)
+    if (!Number.isNaN(envPort)) {
+      console.log(`🔧 Using port ${envPort} from PLAYWRIGHT_PORT environment variable`)
+      return envPort
     }
-  },
+  }
+  
+  const port = await findAvailablePort(3000)
+  console.log(`🔧 Found available port ${port}`)
+  
+  // Set the environment variable so child processes use the same port
+  process.env.PLAYWRIGHT_PORT = port.toString()
+  
+  return port
+}
 
-  /* Configure global timeout for each test */
-  timeout: 30 * 1000, // 30 seconds
-  expect: {
-    timeout: 15 * 1000, // 15 seconds
-  },
+export default (async () => {
+  const port = await getPort()
+  
+  // Используем централизованную конфигурацию
+  const urls = getTestUrls()
+  const headers = getTestHeaders()
+  const chromeConfig = getChromeConfig()
+  
+  // Выводим конфигурацию для отладки
+  logTestConfig()
 
-  /* Configure projects */
-  projects: [
-    {
-      name: 'e2e',
-      testMatch: /e2e\/.*.test.ts/,
-      use: {
-        ...devices['Desktop Chrome'],
-      },
+  return defineConfig({
+    testDir: './tests',
+    fullyParallel: false,
+    forbidOnly: !!process.env.CI,
+    retries: process.env.CI ? 1 : 0,
+    workers: 1,
+    reporter: 'html',
+    // globalSetup: './tests/global-setup.ts', // Пока отключаем для API тестов
+
+    use: {
+      baseURL: urls.publicBase,
+      trace: 'retain-on-failure',
+      extraHTTPHeaders: headers,
     },
-    {
-      name: 'routes',
-      testMatch: /routes\/.*.test.ts/,
-      use: {
-        ...devices['Desktop Chrome'],
-      },
+
+    timeout: 60 * 1000,
+    expect: {
+      timeout: 30 * 1000,
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
+    projects: [
+      {
+        name: 'e2e',
+        testMatch: /e2e\/.*.test.ts/,
+        use: {
+          ...devices['Desktop Chrome'],
+          baseURL: urls.adminBase,
+          // Используем централизованную конфигурацию Chrome
+          launchOptions: chromeConfig,
+        },
+      },
+      {
+        name: 'routes',
+        testMatch: /routes\/.*.test.ts/,
+        use: {
+          ...devices['Desktop Chrome'],
+          baseURL: urls.publicBase,
+        },
+      },
+    ],
 
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
-  ],
-
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'pnpm dev',
-    url: `${baseURL}/ping`,
-    timeout: 30 * 1000,
-    reuseExistingServer: !process.env.CI,
-  },
-});
+    webServer: {
+      command: `pnpm dev --port ${port}`,
+      url: urls.ping,
+      timeout: 120 * 1000,
+      reuseExistingServer: !process.env.CI,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  })
+})()

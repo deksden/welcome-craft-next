@@ -3,19 +3,20 @@ import { generateUUID } from '@/lib/utils';
 import { getMessageByErrorCode } from '@/lib/errors';
 
 test.describe.serial('/api/suggestions', () => {
-  test('Ada cannot get suggestions without documentId', async ({ adaContext }) => {
+  test('Ada cannot get suggestions without artifactId', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/suggestions');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Parameter documentId is required');
+    expect(message).toEqual(getMessageByErrorCode(code));
+    expect(cause).toContain('Parameter documentId is required');
   });
 
-  test('Ada can get suggestions for a document', async ({ adaContext }) => {
-    const documentId = generateUUID();
+  test('Ada can get suggestions for an artifact', async ({ adaContext }) => {
+    const artifactId = generateUUID();
     const response = await adaContext.request.get(
-      `/api/suggestions?documentId=${documentId}`
+      `/api/suggestions?documentId=${artifactId}`
     );
     expect(response.status()).toBe(200);
 
@@ -23,10 +24,10 @@ test.describe.serial('/api/suggestions', () => {
     expect(Array.isArray(suggestions)).toBe(true);
   });
 
-  test('Ada gets empty array for non-existent document', async ({ adaContext }) => {
-    const documentId = generateUUID();
+  test('Ada gets empty array for non-existent artifact', async ({ adaContext }) => {
+    const artifactId = generateUUID();
     const response = await adaContext.request.get(
-      `/api/suggestions?documentId=${documentId}`
+      `/api/suggestions?documentId=${artifactId}`
     );
     expect(response.status()).toBe(200);
 
@@ -35,8 +36,8 @@ test.describe.serial('/api/suggestions', () => {
   });
 
   test('Unauthenticated user cannot access suggestions', async ({ request }) => {
-    const documentId = generateUUID();
-    const response = await request.get(`/api/suggestions?documentId=${documentId}`);
+    const artifactId = generateUUID();
+    const response = await request.get(`/api/suggestions?documentId=${artifactId}`);
     expect(response.status()).toBe(401);
 
     const { code, message } = await response.json();
@@ -44,19 +45,21 @@ test.describe.serial('/api/suggestions', () => {
     expect(message).toEqual(getMessageByErrorCode('unauthorized:suggestions'));
   });
 
-  test('Babbage cannot access Ada\'s document suggestions', async ({ 
+  test('Babbage cannot access Ada\'s artifact suggestions', async ({ 
     babbageContext,
     adaContext 
   }) => {
-    const documentId = generateUUID();
+    const artifactId = generateUUID();
     
-    // Ada creates document (if needed - simplified for test)
+    // Babbage tries to access suggestions for Ada's artifact
     const response = await babbageContext.request.get(
-      `/api/suggestions?documentId=${documentId}`
+      `/api/suggestions?documentId=${artifactId}`
     );
     expect(response.status()).toBe(200);
 
     const suggestions = await response.json();
     expect(Array.isArray(suggestions)).toBe(true);
+    // Should return empty array for non-existent or inaccessible artifacts
+    expect(suggestions).toEqual([]);
   });
 });

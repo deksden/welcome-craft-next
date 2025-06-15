@@ -14,7 +14,7 @@ import { memo, type MouseEvent, useCallback, useMemo, useRef, } from 'react'
 import { BoxIcon, CodeIcon, FileIcon, FullscreenIcon, ImageIcon, WarningIcon } from './icons'
 import { cn, fetcher } from '@/lib/utils'
 import type { Artifact as DBArtifact } from '@/lib/db/schema'
-import { InlineDocumentSkeleton } from './document-skeleton'
+import { InlineArtifactSkeleton } from './artifact-skeleton'
 import useSWR from 'swr'
 import { useArtifact } from '@/hooks/use-artifact'
 import { ImageEditor } from './image-editor'
@@ -97,7 +97,7 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
       />
       <div
         className={cn('h-[257px] overflow-y-scroll border rounded-b-2xl dark:bg-muted border-t-0 dark:border-zinc-700', { 'p-6': artifactKind !== 'image' })}>
-        {isLoading && !fullArtifact ? <InlineDocumentSkeleton/> :
+        {isLoading && !fullArtifact ? <InlineArtifactSkeleton/> :
           artifactKind === 'image' ? <ImageEditor title={artifactTitle as string}
                                                   content={fullArtifact?.content ?? ''} status="idle"
                                                   isInline={true}/> :

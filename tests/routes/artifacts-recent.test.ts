@@ -47,6 +47,14 @@ test.describe.serial('/api/artifacts/recent', () => {
     expect(Array.isArray(artifacts)).toBe(true);
   });
 
+  test('Ada can filter recent artifacts by site kind', async ({ adaContext }) => {
+    const response = await adaContext.request.get('/api/artifacts/recent?kind=site');
+    expect(response.status()).toBe(200);
+
+    const artifacts = await response.json();
+    expect(Array.isArray(artifacts)).toBe(true);
+  });
+
   test('Ada can combine limit and kind filters', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts/recent?limit=10&kind=code');
     expect(response.status()).toBe(200);
@@ -54,6 +62,15 @@ test.describe.serial('/api/artifacts/recent', () => {
     const artifacts = await response.json();
     expect(Array.isArray(artifacts)).toBe(true);
     expect(artifacts.length).toBeLessThanOrEqual(10);
+  });
+
+  test('Ada can filter for site artifacts specifically', async ({ adaContext }) => {
+    const response = await adaContext.request.get('/api/artifacts/recent?limit=5&kind=site');
+    expect(response.status()).toBe(200);
+
+    const artifacts = await response.json();
+    expect(Array.isArray(artifacts)).toBe(true);
+    expect(artifacts.length).toBeLessThanOrEqual(5);
   });
 
   test('Default limit is applied when not specified', async ({ adaContext }) => {

@@ -6,63 +6,63 @@ test.describe.serial('/api/artifacts', () => {
     const response = await adaContext.request.get('/api/artifacts');
     expect(response.status()).toBe(200);
 
-    const result = await response.json();
-    expect(result).toHaveProperty('artifacts');
-    expect(result).toHaveProperty('totalCount');
-    expect(Array.isArray(result.artifacts)).toBe(true);
+    const { data, totalCount } = await response.json();
+    expect(Array.isArray(data)).toBe(true);
+    expect(typeof totalCount).toBe('number');
   });
 
   test('Ada can paginate artifacts', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts?page=1&pageSize=5');
     expect(response.status()).toBe(200);
 
-    const result = await response.json();
-    expect(result.artifacts.length).toBeLessThanOrEqual(5);
+    const { data } = await response.json();
+    expect(data.length).toBeLessThanOrEqual(5);
   });
 
   test('Ada cannot use invalid page parameter', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts?page=0');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Invalid page parameter');
+    expect(message).toEqual(getMessageByErrorCode(code));
+    expect(cause).toContain('Invalid page parameter');
   });
 
   test('Ada cannot use invalid pageSize parameter', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts?pageSize=100');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Invalid pageSize parameter');
+    expect(message).toEqual(getMessageByErrorCode(code));
+    expect(cause).toContain('Invalid pageSize parameter');
   });
 
   test('Ada cannot use pageSize less than 1', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts?pageSize=0');
     expect(response.status()).toBe(400);
 
-    const { code, message } = await response.json();
+    const { code, message, cause } = await response.json();
     expect(code).toEqual('bad_request:api');
-    expect(message).toContain('Invalid pageSize parameter');
+    expect(message).toEqual(getMessageByErrorCode(code));
+    expect(cause).toContain('Invalid pageSize parameter');
   });
 
   test('Ada can search artifacts by query', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts?searchQuery=test');
     expect(response.status()).toBe(200);
 
-    const result = await response.json();
-    expect(result).toHaveProperty('artifacts');
-    expect(Array.isArray(result.artifacts)).toBe(true);
+    const { data } = await response.json();
+    expect(Array.isArray(data)).toBe(true);
   });
 
   test('Ada can filter artifacts by kind', async ({ adaContext }) => {
     const response = await adaContext.request.get('/api/artifacts?kind=text');
     expect(response.status()).toBe(200);
 
-    const result = await response.json();
-    expect(result).toHaveProperty('artifacts');
-    expect(Array.isArray(result.artifacts)).toBe(true);
+    const { data } = await response.json();
+    expect(Array.isArray(data)).toBe(true);
   });
 
   test('Unauthenticated user cannot access artifacts', async ({ request }) => {
@@ -80,8 +80,7 @@ test.describe.serial('/api/artifacts', () => {
     );
     expect(response.status()).toBe(200);
 
-    const result = await response.json();
-    expect(result).toHaveProperty('artifacts');
-    expect(result.artifacts.length).toBeLessThanOrEqual(3);
+    const { data } = await response.json();
+    expect(data.length).toBeLessThanOrEqual(3);
   });
 });

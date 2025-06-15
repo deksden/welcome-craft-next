@@ -1,15 +1,22 @@
 /**
- * @file tests/api-fixtures.ts  
- * @description API-only fixtures for testing API endpoints without UI dependencies
+ * @file tests/api-fixtures.ts
+ * @description API-only fixtures for testing API endpoints without UI dependencies.
  * @author Claude Code
  * @created 13.06.2025
- * @purpose ПОСТОЯННЫЙ - исправление проблемы с fixtures для API тестов
+ * @version 2.0.0
+ * @date 2025-06-14
  */
 
-import { expect as baseExpect, test as baseTest } from '@playwright/test';
-import type { APIRequestContext, Browser, BrowserContext } from '@playwright/test';
-import { getUnixTime } from 'date-fns';
-import { generateId } from 'ai';
+/** HISTORY:
+ * v2.0.0 (2025-06-14): Reverted to version 2.0.0. This version correctly gets the baseURL from the test's `page` object, which is the right approach with an async config.
+ * v3.0.0 (2025-06-14): Simplified to use baseURL directly from the test config.
+ * v1.1.0 (2025-06-14): Used PLAYWRIGHT_PORT environment variable for dynamic URLs.
+ * v1.0.0 (2025-06-13): Initial version.
+ */
+
+import type { APIRequestContext, Browser, BrowserContext } from '@playwright/test'
+import { expect as baseExpect, test as baseTest } from '@playwright/test'
+import { getUnixTime } from 'date-fns'
 
 export type APIUserContext = {
   context: BrowserContext;
@@ -25,133 +32,118 @@ interface APIFixtures {
 }
 
 /**
- * Создает аутентифицированный API контекст без использования UI
+ * Creates an authenticated API context using the test's pre-configured baseURL.
  */
-async function createAPIAuthenticatedContext({
+async function createAPIAuthenticatedContext ({
   browser,
+  baseURL,
   name,
 }: {
   browser: Browser;
+  baseURL: string;
   name: string;
 }): Promise<APIUserContext> {
-  const context = await browser.newContext();
-  
-  const timestamp = getUnixTime(new Date());
-  const email = `test-${name}-${timestamp}@playwright.com`;
-  const password = generateId(16);
 
-  // Создаем пользователя через тестовый API endpoint
-  const request = context.request;
-  const createUserResponse = await request.post('http://app.localhost:3000/api/test/create-user', {
-    data: {
-      email,
-      password,
-    },
-    headers: {
-      'X-Test-Environment': 'playwright'
-    }
-  });
+  const url = new URL(baseURL)
+  const port = url.port
+  
+  // For API tests, use app.localhost for EVERYTHING to avoid cross-domain cookie issues
+  const appURL = `http://app.localhost:${port}`
+  
+  // Set the correct NEXTAUTH_URL for the test environment
+  process.env.NEXTAUTH_URL = appURL
+
+  const context = await browser.newContext()
+
+  const timestamp = getUnixTime(new Date())
+  const email = `test-${name}-${timestamp}@playwright.com`
+  const password = 'test-password' // Use standard test password
+
+  // Create user via a test-only API endpoint using app.localhost (same domain as login)
+  const request = context.request
+  const createUserResponse = await request.post(`${appURL}/api/test/create-user`, {
+    data: { email, password },
+    headers: { 'X-Test-Environment': 'playwright' },
+  })
 
   if (!createUserResponse.ok()) {
-    const errorText = await createUserResponse.text();
-    throw new Error(`Failed to create test user: ${createUserResponse.status()} ${errorText}`);
+    const errorText = await createUserResponse.text()
+    throw new Error(`Failed to create test user: ${createUserResponse.status()} ${errorText}`)
   }
 
-  // Создаем страницу для входа
-  const page = await context.newPage();
-  let authenticatedRequest = context.request;
+  const createUserData = await createUserResponse.json()
+  const userId = createUserData.userId
   
+  if (!userId) {
+    throw new Error(`Failed to get userId from create-user response: ${JSON.stringify(createUserData)}`)
+  }
+
+  // Create a page to perform login and capture cookies
+  const page = await context.newPage()
+  let authenticatedRequest: APIRequestContext
+
   try {
-    // Переходим на страницу регистрации/входа
-    await page.goto('http://app.localhost:3000/login');
-    
-    // Если есть форма входа, заполняем её
-    try {
-      await page.waitForSelector('[data-testid="auth-email-input"]', { timeout: 5000 });
-      await page.fill('[data-testid="auth-email-input"]', email);
-      await page.fill('[data-testid="auth-password-input"]', password);
-      
-      // Используем force click если кнопка disabled
-      await page.click('[data-testid="auth-submit-button"]', { force: true });
-      
-      // Ждем какой-либо ответ от сервера (успех или ошибка)
-      await page.waitForLoadState('networkidle', { timeout: 10000 });
-      
-      // Ждем редиректа после успешного входа
-      await page.waitForURL(/^http:\/\/app\.localhost:3000\/?(?!\/(login|register))/, { timeout: 10000 });
-      
-      // Проверим, что мы действительно залогинены, посетив защищенную страницу
-      await page.goto('http://app.localhost:3000/');
-      await page.waitForLoadState('networkidle');
-      
-      // Проверим, что нет редиректа на login
-      const finalUrl = page.url();
-      
-      if (finalUrl.includes('/login')) {
-        throw new Error('Login failed - redirected back to login page');
-      }
-    } catch (e) {
-      // Если форма входа не найдена, возможно пользователь уже залогинен
-      console.log('Login form not found or already logged in');
+    // Use direct auth endpoint that creates proper session cookies
+    const authResponse = await request.post(`${appURL}/api/test/auth-signin`, {
+      data: { email, password, userId },
+      headers: { 'X-Test-Environment': 'playwright' },
+    })
+
+    if (!authResponse.ok()) {
+      const errorText = await authResponse.text()
+      throw new Error(`Failed to authenticate: ${authResponse.status()} ${errorText}`)
     }
 
-    // ВАЖНО: Получаем cookies из браузерного контекста после логина
-    const cookies = await context.cookies();
+    const authData = await authResponse.json()
+    console.log(`Authentication successful for user: ${authData.user.email}`)
     
-    // Обновляем headers для API requests с cookies
-    const cookieHeader = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+    // Navigate to main page to capture the session cookies set by the auth endpoint
+    await page.goto(`${appURL}/`)
+    await page.waitForLoadState('networkidle')
+
+    // Get cookies from the context - they should now include authjs.session-token
+    const appCookies = await context.cookies(appURL)
     
-    // Обновляем request context с правильными cookies
-    authenticatedRequest = context.request;
+    console.log(`${name} email: ${email}`)
+    console.log(`Available cookies from ${appURL}:`, appCookies.map(c => `${c.name}=${c.value.substring(0, 20)}...`))
     
-    // Переопределяем метод для добавления cookies ко всем запросам
-    const originalGet = authenticatedRequest.get.bind(authenticatedRequest);
-    const originalPost = authenticatedRequest.post.bind(authenticatedRequest);
-    const originalPut = authenticatedRequest.put.bind(authenticatedRequest);
-    const originalDelete = authenticatedRequest.delete.bind(authenticatedRequest);
+    // Verify session works
+    const sessionTestResponse = await request.get(`${appURL}/api/auth/session`, {
+      headers: { 'X-Test-Environment': 'playwright' },
+    })
     
-    authenticatedRequest.get = (url: string, options: any = {}) => {
-      return originalGet(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          'Cookie': cookieHeader,
-        }
-      });
-    };
+    if (sessionTestResponse.ok()) {
+      const sessionData = await sessionTestResponse.json()
+      console.log(`Session verification successful: ${!!sessionData?.user}`)
+    } else {
+      console.log(`Session verification failed: ${sessionTestResponse.status()}`)
+    }
     
-    authenticatedRequest.post = (url: string, options: any = {}) => {
-      return originalPost(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          'Cookie': cookieHeader,
-        }
-      });
-    };
+    // Filter for test and auth session cookies
+    const authCookies = appCookies.filter(cookie => 
+      cookie.name === 'test-session' ||
+      cookie.name.startsWith('authjs.') || 
+      cookie.name.startsWith('next-auth.') ||
+      cookie.name.startsWith('__Secure-next-auth.')
+    )
     
-    authenticatedRequest.put = (url: string, options: any = {}) => {
-      return originalPut(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          'Cookie': cookieHeader,
-        }
-      });
-    };
+    console.log(`Auth cookies to forward:`, authCookies.map(c => c.name))
     
-    authenticatedRequest.delete = (url: string, options: any = {}) => {
-      return originalDelete(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          'Cookie': cookieHeader,
-        }
-      });
-    };
-    
+    const cookieHeader = authCookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
+
+    // Create new authenticated request context with session cookies
+    await context.request.dispose()
+    const newContext = await browser.newContext({
+      baseURL: appURL,
+      extraHTTPHeaders: {
+        'Cookie': cookieHeader,
+        'X-Test-Environment': 'playwright',
+      },
+    })
+    authenticatedRequest = newContext.request
+
   } finally {
-    await page.close();
+    await page.close()
   }
 
   return {
@@ -159,39 +151,48 @@ async function createAPIAuthenticatedContext({
     request: authenticatedRequest,
     email,
     password,
-  };
+  }
 }
 
 export const apiTest = baseTest.extend<APIFixtures>({
-  adaContext: async ({ browser }, use, workerInfo) => {
+  // Use the 'page' fixture which has access to the correct baseURL
+  adaContext: async ({ browser, page }, use, workerInfo) => {
+    const baseURL = (page.context() as any)._options.baseURL // Get baseURL from the test context
+    if (!baseURL) throw new Error('baseURL is not available in the test context.')
     const ada = await createAPIAuthenticatedContext({
       browser,
-      name: `ada-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
-    });
-
-    await use(ada);
-    await ada.context.close();
+      baseURL,
+      name: `ada-${workerInfo.workerIndex}`,
+    })
+    await use(ada)
+    await ada.context.close()
   },
-  
-  babbageContext: async ({ browser }, use, workerInfo) => {
+
+  babbageContext: async ({ browser, page }, use, workerInfo) => {
+    const baseURL = (page.context() as any)._options.baseURL
+    if (!baseURL) throw new Error('baseURL is not available in the test context.')
     const babbage = await createAPIAuthenticatedContext({
       browser,
-      name: `babbage-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
-    });
-
-    await use(babbage);
-    await babbage.context.close();
+      baseURL,
+      name: `babbage-${workerInfo.workerIndex}`,
+    })
+    await use(babbage)
+    await babbage.context.close()
   },
-  
-  curieContext: async ({ browser }, use, workerInfo) => {
+
+  curieContext: async ({ browser, page }, use, workerInfo) => {
+    const baseURL = (page.context() as any)._options.baseURL
+    if (!baseURL) throw new Error('baseURL is not available in the test context.')
     const curie = await createAPIAuthenticatedContext({
       browser,
-      name: `curie-${workerInfo.workerIndex}-${getUnixTime(new Date())}`,
-    });
-
-    await use(curie);
-    await curie.context.close();
+      baseURL,
+      name: `curie-${workerInfo.workerIndex}`,
+    })
+    await use(curie)
+    await curie.context.close()
   },
-});
+})
 
-export const expect = baseExpect;
+export const expect = baseExpect
+
+// END OF: tests/api-fixtures.ts

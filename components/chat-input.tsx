@@ -33,6 +33,7 @@ import type { Session } from 'next-auth'
 import type { UIArtifact } from './artifact'
 import { toast } from './toast'
 import { generateUUID } from '@/lib/utils'
+import { clearArtifactFromClipboard } from '@/app/app/(main)/artifacts/actions'
 
 async function createArtifactFromUpload (url: string, name: string, type: string) {
   const response = await fetch('/api/artifacts/create-from-upload', {
@@ -83,6 +84,16 @@ export function ChatInput ({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadingFiles, setUploadingFiles] = useState<Array<string>>([])
+
+  const handleCancelClipboardArtifact = useCallback(async () => {
+    try {
+      await clearArtifactFromClipboard()
+      setClipboardArtifact(null)
+      toast({ type: 'success', description: 'Артефакт удален из буфера' })
+    } catch (error) {
+      toast({ type: 'error', description: 'Не удалось очистить буфер' })
+    }
+  }, [setClipboardArtifact])
 
   const submitForm = useCallback(() => {
     if (status !== 'ready') {
@@ -188,7 +199,7 @@ export function ChatInput ({
         {clipboardArtifact && (
           <div className="flex items-center justify-between p-2 mb-2 rounded-md bg-background border dark:border-zinc-700">
             <span className="text-sm truncate">{clipboardArtifact.title}</span>
-            <Button variant="ghost" size="icon" onClick={() => setClipboardArtifact(null)}>
+            <Button variant="ghost" size="icon" onClick={handleCancelClipboardArtifact}>
               <CrossIcon size={14} />
             </Button>
           </div>

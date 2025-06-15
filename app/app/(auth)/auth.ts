@@ -43,6 +43,67 @@ declare module 'next-auth/jwt' {
   }
 }
 
+const providers = [
+  // Main credentials provider for regular users
+  Credentials({
+    id: 'credentials',
+    name: 'credentials',
+    credentials: {
+      email: { label: 'Email', type: 'email' },
+      password: { label: 'Password', type: 'password' }
+    },
+    async authorize({ email, password }: any) {
+      const users = await getUser(email);
+
+      if (users.length === 0) {
+        await compare(password, DUMMY_PASSWORD);
+        return null;
+      }
+
+      const [user] = users;
+
+      if (!user.password) {
+        await compare(password, DUMMY_PASSWORD);
+        return null;
+      }
+
+      // TODO: Temporary fix for plain text passwords during development
+      // Remove this when password hashing is implemented
+      const passwordsMatch = password === user.password || await compare(password, user.password);
+
+      if (!passwordsMatch) return null;
+
+      return { ...user, type: 'regular' };
+    },
+  }),
+]
+
+// Add test provider only in development (official Auth.js approach)
+if (process.env.NODE_ENV === 'development') {
+  providers.push(
+    Credentials({
+      id: 'test-credentials',
+      name: 'Test Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        // Simple test authentication - password must be 'test-password'
+        if (credentials?.password === 'test-password') {
+          return {
+            id: 'test-user-id',
+            email: credentials.email as string,
+            name: credentials.email as string,
+            type: 'regular'
+          };
+        }
+        return null;
+      },
+    })
+  );
+}
+
 export const {
   handlers: { GET, POST },
   auth,
@@ -50,47 +111,34 @@ export const {
   signOut,
 } = NextAuth({
   ...authConfig,
-  providers: [
-    Credentials({
-      credentials: {},
-      async authorize({ email, password }: any) {
-        const users = await getUser(email);
-
-        if (users.length === 0) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        const [user] = users;
-
-        if (!user.password) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        // TODO: Temporary fix for plain text passwords during development
-        // Remove this when password hashing is implemented
-        const passwordsMatch = password === user.password || await compare(password, user.password);
-
-        if (!passwordsMatch) return null;
-
-        return { ...user, type: 'regular' };
-      },
-    }),
-  ],
+  providers,
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      // Для новых пользователей при логине
       if (user) {
         token.id = user.id as string;
         token.type = user.type;
+      }
+      
+      // Для тестовых токенов, созданных через /api/test/auth-signin
+      // Они уже содержат все нужные поля
+      if (trigger === 'signIn' && token.sub === 'test-user-id') {
+        // Тестовый токен уже содержит правильную структуру
+        return token;
       }
 
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.type = token.type;
+        session.user.id = token.id || token.sub || '';
+        session.user.type = (token.type as UserType) || 'regular';
+        
+        // Для тестовых сессий
+        if (token.sub === 'test-user-id') {
+          session.user.email = token.email as string;
+          session.user.name = token.name as string;
+        }
       }
 
       return session;

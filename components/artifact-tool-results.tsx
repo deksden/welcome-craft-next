@@ -1,9 +1,9 @@
 /**
- * @file components/document.tsx
- * @description Компоненты для отображения результатов вызова тулзов, связанных с документами.
- * @version 1.3.0
- * @date 2025-06-10
- * @updated Импорт ArtifactKind теперь из общего файла lib/types.
+ * @file components/artifact-tool-results.tsx
+ * @description Компоненты для отображения результатов вызова тулзов, связанных с артефактами.
+ * @version 1.4.0
+ * @date 2025-06-14
+ * @updated Переименованы компоненты Document* в Artifact* для соответствия терминологии.
  */
 
 /** HISTORY:
@@ -36,17 +36,17 @@ const getActionText = (
   }
 }
 
-interface DocumentToolResultProps {
+interface ArtifactToolResultProps {
   type: 'create' | 'update' | 'request-suggestions';
   result: { id: string; title: string; kind: ArtifactKind };
   isReadonly: boolean;
 }
 
-function PureDocumentToolResult ({
+function PureArtifactToolResult ({
   type,
   result,
   isReadonly,
-}: DocumentToolResultProps) {
+}: ArtifactToolResultProps) {
   const { setArtifact } = useArtifact()
 
   return (
@@ -100,19 +100,19 @@ function PureDocumentToolResult ({
   )
 }
 
-export const DocumentToolResult = memo(PureDocumentToolResult, () => true)
+export const ArtifactToolResult = memo(PureArtifactToolResult, () => true)
 
-interface DocumentToolCallProps {
+interface ArtifactToolCallProps {
   type: 'create' | 'update' | 'request-suggestions';
   args: { title: string };
   isReadonly: boolean;
 }
 
-function PureDocumentToolCall ({
+function PureArtifactToolCall ({
   type,
   args,
   isReadonly,
-}: DocumentToolCallProps) {
+}: ArtifactToolCallProps) {
   const { setArtifact } = useArtifact()
 
   return (
@@ -165,6 +165,6 @@ function PureDocumentToolCall ({
   )
 }
 
-export const DocumentToolCall = memo(PureDocumentToolCall, () => true)
+export const ArtifactToolCall = memo(PureArtifactToolCall, () => true)
 
-// END OF: components/document.tsx
+// END OF: components/artifact-tool-results.tsx

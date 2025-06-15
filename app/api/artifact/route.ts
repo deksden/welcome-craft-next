@@ -14,6 +14,7 @@
  */
 
 import { auth } from '@/app/app/(auth)/auth'
+import { getTestSession } from '@/lib/test-auth'
 import { deleteArtifactVersionsAfterTimestamp, getArtifactsById, getArtifactById, saveArtifact, } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
@@ -28,9 +29,12 @@ export async function GET (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter id is missing').toResponse()
   }
 
-  const session = await auth()
+  let session = await auth()
   if (!session?.user) {
-    return new ChatSDKError('unauthorized:artifact').toResponse()
+    session = await getTestSession()
+  }
+  if (!session?.user?.id) {
+    return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
   }
 
   if (versionParam || versionTimestampParam) {
@@ -68,9 +72,12 @@ export async function POST (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter id is required.').toResponse()
   }
 
-  const session = await auth()
+  let session = await auth()
   if (!session?.user) {
-    return new ChatSDKError('unauthorized:artifact').toResponse()
+    session = await getTestSession()
+  }
+  if (!session?.user?.id) {
+    return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
   }
 
   const { content, title, kind, }: { content: string; title: string; kind: ArtifactKind } = await request.json()
@@ -107,9 +114,12 @@ export async function DELETE (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter timestamp is required.').toResponse()
   }
 
-  const session = await auth()
+  let session = await auth()
   if (!session?.user) {
-    return new ChatSDKError('unauthorized:artifact').toResponse()
+    session = await getTestSession()
+  }
+  if (!session?.user?.id) {
+    return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
   }
 
   const artifacts = await getArtifactsById({ id })

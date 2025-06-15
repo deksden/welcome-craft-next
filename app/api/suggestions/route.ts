@@ -1,6 +1,7 @@
 import { auth } from '@/app/app/(auth)/auth';
 import { getSuggestionsByDocumentId } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
+import { getTestSession } from '@/lib/test-auth';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,7 +14,13 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  // Попробуем получить обычную сессию или тестовую
+  let session = await auth();
+  
+  // Если нет обычной сессии, проверяем тестовую
+  if (!session?.user) {
+    session = await getTestSession();
+  }
 
   if (!session?.user) {
     return new ChatSDKError('unauthorized:suggestions').toResponse();

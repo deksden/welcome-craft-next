@@ -3,8 +3,10 @@ import type { WebpackPluginInstance } from 'webpack'
 
 const nextConfig: NextConfig = {
   experimental: {
-    ppr: true,
+    // Disable PPR for faster dev server startup during testing
+    ppr: process.env.NODE_ENV === 'production',
   },
+  serverExternalPackages: ['pino'],
   images: {
     remotePatterns: [
       {
@@ -33,7 +35,6 @@ const nextConfig: NextConfig = {
     // Возвращаем измененную конфигурацию.
     return config
   },
-  serverComponentsExternalPackages: ['pino'],
 }
 
 export default nextConfig

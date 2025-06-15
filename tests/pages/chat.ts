@@ -27,7 +27,9 @@ export class ChatPage {
   }
 
   async createNewChat() {
-    await this.page.goto('http://app.localhost:3000/');
+    // Page уже должна быть на главной с auth через setupTestEnvironment
+    // Если нужно перейти заново, используем относительный URL
+    await this.page.goto('/');
   }
 
   public getCurrentURL(): string {

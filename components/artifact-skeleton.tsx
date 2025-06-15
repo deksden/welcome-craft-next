@@ -2,7 +2,7 @@
 
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 
-export const DocumentSkeleton = ({
+export const ArtifactSkeleton = ({
   artifactKind,
 }: {
   artifactKind: ArtifactKind;
@@ -24,7 +24,7 @@ export const DocumentSkeleton = ({
   )
 }
 
-export const InlineDocumentSkeleton = () => {
+export const InlineArtifactSkeleton = () => {
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="animate-pulse rounded-lg h-4 bg-muted-foreground/20 w-48"/>

@@ -8,6 +8,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/app/(auth)/auth'
+import { getTestSession } from '@/lib/test-auth'
 import { getPagedArtifactsByUserId } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
@@ -16,7 +17,11 @@ export const dynamic = 'force-dynamic'
 
 export async function GET (request: NextRequest) {
   try {
-    const session = await auth()
+    let session = await auth()
+    if (!session?.user) {
+      session = await getTestSession()
+    }
+    
     if (!session?.user?.id) {
       return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
     }

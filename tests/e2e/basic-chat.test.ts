@@ -1,58 +1,61 @@
 /**
- * Базовый тест чата с mock аутентификацией
- * Для быстрой проверки функциональности без реальной регистрации
+ * Базовый тест чата с простой аутентификацией
+ * Для быстрой проверки функциональности с рабочей авторизацией
  */
 
 import { test, expect } from '@playwright/test';
-import { createMockAuthenticatedContext } from '../helpers';
 import { TestUtils } from '../helpers/test-utils';
+import { logTestConfig } from '../helpers/test-config';
 
-test.describe('Basic Chat with Mock Auth', () => {
-  test('Chat input is visible and functional', async ({ browser }) => {
-    // Используем mock аутентификацию для быстрого доступа
-    const { page, context } = await createMockAuthenticatedContext({
-      browser,
-      name: 'basic-test'
-    });
-    
+test.describe('Basic Chat with Simple Auth', () => {
+  test('Chat input is visible and functional', async ({ page }) => {
     const testUtils = new TestUtils(page);
     
+    // Логируем конфигурацию для отладки
+    logTestConfig();
+    
     try {
-      // Переходим на главную страницу админки
-      await page.goto('http://app.localhost:3000/');
+      // Используем новую auth систему
+      const timestamp = Date.now();
+      const email = `test-basic-${timestamp}@playwright.com`;
+      const userId = `test-user-${timestamp}`;
       
-      // Ждем загрузки страницы
+      // Переходим на страницу приложения
+      await page.goto('/');
+      
+      // Устанавливаем auth session через API
+      console.log('🔐 Setting up auth session...');
+      await testUtils.setAuthSession(email, userId);
+      
+      // Проверяем что session установлена
+      const authStatus = await testUtils.checkAuthStatus();
+      expect(authStatus.authenticated).toBe(true);
+      
+      // Переходим на главную страницу
+      await page.goto('/');
+      
+      // Ждем чтобы страница загрузилась
+      await page.waitForTimeout(1000);
+      
+      // Проверяем что мы на главной странице
       await page.waitForTimeout(2000);
-      
-      // Проверяем что страница загрузилась
       console.log('Current URL:', page.url());
       console.log('Page title:', await page.title());
       
       // Ищем поле ввода чата
       const chatInput = page.getByTestId('chat-input');
       
-      // Проверяем что элемент существует (даже если не видим)
-      const chatInputCount = await chatInput.count();
-      console.log('Chat input elements found:', chatInputCount);
+      // Ждем появления элемента
+      await chatInput.waitFor({ timeout: 10000 });
       
-      if (chatInputCount > 0) {
-        // Пытаемся сделать элемент видимым
-        await chatInput.first().scrollIntoViewIfNeeded();
-        
-        // Проверяем видимость
-        const isVisible = await chatInput.first().isVisible();
-        console.log('Chat input visible:', isVisible);
-        
-        if (isVisible) {
-          await chatInput.first().fill('Тест сообщения');
-          expect(await chatInput.first().inputValue()).toBe('Тест сообщения');
-        }
-      }
+      // Проверяем что элемент видим и функционален
+      await expect(chatInput).toBeVisible();
+      await chatInput.fill('Тест сообщения');
+      expect(await chatInput.inputValue()).toBe('Тест сообщения');
       
       // Ищем кнопку отправки
       const sendButton = page.getByTestId('send-button');
-      const sendButtonCount = await sendButton.count();
-      console.log('Send button elements found:', sendButtonCount);
+      await expect(sendButton).toBeVisible();
       
     } catch (error) {
       console.error('Test error:', error);
@@ -61,33 +64,55 @@ test.describe('Basic Chat with Mock Auth', () => {
       await page.screenshot({ path: 'debug-basic-chat.png', fullPage: true });
       
       throw error;
-    } finally {
-      await context.close();
     }
   });
   
-  test('Page loads without authentication errors', async ({ browser }) => {
-    const { page, context } = await createMockAuthenticatedContext({
-      browser,
-      name: 'page-load-test'
-    });
+  test('Page loads without authentication errors', async ({ page }) => {
+    const testUtils = new TestUtils(page);
+    
+    // Логируем конфигурацию для отладки
+    logTestConfig();
     
     try {
-      await page.goto('http://app.localhost:3000/');
+      // Используем новую auth систему
+      const timestamp = Date.now();
+      const email = `test-load-${timestamp}@playwright.com`;
+      const userId = `test-user-${timestamp}`;
+      
+      // Переходим на страницу приложения  
+      await page.goto('/');
+      
+      // Устанавливаем auth session через API
+      console.log('🔐 Setting up auth session...');
+      await testUtils.setAuthSession(email, userId);
+      
+      // Проверяем что session установлена
+      const authStatus = await testUtils.checkAuthStatus();
+      expect(authStatus.authenticated).toBe(true);
+      
+      // Переходим на главную страницу
+      await page.goto('/');
       
       // Проверяем что не произошло редиректа на /login
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1000);
       const finalUrl = page.url();
       
       console.log('Final URL:', finalUrl);
       expect(finalUrl).not.toContain('/login');
+      expect(finalUrl).not.toContain('/register');
       
       // Проверяем что страница содержит основные элементы
       const bodyText = await page.textContent('body');
       expect(bodyText).toBeDefined();
       
-    } finally {
-      await context.close();
+      // Проверяем наличие чат-интерфейса
+      const chatInput = page.getByTestId('chat-input');
+      await expect(chatInput).toBeVisible();
+      
+    } catch (error) {
+      console.error('Auth test error:', error);
+      await page.screenshot({ path: 'debug-auth-error.png', fullPage: true });
+      throw error;
     }
   });
 });

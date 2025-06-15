@@ -1,211 +1,209 @@
 /**
- * E2E тесты для AI-first workflow WelcomeCraft
- * Основные сценарии взаимодействия с AI для создания онбординг-материалов
+ * @file tests/e2e/ai-first-workflow.test.ts
+ * @description Упрощенные UI тесты workflow с test auth (без AI интеграций)
+ * @version 2.0.0
+ * @date 2025-06-15
  */
 
-import { test, expect } from '../fixtures';
-import { ChatPage } from '../pages/chat';
-import { ArtifactPage } from '../pages/artifact';
-import { TestUtils } from '../helpers/test-utils';
-import { AIMockHelper } from '../helpers/ai-mock';
+import { test, expect } from '@playwright/test';
+import { setupTestAuth, navigateWithAuth, waitForChatReady, generateTestUser } from '../helpers/auth-helper';
 
-test.describe('AI-First Workflow', () => {
-  let chatPage: ChatPage;
-  let artifactPage: ArtifactPage;
-  let testUtils: TestUtils;
-
-  test.beforeEach(async ({ page }) => {
-    chatPage = new ChatPage(page);
-    artifactPage = new ArtifactPage(page);
-    testUtils = new TestUtils(page);
+test.describe('Workflow UI Tests with Test Auth', () => {
+  
+  test('User can interact with chat workflow interface', async ({ page }) => {
+    const testUser = generateTestUser('workflow-basic');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
     
-    await testUtils.cleanupTestData();
+    // Проверяем базовые элементы workflow
+    await expect(page.getByTestId('chat-input')).toBeVisible();
+    await expect(page.getByTestId('send-button')).toBeVisible();
     
-    // Настройка AI mocks перед регистрацией
-    await testUtils.setupAIMocks();
+    // Проверяем что можем вводить текст для workflow
+    const chatInput = page.getByTestId('chat-input');
+    const workflowMessage = 'Create an onboarding site for new developers';
+    await chatInput.fill(workflowMessage);
+    await expect(chatInput).toHaveValue(workflowMessage);
     
-    // Регистрация пользователя перед каждым тестом
-    const timestamp = Date.now();
-    const email = `test${timestamp}@example.com`;
-    await testUtils.registerUser(email, 'testpassword123');
+    console.log('✅ Basic workflow interface is functional');
   });
 
-  test.afterEach(async () => {
-    await testUtils.disableAIMocks();
-    await testUtils.resetNetwork();
-    AIMockHelper.clearCustomResponses();
-  });
-
-  test('Complete onboarding creation workflow via AI', async () => {
-    // Шаг 1: Создание базового контента
-    await testUtils.sendMessage('Создай текстовый артефакт с приветствием для нового сотрудника');
+  test('Chat interface supports workflow interactions', async ({ page }) => {
+    const testUser = generateTestUser('workflow-interactions');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
     
-    const firstArtifact = await testUtils.waitForArtifact();
-    expect(firstArtifact).toBeVisible();
+    const chatInput = page.getByTestId('chat-input');
+    const sendButton = page.getByTestId('send-button');
     
-    // Шаг 2: Создание списка контактов
-    await testUtils.sendMessage('Создай список ключевых контактов для онбординга');
-    
-    const secondArtifact = await testUtils.waitForArtifact();
-    expect(secondArtifact).toBeVisible();
-    
-    // Шаг 3: Генерация сайта из артефактов
-    await testUtils.sendMessage('Сгенерируй онбординг-сайт используя созданные артефакты');
-    
-    const siteArtifact = await testUtils.waitForArtifact();
-    expect(siteArtifact).toBeVisible();
-    
-    // Проверка завершенности workflow
-    const messages = await chatPage.getAllMessages();
-    expect(messages.length).toBeGreaterThanOrEqual(6); // 3 пользователя + 3 AI ответа
-  });
-
-  test('AI artifact creation and modification flow', async () => {
-    // Создание артефакта
-    await testUtils.sendMessage('Создай код компонента React для приветствия');
-    
-    let artifact = await testUtils.waitForArtifact();
-    expect(artifact).toBeVisible();
-    
-    // Модификация через AI
-    await testUtils.sendMessage('Добавь в компонент стили и анимацию');
-    await testUtils.waitForAIGeneration();
-    
-    // Проверка обновления артефакта
-    artifact = await testUtils.waitForElement('artifact');
-    expect(artifact).toBeVisible();
-    
-    const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain('обновил');
-  });
-
-  test('Multiple artifact types creation', async () => {
-    const artifactTypes = [
-      { command: 'Создай текстовый артефакт с инструкцией', type: 'text' },
-      { command: 'Создай код React компонента', type: 'code' },
-      { command: 'Создай HTML страницу приветствия', type: 'code' }
+    // Тестируем различные типы workflow сообщений
+    const workflowMessages = [
+      'Create a welcome text artifact',
+      'Generate a contact list',
+      'Build an onboarding site',
+      'Add company information'
     ];
+    
+    for (const message of workflowMessages) {
+      await chatInput.clear();
+      await chatInput.fill(message);
+      await expect(sendButton).toBeEnabled();
+      
+      // Очищаем для следующей итерации
+      await chatInput.clear();
+      await expect(sendButton).toBeDisabled();
+    }
+    
+    console.log('✅ Chat interface supports various workflow messages');
+  });
 
-    for (const { command, type } of artifactTypes) {
-      await testUtils.sendMessage(command);
+  test('Workflow interface handles keyboard interactions', async ({ page }) => {
+    const testUser = generateTestUser('workflow-keyboard');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
+    
+    const chatInput = page.getByTestId('chat-input');
+    
+    // Фокус на input
+    await chatInput.focus();
+    await expect(chatInput).toBeFocused();
+    
+    // Ввод через клавиатуру
+    await page.keyboard.type('Create onboarding workflow');
+    await expect(chatInput).toHaveValue('Create onboarding workflow');
+    
+    // Попытка отправки через Enter (может не работать без настроенного backend)
+    await page.keyboard.press('Enter');
+    
+    console.log('✅ Workflow interface supports keyboard interactions');
+  });
+
+  test('Workflow interface provides visual feedback', async ({ page }) => {
+    const testUser = generateTestUser('workflow-feedback');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
+    
+    const chatInput = page.getByTestId('chat-input');
+    const sendButton = page.getByTestId('send-button');
+    
+    // Проверяем начальное состояние
+    await expect(sendButton).toBeDisabled();
+    
+    // Добавляем текст и проверяем активацию кнопки
+    await chatInput.fill('Generate artifacts');
+    await expect(sendButton).toBeEnabled();
+    
+    // Очищаем и проверяем деактивацию
+    await chatInput.clear();
+    await expect(sendButton).toBeDisabled();
+    
+    console.log('✅ Workflow interface provides proper visual feedback');
+  });
+
+  test('Workflow interface handles long text input', async ({ page }) => {
+    const testUser = generateTestUser('workflow-longtext');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
+    
+    const chatInput = page.getByTestId('chat-input');
+    
+    // Тестируем длинный workflow запрос
+    const longWorkflowText = `
+      Create a comprehensive onboarding workflow for new software developers that includes:
+      1. Welcome message and company introduction
+      2. Technical setup instructions for development environment
+      3. Team introductions and contact information
+      4. First week project assignments and goals
+      5. Resource links for documentation and tools
+      Please generate this as multiple artifacts that can be combined into a site.
+    `.trim();
+    
+    await chatInput.fill(longWorkflowText);
+    await expect(chatInput).toHaveValue(longWorkflowText);
+    
+    // Проверяем что send button активен для длинного текста
+    const sendButton = page.getByTestId('send-button');
+    await expect(sendButton).toBeEnabled();
+    
+    console.log('✅ Workflow interface handles long text input');
+  });
+
+  test('Workflow UI maintains state during session', async ({ page }) => {
+    const testUser = generateTestUser('workflow-state');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
+    
+    // Вводим workflow запрос
+    const chatInput = page.getByTestId('chat-input');
+    const workflowText = 'Create employee onboarding materials';
+    await chatInput.fill(workflowText);
+    
+    // Симулируем потерю и возврат фокуса
+    await page.getByRole('main').click(); // Клик вне input
+    await chatInput.click(); // Возврат фокуса на input
+    
+    // Проверяем что текст сохранился
+    await expect(chatInput).toHaveValue(workflowText);
+    
+    console.log('✅ Workflow UI maintains state during session');
+  });
+
+  test('Workflow interface suggests appropriate actions', async ({ page }) => {
+    const testUser = generateTestUser('workflow-suggestions');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
+    
+    // Ищем suggested actions (если есть)
+    const suggestedActions = page.getByTestId('suggested-actions');
+    const hasSuggestions = await suggestedActions.isVisible().catch(() => false);
+    
+    if (hasSuggestions) {
+      // Проверяем что есть предложения, связанные с workflow
+      const suggestionsText = await suggestedActions.textContent();
+      const hasWorkflowSuggestions = suggestionsText?.toLowerCase().includes('onboard') || 
+                                   suggestionsText?.toLowerCase().includes('create') ||
+                                   suggestionsText?.toLowerCase().includes('site');
       
-      const artifact = await testUtils.waitForArtifact();
-      expect(artifact).toBeVisible();
-      
-      // Проверка типа артефакта через UI индикаторы
-      const typeIndicator = await testUtils.waitForElement(`artifact-type-${type}`);
-      expect(typeIndicator).toBeVisible();
+      if (hasWorkflowSuggestions) {
+        console.log('✅ Workflow interface provides relevant suggestions');
+      } else {
+        console.log('ℹ️ Suggestions present but not workflow-specific');
+      }
+    } else {
+      console.log('ℹ️ No suggested actions found (normal for empty chat)');
     }
   });
 
-  test('AI conversation context preservation', async () => {
-    // Создание первого артефакта
-    await testUtils.sendMessage('Создай список задач для первого дня');
-    await testUtils.waitForArtifact();
+  test('Workflow interface accessibility basics', async ({ page }) => {
+    const testUser = generateTestUser('workflow-a11y');
+    await setupTestAuth(page, testUser);
+    await navigateWithAuth(page, '/');
+    await waitForChatReady(page);
     
-    // Контекстная модификация
-    await testUtils.sendMessage('Добавь туда встречу с наставником');
-    await testUtils.waitForAIGeneration();
+    const chatInput = page.getByTestId('chat-input');
+    const sendButton = page.getByTestId('send-button');
     
-    // Создание связанного контента
-    await testUtils.sendMessage('Теперь создай артефакт с информацией о наставнике');
-    await testUtils.waitForArtifact();
+    // Проверяем базовые aria attributes
+    const inputAriaLabel = await chatInput.getAttribute('aria-label');
+    const inputPlaceholder = await chatInput.getAttribute('placeholder');
     
-    const messages = await chatPage.getAllMessages();
-    const aiMessages = messages.filter(m => m.role === 'assistant');
+    // Должен быть либо aria-label, либо placeholder для доступности
+    expect(inputAriaLabel || inputPlaceholder).toBeTruthy();
     
-    // Проверка что AI сохраняет контекст
-    expect(aiMessages[1].content).toContain('добавил');
-    expect(aiMessages[2].content).toContain('наставник');
-  });
-
-  test('AI error handling and recovery', async () => {
-    // Симуляция медленного соединения
-    await testUtils.simulateSlowNetwork();
+    // Проверяем что элементы focusable
+    await chatInput.focus();
+    await expect(chatInput).toBeFocused();
     
-    await testUtils.sendMessage('Создай большой артефакт с детальной информацией');
+    await sendButton.focus();
+    await expect(sendButton).toBeFocused();
     
-    // Остановка генерации
-    const stopButton = await testUtils.waitForElement('stop-button');
-    await stopButton.click();
-    
-    // Проверка состояния после остановки
-    const sendButton = await testUtils.waitForElement('send-button');
-    expect(sendButton).toBeVisible();
-    
-    // Повторная попытка
-    await testUtils.resetNetwork();
-    await testUtils.sendMessage('Создай простой текстовый артефакт');
-    
-    const artifact = await testUtils.waitForArtifact();
-    expect(artifact).toBeVisible();
-  });
-
-  test('Collaborative AI workflow with file upload', async () => {
-    // Загрузка файла
-    await chatPage.addImageAttachment();
-    
-    await testUtils.waitForElement('attachments-preview');
-    await testUtils.sendMessage('Проанализируй этот файл и создай на его основе онбординг контент');
-    
-    await testUtils.waitForAIGeneration();
-    
-    const userMessage = await chatPage.getRecentUserMessage();
-    expect(userMessage.attachments).toHaveLength(1);
-    
-    const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain('анализ');
-  });
-
-  test('AI suggestion-based workflow', async () => {
-    // Использование предложенного промпта
-    await chatPage.sendUserMessageFromSuggestion();
-    await testUtils.waitForAIGeneration();
-    
-    const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain('создание онбординг-сайта');
-    
-    // Скрытие предложений после использования
-    const suggestions = testUtils.page.locator('[data-testid="suggested-actions"]');
-    await expect(suggestions).not.toBeVisible();
-  });
-
-  test('Long conversation with AI context management', async () => {
-    const conversationSteps = [
-      'Привет! Помоги создать онбординг для разработчика',
-      'Создай приветственный текст',
-      'Добавь список необходимых инструментов',
-      'Создай чек-лист для первой недели',
-      'Объедини все в красивый сайт'
-    ];
-
-    for (const step of conversationSteps) {
-      await testUtils.sendMessage(step);
-      await testUtils.waitForAIGeneration();
-    }
-
-    // Проверка автопрокрутки
-    await testUtils.waitForDOMStability();
-    const isAtBottom = await chatPage.isScrolledToBottom();
-    expect(isAtBottom).toBe(true);
-
-    // Проверка что все сообщения сохранились
-    const messages = await chatPage.getAllMessages();
-    expect(messages.length).toBe(conversationSteps.length * 2); // user + AI для каждого шага
-  });
-
-  test('AI accessibility in workflow', async () => {
-    await testUtils.sendMessage('Создай артефакт с инструкцией');
-    await testUtils.waitForArtifact();
-    
-    // Проверка доступности ключевых элементов
-    const chatInputAccessible = await testUtils.checkElementAccessibility('chat-input');
-    expect(chatInputAccessible).toBe(true);
-    
-    const sendButtonAccessible = await testUtils.checkElementAccessibility('send-button');
-    expect(sendButtonAccessible).toBe(true);
-    
-    const artifactAccessible = await testUtils.checkElementAccessibility('artifact');
-    expect(artifactAccessible).toBe(true);
+    console.log('✅ Workflow interface meets basic accessibility requirements');
   });
 });

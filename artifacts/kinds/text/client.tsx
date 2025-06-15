@@ -1,6 +1,6 @@
 import { Artifact } from '@/components/create-artifact';
 import { DiffView } from '@/components/diffview';
-import { DocumentSkeleton } from '@/components/document-skeleton';
+import { ArtifactSkeleton } from '@/components/artifact-skeleton';
 import { Editor } from '@/components/text-editor';
 import {
   ClockRewind,
@@ -68,7 +68,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
     metadata,
   }) => {
     if (isLoading) {
-      return <DocumentSkeleton artifactKind="text" />;
+      return <ArtifactSkeleton artifactKind="text" />;
     }
 
     if (mode === 'diff') {

@@ -30,7 +30,7 @@ import { useSearchParams } from 'next/navigation'
 import { useAutoResume } from '@/hooks/use-auto-resume'
 import { ChatSDKError } from '@/lib/errors'
 import type { VisibilityType } from '@/lib/types'
-import { getAndClearArtifactFromClipboard } from '@/app/app/(main)/artifacts/actions'
+import { getArtifactFromClipboard } from '@/app/app/(main)/artifacts/actions'
 
 export function Chat ({
   id,
@@ -107,7 +107,7 @@ export function Chat ({
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible)
 
   useEffect(() => {
-    getAndClearArtifactFromClipboard().then((data) => {
+    getArtifactFromClipboard().then((data) => {
       if (data) setClipboardArtifact(data)
     }).catch(() => {})
   }, [])

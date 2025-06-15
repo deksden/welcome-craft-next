@@ -27,6 +27,7 @@ import {
   type UIMessage
 } from 'ai'
 import { auth, type UserType } from '@/app/app/(auth)/auth'
+import { getTestSession } from '@/lib/test-auth'
 import { type ArtifactContext, type RequestHints, systemPrompt } from '@/lib/ai/prompts'
 import { deleteChatSoftById, getChatById, getMessageCountByUserId, saveChat, saveMessages, } from '@/lib/db/queries'
 import { generateUUID } from '@/lib/utils'
@@ -84,9 +85,12 @@ export async function POST (request: Request) {
       activeArtifactKind
     } = requestBody
 
-    const session = await auth()
+    let session = await auth()
     if (!session?.user) {
-      return new ChatSDKError('unauthorized:chat').toResponse()
+      session = await getTestSession()
+    }
+    if (!session?.user?.id) {
+      return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
     }
 
     const childLogger = logger.child({ chatId, userId: session.user.id })
@@ -202,8 +206,11 @@ export async function DELETE (request: Request) {
 
   if (!id) return new ChatSDKError('bad_request:api').toResponse()
 
-  const session = await auth()
-  if (!session?.user) return new ChatSDKError('unauthorized:chat').toResponse()
+  let session = await auth()
+  if (!session?.user) {
+    session = await getTestSession()
+  }
+  if (!session?.user?.id) return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
 
   const chat = await getChatById({ id })
   if (!chat || chat.userId !== session.user.id) {

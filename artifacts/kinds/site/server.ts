@@ -1,17 +1,4 @@
-/**
- * @file artifacts/kinds/site/server.ts
- * @description Серверный обработчик для артефакта типа "Сайт".
- * @version 1.0.0
- * @date 2025-06-13
- * @updated Логика генерации сайта перенесена из siteGenerate в метод create.
- */
 
-/** HISTORY:
- * v1.0.0 (2025-06-13): Moved site generation logic from the separate tool into the create method.
- * v0.1.0 (2025-06-12): Initial placeholder implementation.
- */
-
-import type { Session } from 'next-auth'
 import { createLogger } from '@fab33/fab-logger'
 import { getPagedArtifactsByUserId } from '@/lib/db/queries'
 import { blockDefinitions } from '@/site-blocks'
