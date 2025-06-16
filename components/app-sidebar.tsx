@@ -30,16 +30,15 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useLocalStorage } from 'usehooks-ts'
-import type { Artifact as DBArtifact } from '@/lib/db/schema'
 import useSWR from 'swr'
 import { fetcher } from '@/lib/utils'
 import { useArtifact } from '@/hooks/use-artifact'
 import { Skeleton } from './ui/skeleton'
 import { toast } from './toast'
-import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
+import type { ArtifactKind, ArtifactApiResponse } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 
 interface SidebarArtifactItemProps {
-  artifact: Pick<DBArtifact, 'id' | 'title' | 'createdAt' | 'kind' | 'content'>;
+  artifact: Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'kind' | 'content'>;
   isActive: boolean;
   onClick: () => void;
 }
@@ -86,7 +85,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
   const {
     data: recentArtifacts,
     isLoading: isLoadingRecentArtifacts,
-  } = useSWR<Array<Pick<DBArtifact, 'id' | 'title' | 'createdAt' | 'kind' | 'content'>>>(
+  } = useSWR<Array<Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'kind' | 'content'>>>(
     user ? `/api/artifacts/recent?limit=5` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -96,7 +95,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
   const artifactHook = useArtifact()
   const activeArtifactId = artifactHook.artifact.isVisible ? artifactHook.artifact.artifactId : null
 
-  const handleArtifactClick = (doc: Pick<DBArtifact, 'id' | 'title' | 'kind' | 'content'>) => {
+  const handleArtifactClick = (doc: Pick<ArtifactApiResponse, 'id' | 'title' | 'kind' | 'content'>) => {
     if (!doc.kind) {
       console.error('SYS_COMP_APP_SIDEBAR: Artifact kind is undefined, cannot open.', doc)
       toast({ type: 'error', description: 'Не удалось определить тип артефакта.' })
@@ -108,7 +107,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
       artifactId: doc.id,
       title: doc.title,
       kind: doc.kind as ArtifactKind,
-      content: doc.content || '',
+      content: doc.content,
       isVisible: true,
       status: 'idle',
       displayMode: 'split',

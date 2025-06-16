@@ -2,7 +2,7 @@
  * Простой тест для проверки новой конфигурационной системы
  */
 
-import { test, expect } from '@playwright/test';
+import { test, } from '@playwright/test';
 import { TestUtils } from '../helpers/test-utils';
 import { logTestConfig } from '../helpers/test-config';
 

@@ -5,7 +5,7 @@
 
 import type { Page, Locator } from '@playwright/test';
 import { getAIResponse, type MockAIResponse } from './ai-mock';
-import { getAdminUrl, getTestHeaders, isPlaywrightEnvironment } from './test-config';
+import { getTestHeaders, } from './test-config';
 
 export class TestUtils {
   constructor(public page: Page) {}

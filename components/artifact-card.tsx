@@ -34,11 +34,11 @@ import {
 } from '@/components/icons'
 import { deleteArtifact } from '@/app/app/(main)/artifacts/actions'
 import { toast } from '@/components/toast'
-import type { Artifact as DBArtifact } from '@/lib/db/schema'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from './ui/skeleton'
+import type { ArtifactApiResponse } from '@/lib/types'
 
-export interface ArtifactDocument extends Pick<DBArtifact, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'> {}
+export interface ArtifactDocument extends Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'> {}
 
 interface ArtifactCardProps {
   artifact: ArtifactDocument;

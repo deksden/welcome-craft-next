@@ -53,7 +53,7 @@ test.describe('Auth System Test', () => {
       console.log(`🔐 Testing auth for user type: ${userType}`);
       
       const testUser = generateTestUser(`${userType}-test`);
-      testUser.type = userType;
+      testUser.type = userType as 'regular' | 'admin' | 'guest';
       
       // Очищаем предыдущие sessions
       await clearTestAuth(page);

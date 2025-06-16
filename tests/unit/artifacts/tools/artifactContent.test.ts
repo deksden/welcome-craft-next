@@ -28,7 +28,9 @@ describe('AI Tool - artifactContent', () => {
       id: 'existing-artifact-id',
       title: 'Тестовый документ',
       kind: 'text',
-      content: 'Это тестовый контент.',
+      content_text: 'Это тестовый контент.',
+      content_url: null,
+      content_site_definition: null,
       userId: 'test-user-123',
       createdAt: new Date(),
       authorId: 'test-user-123',
@@ -60,7 +62,7 @@ describe('AI Tool - artifactContent', () => {
 
     expect(result.toolName).toBe(AI_TOOL_NAMES.ARTIFACT_CONTENT)
     expect(result.artifactId).toBe(mockExistingArtifact.doc.id)
-    expect(result.content).toBe(mockExistingArtifact.doc.content)
+    expect(result.content).toBe('Это тестовый контент.')
     expect(result.version).toBe(1)
     expect(result.totalVersions).toBe(1)
   })

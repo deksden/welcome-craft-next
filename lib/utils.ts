@@ -8,7 +8,7 @@
 
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import type { Artifact } from '@/lib/db/schema' // Изменено
+import type { ArtifactApiResponse } from '@/lib/types' // Изменено
 import { ChatSDKError, type ErrorCode } from './errors'
 
 export function cn (...inputs: ClassValue[]) {
@@ -49,7 +49,7 @@ export function generateUUID (): string {
 }
 
 export function getArtifactTimestampByIndex (
-  artifacts: Array<Artifact>, // Изменено
+  artifacts: Array<ArtifactApiResponse>, // Изменено
   index: number,
 ) {
   if (!artifacts || index >= artifacts.length) return new Date()

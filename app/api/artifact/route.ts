@@ -13,8 +13,7 @@
  * v1.0.0 (2025-06-09): Переименован из document, адаптирован под новую схему и логику.
  */
 
-import { auth } from '@/app/app/(auth)/auth'
-import { getTestSession } from '@/lib/test-auth'
+import { getAuthSession } from '@/lib/test-auth'
 import { deleteArtifactVersionsAfterTimestamp, getArtifactsById, getArtifactById, saveArtifact, } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
@@ -25,14 +24,18 @@ export async function GET (request: Request) {
   const versionParam = searchParams.get('version')
   const versionTimestampParam = searchParams.get('versionTimestamp')
 
+  console.log('🔍 [DEBUG] GET /api/artifact - Request params:', { id, versionParam, versionTimestampParam })
+
   if (!id) {
     return new ChatSDKError('bad_request:api', 'Parameter id is missing').toResponse()
   }
 
-  let session = await auth()
-  if (!session?.user) {
-    session = await getTestSession()
-  }
+  const session = await getAuthSession()
+  console.log('🔍 [DEBUG] GET /api/artifact - Auth session:', { 
+    authenticated: !!session?.user?.id, 
+    userId: session?.user?.id 
+  })
+  
   if (!session?.user?.id) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
   }
@@ -40,28 +43,65 @@ export async function GET (request: Request) {
   if (versionParam || versionTimestampParam) {
     const version = versionParam ? Number.parseInt(versionParam, 10) : undefined
     const versionTimestamp = versionTimestampParam ? new Date(versionTimestampParam) : undefined
+    console.log('🔍 [DEBUG] GET /api/artifact - Getting specific version:', { version, versionTimestamp })
     const result = await getArtifactById({ id, version, versionTimestamp })
+    console.log('🔍 [DEBUG] GET /api/artifact - Specific version result:', { 
+      found: !!result, 
+      kind: result?.doc?.kind,
+      title: result?.doc?.title,
+      hasContentText: !!result?.doc?.content_text,
+      hasContentUrl: !!result?.doc?.content_url,
+      hasContentSiteDefinition: !!result?.doc?.content_site_definition
+    })
     if (!result) {
       return new ChatSDKError('not_found:artifact').toResponse()
     }
     if (result.doc.userId !== session.user.id) {
       return new ChatSDKError('forbidden:artifact').toResponse()
     }
-    return Response.json(result, { status: 200 })
+    
+    // Normalize specific version for API response
+    const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
+    const normalizedResult = {
+      ...result,
+      doc: normalizeArtifactForAPI(result.doc)
+    }
+    
+    return Response.json(normalizedResult, { status: 200 })
   }
 
+  console.log('🔍 [DEBUG] GET /api/artifact - Getting all versions for id:', id)
   const artifacts = await getArtifactsById({ id })
+  console.log('🔍 [DEBUG] GET /api/artifact - All versions result:', { 
+    count: artifacts.length,
+    firstArtifact: artifacts[0] ? {
+      kind: artifacts[0].kind,
+      title: artifacts[0].title,
+      summary: artifacts[0].summary,
+      hasContentText: !!artifacts[0].content_text,
+      hasContentUrl: !!artifacts[0].content_url,
+      hasContentSiteDefinition: !!artifacts[0].content_site_definition
+    } : null
+  })
+  
   const [artifact] = artifacts
 
   if (!artifact) {
+    console.log('🔍 [DEBUG] GET /api/artifact - Artifact not found')
     return new ChatSDKError('not_found:artifact').toResponse()
   }
 
   if (artifact.userId !== session.user.id) {
+    console.log('🔍 [DEBUG] GET /api/artifact - Access denied, userId mismatch')
     return new ChatSDKError('forbidden:artifact').toResponse()
   }
 
-  return Response.json(artifacts, { status: 200 })
+  // Normalize artifacts for API response (add unified content field)
+  const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
+  const normalizedArtifacts = artifacts.map(normalizeArtifactForAPI)
+  
+  console.log('🔍 [DEBUG] GET /api/artifact - Returning artifacts:', normalizedArtifacts.length)
+  return Response.json(normalizedArtifacts, { status: 200 })
 }
 
 export async function POST (request: Request) {
@@ -72,10 +112,7 @@ export async function POST (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter id is required.').toResponse()
   }
 
-  let session = await auth()
-  if (!session?.user) {
-    session = await getTestSession()
-  }
+  const session = await getAuthSession()
   if (!session?.user?.id) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
   }
@@ -114,10 +151,7 @@ export async function DELETE (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter timestamp is required.').toResponse()
   }
 
-  let session = await auth()
-  if (!session?.user) {
-    session = await getTestSession()
-  }
+  const session = await getAuthSession()
   if (!session?.user?.id) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
   }

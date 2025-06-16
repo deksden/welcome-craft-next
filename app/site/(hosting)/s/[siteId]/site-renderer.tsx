@@ -59,6 +59,6 @@ export function SiteRenderer ({ siteId }: { siteId: string }) {
   )
 }
 
-export default SiteRenderer
+export { SiteRenderer as default }
 
 // END OF: app/(site)/(hosting)/s/[siteId]/site-renderer.tsx

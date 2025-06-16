@@ -58,7 +58,7 @@ export default function Page () {
         // Поэтому делаем клиентский redirect на тот же домен (app.localhost)
         console.log('🎉 Registration successful - redirecting to main page')
         setTimeout(() => {
-          window.location.href = window.location.origin + '/'
+          window.location.href = `${window.location.origin}/`
         }, 1000) // Небольшая задержка для показа toast
       }
     } catch (error) {

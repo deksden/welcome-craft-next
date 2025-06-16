@@ -42,6 +42,8 @@ export const artifactCreate = ({ session }: CreateArtifactProps) =>
       'Creates a new artifact (like text, code, image, or sheet) based on a title and a detailed prompt. Use this when the user explicitly asks to "create", "write", "generate", or "make" something new.',
     parameters: CreateArtifactSchema,
     execute: async (args: CreateArtifactParams) => {
+      const startTime = Date.now()
+      
       if (!session?.user?.id) {
         logger.error('User session or user ID is missing. Cannot proceed with artifact creation.')
         return { error: 'User is not authenticated. This action cannot be performed.' }
@@ -50,46 +52,95 @@ export const artifactCreate = ({ session }: CreateArtifactProps) =>
       const { title, kind, prompt } = args
       const artifactId = generateUUID()
       const childLogger = logger.child({ artifactId, kind, userId: session.user.id })
-      childLogger.trace({ title }, 'Entering artifactCreate tool')
+      
+      childLogger.info({ 
+        title, 
+        kind,
+        prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''),
+        promptLength: prompt.length 
+      }, 'Starting artifact creation')
 
       const handler = artifactTools.find((h) => h.kind === kind)
 
       if (!handler?.create) {
         const errorMsg = `Create operation for artifact of kind '${kind}' is not supported.`
-        childLogger.error(errorMsg)
+        childLogger.error({ availableKinds: artifactTools.map(h => h.kind) }, errorMsg)
         return { error: errorMsg }
       }
 
-      const content = await handler.create({ id: artifactId, title, prompt, session })
+      try {
+        childLogger.debug('Calling artifact handler for content generation')
+        const contentGenerationStart = Date.now()
+        
+        const content = await handler.create({ id: artifactId, title, prompt, session })
+        
+        const contentGenerationTime = Date.now() - contentGenerationStart
+        childLogger.info({ 
+          contentGenerationTimeMs: contentGenerationTime,
+          contentLength: typeof content === 'string' ? content.length : JSON.stringify(content).length,
+          contentType: typeof content
+        }, 'Content generation completed')
 
-      await saveArtifact({
-        id: artifactId,
-        title,
-        content,
-        kind,
-        userId: session.user.id,
-        authorId: null, // Created by AI
-      })
+        childLogger.debug('Saving artifact to database')
+        const dbSaveStart = Date.now()
+        
+        await saveArtifact({
+          id: artifactId,
+          title,
+          content,
+          kind,
+          userId: session.user.id,
+          authorId: null, // Created by AI
+        })
+        
+        const dbSaveTime = Date.now() - dbSaveStart
+        childLogger.info({ dbSaveTimeMs: dbSaveTime }, 'Artifact saved to database successfully')
 
-      childLogger.info({ kind, title }, 'Artifact created and saved successfully. Starting summary generation.')
+        // Background summary generation
+        childLogger.debug('Starting background summary generation')
+        generateAndSaveSummary(artifactId, content, kind)
+          .catch(error => {
+            childLogger.error({ 
+              error: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+              artifactId,
+              artifactKind: kind
+            }, 'Background summary generation failed')
+          })
 
-      // We don't await this, it runs in the background
-      generateAndSaveSummary(artifactId, content, kind)
+        const totalTime = Date.now() - startTime
+        const result = {
+          toolName: AI_TOOL_NAMES.ARTIFACT_CREATE,
+          artifactId,
+          artifactKind: kind,
+          artifactTitle: title,
+          description: `A new ${kind} artifact titled "${title}" was created.`,
+          version: 1,
+          totalVersions: 1,
+          updatedAt: new Date().toISOString(),
+          summary: null, // Summary will be generated in the background
+        }
 
-      const result = {
-        toolName: AI_TOOL_NAMES.ARTIFACT_CREATE,
-        artifactId,
-        artifactKind: kind,
-        artifactTitle: title,
-        description: `A new ${kind} artifact titled "${title}" was created.`,
-        version: 1,
-        totalVersions: 1,
-        updatedAt: new Date().toISOString(),
-        summary: null, // Summary will be generated in the background
+        childLogger.info({ 
+          totalExecutionTimeMs: totalTime,
+          result: {
+            artifactId: result.artifactId,
+            kind: result.artifactKind,
+            title: result.artifactTitle
+          }
+        }, 'Artifact creation completed successfully')
+        
+        return result
+      } catch (error) {
+        const totalTime = Date.now() - startTime
+        childLogger.error({ 
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          executionTimeMs: totalTime
+        }, 'Artifact creation failed')
+        
+        return { error: `Failed to create ${kind} artifact: ${error instanceof Error ? error.message : String(error)}` }
       }
-
-      childLogger.trace({ result }, 'Exiting artifactCreate tool')
-      return result
     },
   })
 

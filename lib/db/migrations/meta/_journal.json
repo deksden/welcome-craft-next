@@ -8,6 +8,13 @@
       "when": 1749636135888,
       "tag": "0000_amazing_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1734345600000,
+      "tag": "0001_sparse_content_columns",
+      "breakpoints": true
     }
   ]
 }

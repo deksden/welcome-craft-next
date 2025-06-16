@@ -8,7 +8,6 @@
 
 import { test, expect } from '@playwright/test';
 import { setupTestAuth, generateTestUser, clearTestAuth } from '../helpers/auth-helper';
-import { getTestUrls } from '../helpers/test-config';
 
 test.describe('User Sessions with Test Auth', () => {
   

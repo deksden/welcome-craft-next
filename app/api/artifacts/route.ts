@@ -46,7 +46,14 @@ export async function GET (request: NextRequest) {
 
     const result = await getPagedArtifactsByUserId(queryParams)
 
-    return NextResponse.json(result)
+    // Normalize artifacts for API response (add unified content field)
+    const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
+    const normalizedResult = {
+      ...result,
+      data: result.data.map(normalizeArtifactForAPI)
+    }
+
+    return NextResponse.json(normalizedResult)
 
   } catch (error) {
     if (error instanceof ChatSDKError) {

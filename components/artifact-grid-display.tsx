@@ -12,12 +12,12 @@ import type { MouseEvent } from 'react'
 import { Pagination, PaginationContent, PaginationLink, } from '@/components/ui/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import type { Artifact as DBArtifact } from '@/lib/db/schema'
+import type { ArtifactApiResponse } from '@/lib/types'
 import { ArtifactCard } from './artifact-card'
 
 const skeletonKeys = Array.from({ length: 4 }, (_, i) => `sk-${i}`)
 
-export interface ArtifactDocument extends Pick<DBArtifact, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'> {}
+export interface ArtifactDocument extends Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'> {}
 
 interface ArtifactGridDisplayProps {
   artifacts: ArtifactDocument[];

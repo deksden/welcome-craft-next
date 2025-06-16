@@ -14,7 +14,7 @@
 */
 
 import type { InferSelectModel } from 'drizzle-orm'
-import { boolean, foreignKey, json, pgTable, primaryKey, text, timestamp, uuid, varchar, } from 'drizzle-orm/pg-core'
+import { boolean, foreignKey, json, jsonb, pgTable, primaryKey, text, timestamp, uuid, varchar, } from 'drizzle-orm/pg-core'
 
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -71,7 +71,17 @@ export const artifact = pgTable(
     id: uuid('id').notNull().defaultRandom(),
     createdAt: timestamp('createdAt').notNull(),
     title: text('title').notNull(),
-    content: json('content').$type<string>(),
+    
+    // Типизированные колонки контента (Sparse Columns approach)
+    // Для kind: 'text', 'code', 'sheet'
+    content_text: text('content_text'),
+    
+    // Для kind: 'image' 
+    content_url: varchar('content_url', { length: 2048 }),
+    
+    // Для kind: 'site'
+    content_site_definition: jsonb('content_site_definition'),
+    
     summary: text('summary').notNull().default(''),
     kind: varchar('kind', { enum: ['text', 'code', 'image', 'sheet', 'site'] })
       .notNull()

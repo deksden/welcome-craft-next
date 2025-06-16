@@ -103,9 +103,6 @@ export function ChatInput ({
 
     const options: Parameters<typeof handleSubmit>[1] = {
       body: {
-        id: chatId,
-        selectedChatModel: initialChatModel,
-        selectedVisibilityType: 'private',
         activeArtifactId: artifact.isVisible ? artifact.artifactId : undefined,
         activeArtifactTitle: artifact.isVisible ? artifact.title : undefined,
         activeArtifactKind: artifact.isVisible ? artifact.kind : undefined,
@@ -128,7 +125,7 @@ export function ChatInput ({
 
     handleSubmit(undefined, options)
     setInput('')
-  }, [status, chatId, handleSubmit, setInput, initialChatModel, artifact, clipboardArtifact, append, setClipboardArtifact])
+  }, [status, handleSubmit, setInput, artifact, clipboardArtifact, append, setClipboardArtifact])
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -176,7 +173,7 @@ export function ChatInput ({
   )
 
   return (
-    <div className="relative w-full flex flex-col gap-2">
+    <div data-testid="chat-input-container" className="relative w-full flex flex-col gap-2">
       {messages.length === 0 &&
         uploadingFiles.length === 0 && (
           <SuggestedActions
@@ -197,7 +194,7 @@ export function ChatInput ({
 
       <div className="flex flex-col w-full p-2 bg-muted dark:bg-zinc-800 rounded-2xl border dark:border-zinc-700">
         {clipboardArtifact && (
-          <div className="flex items-center justify-between p-2 mb-2 rounded-md bg-background border dark:border-zinc-700">
+          <div data-testid="chat-input-clipboard-artifact" className="flex items-center justify-between p-2 mb-2 rounded-md bg-background border dark:border-zinc-700">
             <span className="text-sm truncate">{clipboardArtifact.title}</span>
             <Button variant="ghost" size="icon" onClick={handleCancelClipboardArtifact}>
               <CrossIcon size={14} />
@@ -206,7 +203,7 @@ export function ChatInput ({
         )}
         {uploadingFiles.length > 0 && (
           <div
-            data-testid="attachments-preview"
+            data-testid="chat-input-attachments-preview"
             className="flex flex-row gap-2 overflow-x-scroll items-end p-2 border-b dark:border-zinc-700"
           >
             {uploadingFiles.map((filename) => (
@@ -220,7 +217,7 @@ export function ChatInput ({
         )}
 
         <Textarea
-          data-testid="chat-input"
+          data-testid="chat-input-textarea"
           placeholder="Send a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -238,7 +235,7 @@ export function ChatInput ({
         <div className="flex w-full items-center justify-between gap-2 pt-2">
           <div className="flex gap-1">
             <Button
-              data-testid="attachments-button"
+              data-testid="chat-input-attach-menu"
               variant="ghost"
               size="icon"
               onClick={() => fileInputRef.current?.click()}
@@ -247,6 +244,7 @@ export function ChatInput ({
               <PaperclipIcon size={18}/>
             </Button>
             <ModelSelector
+              data-testid="chat-input-model-selector"
               session={session}
               selectedModelId={initialChatModel}
               className=""
@@ -256,7 +254,7 @@ export function ChatInput ({
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">⌘+Enter to send</p>
             <Button
-              data-testid="send-button"
+              data-testid="chat-input-send-button"
               size="icon"
               variant="outline"
               className="rounded-full"

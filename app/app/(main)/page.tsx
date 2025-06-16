@@ -16,9 +16,7 @@
  * v1.0.0 (2025-06-05): Начальная версия.
  */
 
-import { cookies } from 'next/headers';
-import { Chat } from '@/components/chat';
-import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+// Удалены неиспользуемые импорты после изменения логики на прямой редирект
 import { generateUUID } from '@/lib/utils';
 import { getAuthSession } from '@/lib/test-auth';
 import { redirect } from 'next/navigation';
@@ -32,20 +30,8 @@ export default async function Page() {
 
   const id = generateUUID();
 
-  const cookieStore = await cookies();
-  const modelIdFromCookie = cookieStore.get('chat-model');
-
-  return (
-    <Chat
-      key={id}
-      id={id}
-      initialMessages={[]}
-      initialChatModel={modelIdFromCookie?.value || DEFAULT_CHAT_MODEL}
-      isReadonly={false}
-      session={session}
-      autoResume={false}
-    />
-  );
+  // Редирект на созданный чат
+  redirect(`/chat/${id}`);
 }
 
 // END OF: app/(main)/page.tsx

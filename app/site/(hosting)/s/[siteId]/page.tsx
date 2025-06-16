@@ -11,6 +11,7 @@
  * v1.0.0 (2025-06-12): Начальная версия.
  */
 
+// eslint-disable-next-line import/no-named-as-default
 import SiteRenderer from './site-renderer'
 
 interface SitePageProps {

@@ -21,19 +21,57 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, password } = await request.json();
+    const { id, email, password } = await request.json();
     
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    const [user] = await createUser(email, password);
-    
-    return NextResponse.json({ 
-      success: true, 
-      email,
-      userId: user.id 
-    });
+    // Если передан конкретный ID, используем прямую вставку в БД
+    if (id) {
+      const { db } = await import('@/lib/db');
+      const { user: userTable } = await import('@/lib/db/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      // Проверяем, существует ли уже пользователь
+      const existingUser = await db.select().from(userTable).where(eq(userTable.id, id)).limit(1);
+      
+      if (existingUser.length > 0) {
+        return NextResponse.json({
+          success: true,
+          message: 'User already exists',
+          email: existingUser[0].email,
+          userId: existingUser[0].id
+        });
+      }
+
+      // Создаем пользователя с конкретным ID
+      const [user] = await db.insert(userTable).values({
+        id,
+        email,
+        password // В тестах храним простой пароль
+      }).returning({
+        id: userTable.id,
+        email: userTable.email
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'User created with specific ID',
+        email: user.email,
+        userId: user.id 
+      });
+    } else {
+      // Используем стандартную функцию создания пользователя
+      const [user] = await createUser(email, password);
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'User created with auto-generated ID',
+        email,
+        userId: user.id 
+      });
+    }
   } catch (error) {
     console.error('Test create user error:', error);
     return NextResponse.json({ 

@@ -236,7 +236,45 @@ As we move forward, Silicon Valley continues to reinvent itself. While some pred
         usage: { completionTokens: 10, promptTokens: 3 },
       },
     ];
+  } else if (
+    recentMessage.role === 'user' && 
+    Array.isArray(recentMessage.content) &&
+    recentMessage.content.some(part => 
+      part.type === 'text' && 
+      (part.text.toLowerCase().includes('таблиц') || 
+       part.text.toLowerCase().includes('sheet') ||
+       part.text.toLowerCase().includes('csv'))
+    )
+  ) {
+    // Мок для запросов на создание таблиц
+    return [
+      {
+        type: 'tool-call',
+        toolCallId: 'call_sheet_123',
+        toolName: 'artifactCreate',
+        toolCallType: 'function',
+        args: JSON.stringify({
+          title: 'Преимущества Next.js',
+          kind: 'sheet',
+          prompt: 'Создай таблицу с преимуществами Next.js и их описанием'
+        }),
+      },
+      {
+        type: 'finish',
+        finishReason: 'tool-calls',
+        logprobs: undefined,
+        usage: { completionTokens: 15, promptTokens: 8 },
+      },
+    ];
   }
 
-  return [{ type: 'text-delta', textDelta: 'Unknown test prompt!' }];
+  return [
+    { type: 'text-delta', textDelta: 'Unknown test prompt!' },
+    {
+      type: 'finish',
+      finishReason: 'stop',
+      logprobs: undefined,
+      usage: { completionTokens: 4, promptTokens: 3 },
+    },
+  ];
 };

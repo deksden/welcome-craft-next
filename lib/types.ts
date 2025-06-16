@@ -21,4 +21,17 @@ export type VisibilityType = 'public' | 'private';
 export const artifactKinds = ['text', 'code', 'image', 'sheet', 'site'] as const
 export type ArtifactKind = (typeof artifactKinds)[number];
 
+// API response type for normalized artifacts (with unified content field)
+export interface ArtifactApiResponse {
+  id: string
+  createdAt: Date
+  title: string
+  summary: string
+  kind: ArtifactKind
+  userId: string
+  authorId: string | null
+  deletedAt: Date | null
+  content: string  // Unified content field from normalizeArtifactForAPI
+}
+
 // END OF: lib/types.ts

@@ -47,15 +47,17 @@ export function Header () {
 
   return (
     <header
+      data-testid="header"
       className="sticky top-0 z-50 flex h-14 w-full shrink-0 items-center justify-between border-b bg-background px-4">
       <div className="flex items-center gap-2">
-        <Link href="/" className="font-bold text-lg">
+        <Link href="/" className="font-bold text-lg" data-testid="header-project-logo">
           {Package.appName}
         </Link>
       </div>
 
       <div className="flex items-center justify-end gap-2">
         <Button
+          data-testid="header-new-chat-button"
           variant="ghost"
           size="sm"
           onClick={() => {
@@ -69,6 +71,7 @@ export function Header () {
         {activeChatContext && chatVisibilityHook && (
           <>
             <Button
+              data-testid="header-share-button"
               variant={chatVisibilityHook.visibilityType === 'public' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setShareDialogOpen(true)}
@@ -85,8 +88,8 @@ export function Header () {
             />
           </>
         )}
-        <ThemeSwitcher/>
-        {session?.user && <SidebarUserNav user={session.user}/>}
+        <ThemeSwitcher data-testid="header-theme-selector"/>
+        {session?.user && <SidebarUserNav user={session.user} data-testid="header-user-menu"/>}
       </div>
     </header>
   )

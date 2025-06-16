@@ -32,7 +32,7 @@ vi.mock('@/lib/db/queries', () => ({
 }))
 
 vi.mock('@/lib/ai/summarizer', () => ({
-  generateAndSaveSummary: vi.fn(),
+  generateAndSaveSummary: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/lib/utils', async (importOriginal) => {

@@ -79,6 +79,7 @@
 │   └── index.ts           # Barrel-файл для регистрации всех блоков
 ├── tests/
 │   ├── e2e/               # E2E тесты Playwright
+│   ├── helpers/           # Хелперы для тестов (ui-helpers.ts, test-utils.ts)
 │   └── unit/              # Юнит-тесты Vitest
 └── ...                    # Конфигурационные файлы
 ```

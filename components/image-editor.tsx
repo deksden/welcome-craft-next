@@ -37,6 +37,16 @@ export function ImageEditor ({
   currentVersionIndex = 0,
   getDocumentContentById = () => '',
 }: ImageEditorProps) {
+  console.log('🔍 [DEBUG] ImageEditor - Props:', {
+    title,
+    contentLength: content?.length,
+    contentPreview: `${content?.substring(0, 100)}...`,
+    status,
+    isInline,
+    mode,
+    isValidUrl: content && (content.startsWith('http') || content.startsWith('data:'))
+  })
+  
   const [sliderValue, setSliderValue] = useState(50)
 
   const oldContentUrl = (mode === 'diff' && !isCurrentVersion && currentVersionIndex > 0)
@@ -44,6 +54,11 @@ export function ImageEditor ({
     : null
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error('🔍 [DEBUG] ImageEditor - Image load error:', {
+      title,
+      originalSrc: content,
+      error: e.type
+    })
     // В случае ошибки загрузки по URL, можно заменить src на плейсхолдер
     e.currentTarget.src = 'https://via.placeholder.com/400x300.png?text=Image+not+found'
   }

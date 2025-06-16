@@ -39,9 +39,9 @@ test.describe('User Management E2E', () => {
   test('Multiple users can access the system independently', async ({ page }) => {
     // Тестируем разные типы пользователей
     const users = [
-      { ...generateTestUser('admin'), type: 'admin' },
-      { ...generateTestUser('manager'), type: 'manager' },
-      { ...generateTestUser('user'), type: 'regular' }
+      { ...generateTestUser('admin'), type: 'admin' as const },
+      { ...generateTestUser('manager'), type: 'guest' as const },
+      { ...generateTestUser('user'), type: 'regular' as const }
     ];
     
     for (const user of users) {

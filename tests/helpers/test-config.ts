@@ -119,7 +119,7 @@ export function getCookieConfig() {
  */
 export function getAdminUrl(path: string): string {
   const urls = getTestUrls();
-  return `${urls.adminBase}${path.startsWith('/') ? path : '/' + path}`;
+  return `${urls.adminBase}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 /**
@@ -127,7 +127,7 @@ export function getAdminUrl(path: string): string {
  */
 export function getPublicUrl(path: string): string {
   const urls = getTestUrls();
-  return `${urls.publicBase}${path.startsWith('/') ? path : '/' + path}`;
+  return `${urls.publicBase}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 /**

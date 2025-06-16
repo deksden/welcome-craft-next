@@ -23,6 +23,12 @@ import {
   titleModel,
 } from './models.test';
 
+if (isTestEnvironment) {
+  console.log('🧪 Using MOCK AI Models (from lib/ai/models.test.ts)');
+} else {
+  console.log('🚀 Using REAL AI Models (Google Gemini)');
+}
+
 export const myProvider = isTestEnvironment
   ? customProvider({
       languageModels: {

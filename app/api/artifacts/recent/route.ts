@@ -37,7 +37,11 @@ export async function GET (request: NextRequest) {
 
     const recentArtifacts = await getRecentArtifactsByUserId({ userId: session.user.id, limit, kind })
 
-    return NextResponse.json(recentArtifacts)
+    // Normalize artifacts for API response (add unified content field)
+    const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
+    const normalizedArtifacts = recentArtifacts.map(normalizeArtifactForAPI)
+
+    return NextResponse.json(normalizedArtifacts)
 
   } catch (error) {
     if (error instanceof ChatSDKError) {

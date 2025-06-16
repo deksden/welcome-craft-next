@@ -18,6 +18,7 @@ import { getArtifactById } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import { createLogger } from '@fab33/fab-logger'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
+import { getDisplayContent } from '@/lib/artifact-content-utils'
 
 const logger = createLogger('artifacts:tools:artifactContent')
 
@@ -48,7 +49,7 @@ export const artifactContent = tool({
         artifactId: doc.id,
         artifactTitle: doc.title,
         artifactKind: doc.kind,
-        content: doc.content,
+        content: getDisplayContent(doc),
         version: returnedVersionNumber,
         totalVersions: totalVersions,
         authorId: doc.authorId,

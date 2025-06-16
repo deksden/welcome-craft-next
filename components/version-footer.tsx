@@ -18,7 +18,7 @@ import { useState } from 'react'
 import { useSWRConfig } from 'swr'
 import { useWindowSize } from 'usehooks-ts'
 
-import type { Artifact } from '@/lib/db/schema'
+import type { ArtifactApiResponse } from '@/lib/types'
 import { getArtifactTimestampByIndex } from '@/lib/utils'
 
 import { LoaderIcon } from './icons'
@@ -27,7 +27,7 @@ import { useArtifact } from '@/hooks/use-artifact'
 
 interface VersionFooterProps {
   handleVersionChange: (type: 'next' | 'prev' | 'toggle' | 'latest') => void;
-  documents: Array<Artifact> | undefined;
+  documents: Array<ArtifactApiResponse> | undefined;
   currentVersionIndex: number;
 }
 
@@ -68,9 +68,9 @@ export const VersionFooter = ({
             setIsMutating(true)
 
             mutate(
-              `/api/document?id=${artifact.artifactId}`,
+              `/api/artifact?id=${artifact.artifactId}`,
               await fetch(
-                `/api/document?id=${artifact.artifactId}&timestamp=${getArtifactTimestampByIndex(
+                `/api/artifact?id=${artifact.artifactId}&timestamp=${getArtifactTimestampByIndex(
                   documents,
                   currentVersionIndex,
                 )}`,

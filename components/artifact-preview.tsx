@@ -13,14 +13,13 @@
 import { memo, type MouseEvent, useCallback, useMemo, useRef, } from 'react'
 import { BoxIcon, CodeIcon, FileIcon, FullscreenIcon, ImageIcon, WarningIcon } from './icons'
 import { cn, fetcher } from '@/lib/utils'
-import type { Artifact as DBArtifact } from '@/lib/db/schema'
+import type { ArtifactApiResponse, ArtifactKind } from '@/lib/types'
 import { InlineArtifactSkeleton } from './artifact-skeleton'
 import useSWR from 'swr'
 import { useArtifact } from '@/hooks/use-artifact'
 import { ImageEditor } from './image-editor'
 import { toast } from './toast'
 import type { artifactCreate } from '@/artifacts/tools/artifactCreate'
-import type { ArtifactKind } from '@/lib/types'
 
 type ArtifactToolResult = Awaited<ReturnType<ReturnType<typeof artifactCreate>['execute']>>;
 
@@ -41,15 +40,49 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
     summary: ''
   } : result
 
-  const { data: artifacts, isLoading } = useSWR<Array<DBArtifact>>(
+  const { data: artifacts, isLoading, error } = useSWR<Array<ArtifactApiResponse>>(
     artifactId ? `/api/artifact?id=${artifactId}` : null,
     fetcher,
     {
       refreshInterval: (data) => (data && data.length > 0 && !data[data.length - 1].summary ? 3000 : 0),
+      onSuccess: (data) => {
+        console.log('🔍 [DEBUG] ArtifactPreview - SWR success:', {
+          artifactId,
+          artifactKind,
+          artifactTitle,
+          dataLength: data?.length,
+          latestContent: `${data?.[data.length - 1]?.content?.substring(0, 100)}...`,
+          latestSummary: data?.[data.length - 1]?.summary
+        })
+      },
+      onError: (err) => {
+        console.error('🔍 [DEBUG] ArtifactPreview - SWR error:', {
+          artifactId,
+          error: err.message,
+          status: err.status
+        })
+      }
     }
   )
 
-  const fullArtifact = useMemo(() => artifacts?.[artifacts.length - 1], [artifacts])
+  const fullArtifact = useMemo(() => {
+    const latest = artifacts?.[artifacts.length - 1]
+    console.log('🔍 [DEBUG] ArtifactPreview - fullArtifact computed:', {
+      artifactId,
+      hasArtifacts: !!artifacts,
+      artifactsLength: artifacts?.length,
+      latestArtifact: latest ? {
+        id: latest.id,
+        kind: latest.kind,
+        title: latest.title,
+        contentLength: latest.content?.length,
+        contentPreview: `${latest.content?.substring(0, 100)}...`,
+        summary: latest.summary,
+        createdAt: latest.createdAt
+      } : null
+    })
+    return latest
+  }, [artifacts, artifactId])
   const hitboxRef = useRef<HTMLDivElement>(null)
 
   const handleOpenArtifact = useCallback((event: MouseEvent<HTMLElement>) => {

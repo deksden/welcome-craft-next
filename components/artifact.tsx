@@ -19,7 +19,6 @@ import { formatDistance } from 'date-fns'
 import { type Dispatch, memo, type SetStateAction, useCallback, useEffect, useState, } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts'
-import type { Artifact as DBArtifact } from '@/lib/db/schema'
 import { fetcher } from '@/lib/utils'
 import { Toolbar } from './toolbar'
 import { VersionFooter } from './version-footer'
@@ -29,6 +28,7 @@ import { useArtifact } from '@/hooks/use-artifact'
 import { codeArtifact } from '@/artifacts/kinds/code/client'
 import { imageArtifact } from '@/artifacts/kinds/image/client'
 import { sheetArtifact } from '@/artifacts/kinds/sheet/client'
+import { siteArtifact } from '@/artifacts/kinds/site/client'
 import { textArtifact } from '@/artifacts/kinds/text/client'
 import equal from 'fast-deep-equal'
 import type { UseChatHelpers } from '@ai-sdk/react'
@@ -38,7 +38,7 @@ import { FullscreenIcon } from './icons'
 import type { Session } from 'next-auth'
 import { toast } from './toast'
 import { createClientLogger } from '@/lib/client-logger'
-import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
+import type { ArtifactKind, ArtifactApiResponse } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 
 const logger = createClientLogger('Artifact')
 
@@ -47,6 +47,7 @@ export const artifactDefinitions = [
   codeArtifact,
   imageArtifact,
   sheetArtifact,
+  siteArtifact,
 ]
 
 export type ArtifactDisplayMode = 'split' | 'full';
@@ -98,11 +99,30 @@ function PureArtifact ({
   const {
     data: artifacts,
     isLoading: isArtifactsFetching,
-  } = useSWR<Array<DBArtifact>>(
+    error: artifactsError
+  } = useSWR<Array<ArtifactApiResponse>>(
     artifact.artifactId && artifact.status !== 'streaming'
       ? `/api/artifact?id=${artifact.artifactId}`
       : null,
     fetcher,
+    {
+      onSuccess: (data) => {
+        console.log('🔍 [DEBUG] Artifact - SWR success:', {
+          artifactId: artifact.artifactId,
+          kind: artifact.kind,
+          title: artifact.title,
+          dataLength: data?.length,
+          latestContent: `${data?.[data.length - 1]?.content?.substring(0, 100)}...`
+        })
+      },
+      onError: (err) => {
+        console.error('🔍 [DEBUG] Artifact - SWR error:', {
+          artifactId: artifact.artifactId,
+          error: err.message,
+          status: err.status
+        })
+      }
+    }
   )
 
   useEffect(() => {
@@ -112,7 +132,7 @@ function PureArtifact ({
   }, [isArtifactsFetching])
 
   const [mode, setMode] = useState<'edit' | 'diff'>('edit')
-  const [currentArtifact, setCurrentArtifact] = useState<DBArtifact | null>(null)
+  const [currentArtifact, setCurrentArtifact] = useState<ArtifactApiResponse | null>(null)
   const [currentVersionIndex, setCurrentVersionIndex] = useState(-1)
 
   useEffect(() => {
@@ -123,7 +143,7 @@ function PureArtifact ({
         setCurrentVersionIndex(artifacts.length - 1)
         setArtifact((current) => ({
           ...current,
-          content: mostRecentArtifact.content ?? '',
+          content: mostRecentArtifact.content,
           saveStatus: 'saved'
         }))
       }
@@ -226,21 +246,26 @@ function PureArtifact ({
         </div>
       </div>
       <div className="dark:bg-muted bg-background h-full overflow-y-scroll !max-w-full items-center">
-        <artifactDefinition.content
-          title={artifact.title}
-          content={isCurrentVersion ? artifact.content : getArtifactContentByIdx(currentVersionIndex)}
-          mode={mode}
-          status={artifact.status}
-          currentVersionIndex={currentVersionIndex}
-          suggestions={[]}
-          onSaveContent={saveContent}
-          isInline={false}
-          isCurrentVersion={isCurrentVersion}
-          getDocumentContentById={getArtifactContentByIdx}
-          isLoading={isArtifactsFetching && !artifact.content}
-          metadata={metadata}
-          setMetadata={setMetadata}
-        />
+        {artifactDefinition && (() => {
+          const ContentComponent = artifactDefinition.content as any
+          return (
+            <ContentComponent
+              title={artifact.title}
+              content={isCurrentVersion ? artifact.content : getArtifactContentByIdx(currentVersionIndex)}
+              mode={mode}
+              status={artifact.status}
+              currentVersionIndex={currentVersionIndex}
+              suggestions={[]}
+              onSaveContent={saveContent}
+              isInline={false}
+              isCurrentVersion={isCurrentVersion}
+              getDocumentContentById={getArtifactContentByIdx}
+              isLoading={isArtifactsFetching && !artifact.content}
+              metadata={metadata as any}
+              setMetadata={setMetadata as any}
+            />
+          )
+        })()}
         {isCurrentVersion && <Toolbar
           append={append}
           status={status}

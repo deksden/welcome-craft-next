@@ -58,7 +58,15 @@
       "Bash(PLAYWRIGHT_PORT=3004 pnpm exec playwright test routes/history.test.ts --reporter=line --timeout=30000)",
       "Bash(PLAYWRIGHT_PORT=3005 pnpm exec playwright test routes/artifacts.test.ts routes/files-upload.test.ts routes/redis-clipboard.test.ts --reporter=line --timeout=30000)",
       "Bash(pnpm dev:*)",
-      "Bash(pnpm run test:e2e-single:*)"
+      "Bash(pnpm run test:e2e-single:*)",
+      "Bash(pnpm run:*)",
+      "Bash(pnpm drizzle-kit:*)",
+      "Bash(next lint --quiet)",
+      "Bash(cp:*)",
+      "Bash(next lint)",
+      "Bash(echo:*)",
+      "Bash(NODE_ENV=development node -e \"\nconst { isTestEnvironment } = require('./lib/constants.ts');\nconsole.log('isTestEnvironment:', isTestEnvironment);\nconsole.log('NODE_ENV:', process.env.NODE_ENV);\nconsole.log('PLAYWRIGHT_TEST_BASE_URL:', process.env.PLAYWRIGHT_TEST_BASE_URL);\nconsole.log('PLAYWRIGHT:', process.env.PLAYWRIGHT);\nconsole.log('CI_PLAYWRIGHT:', process.env.CI_PLAYWRIGHT);\n\")",
+      "WebFetch(domain:ai.google.dev)"
     ],
     "deny": []
   }

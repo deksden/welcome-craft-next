@@ -108,6 +108,7 @@ function PureArtifactActions ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            data-testid="artifact-actions-discuss-button"
             variant="outline"
             className="h-fit p-2 dark:hover:bg-zinc-700"
             onClick={handleDiscuss}
@@ -122,6 +123,7 @@ function PureArtifactActions ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            data-testid="artifact-actions-add-to-chat-button"
             variant="outline"
             className="h-fit p-2 dark:hover:bg-zinc-700"
             onClick={handleAddToChat}
@@ -145,7 +147,7 @@ function PureArtifactActions ({
               onClick={async () => {
                 setIsLoading(true)
                 try {
-                  await Promise.resolve(action.onClick(actionContext))
+                  await Promise.resolve(action.onClick(actionContext as any))
                 } catch (error) {
                   toast({ type: 'error', description: 'Failed to execute action' })
                 } finally {
@@ -156,7 +158,7 @@ function PureArtifactActions ({
                 isLoading || artifact.status === 'streaming'
                   ? true
                   : action.isDisabled
-                    ? action.isDisabled(actionContext)
+                    ? action.isDisabled(actionContext as any)
                     : false
               }
             >
@@ -169,7 +171,7 @@ function PureArtifactActions ({
       ))}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="p-2">
+          <div data-testid="artifact-actions-save-status" className="p-2">
             <SaveStatusIndicator status={artifact.saveStatus}/>
           </div>
         </TooltipTrigger>

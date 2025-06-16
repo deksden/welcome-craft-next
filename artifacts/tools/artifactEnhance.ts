@@ -20,6 +20,7 @@ import { myProvider } from '@/lib/ai/providers'
 import { generateUUID } from '@/lib/utils'
 import type { Suggestion } from '@/lib/db/schema'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
+import { getDisplayContent } from '@/lib/artifact-content-utils'
 
 const logger = createLogger('artifacts:tools:artifactEnhance')
 
@@ -49,7 +50,8 @@ export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
       childLogger.trace('Entering artifactEnhance tool')
 
       const artifactResult = await getArtifactById({ id })
-      if (!artifactResult || !artifactResult.doc.content) {
+      const content = artifactResult ? getDisplayContent(artifactResult.doc) : ''
+      if (!artifactResult || !content) {
         childLogger.warn('Artifact not found or content is empty')
         return { error: 'Artifact not found or has no content to enhance.' }
       }
@@ -67,7 +69,7 @@ export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
       await saveArtifact({
         ...artifact,
         createdAt: newVersionDate,
-        content: artifact.content ?? ''
+        content: getDisplayContent(artifact) || ''
       })
 
       // 2. Generate suggestions
@@ -77,7 +79,7 @@ export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
       const { object: objectPromise } = await streamObject({
         model: myProvider.languageModel('artifact-model'),
         system: prompt,
-        prompt: artifact.content ?? '',
+        prompt: getDisplayContent(artifact) || '',
         schema: z.object({
           suggestions: z.array(z.object({
             originalSentence: z.string(),

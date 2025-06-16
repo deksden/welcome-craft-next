@@ -76,6 +76,10 @@ export function Chat ({
     sendExtraMessageFields: true,
     generateId: generateUUID,
     fetch: fetchWithErrorHandlers,
+    body: {
+      selectedChatModel: initialChatModel,
+      selectedVisibilityType: initialVisibilityType,
+    },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey))
     },

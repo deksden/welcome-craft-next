@@ -140,8 +140,12 @@ export async function getChatsByUserId ({ id, limit, startingAfter, endingBefore
     db.select().from(chat).where(cursorCondition ? and(baseWhere, cursorCondition) : baseWhere).orderBy(desc(chat.createdAt)).limit(extendedLimit)
 
   let filteredChats: Array<Chat> = []
-  if (startingAfter) { /* ... */ } else if (endingBefore) { /* ... */ } else {
-    filteredChats = await query() // ИЗМЕНЕНИЕ ЗДЕСЬ
+  if (startingAfter) {
+    filteredChats = await query(gt(chat.createdAt, new Date(startingAfter)))
+  } else if (endingBefore) {
+    filteredChats = await query(gte(chat.createdAt, new Date(endingBefore)))
+  } else {
+    filteredChats = await query()
   }
 
   const hasMore = filteredChats.length > limit
@@ -214,26 +218,89 @@ export async function saveArtifact ({ id, title, kind, content, userId, authorId
   createdAt?: Date
 }) {
   const childLogger = logger.child({ artifactId: id, userId, kind })
-  childLogger.trace({ title, authorId }, 'Entering saveArtifact')
-  const [savedArtifact] = await db.insert(artifact).values({
-    id,
-    title,
-    kind,
-    content,
-    userId,
-    authorId,
-    createdAt: createdAt ?? new Date()
-  }).returning()
-  if (savedArtifact?.content) {
-    generateAndSaveSummary(id, savedArtifact.content, kind).catch(err => {
-      childLogger.error({ err }, 'Async summary generation failed')
-    })
+  childLogger.trace({ title, authorId, contentLength: content?.length }, 'Entering saveArtifact')
+  
+  try {
+    // Import here to avoid circular dependency
+    const { prepareContentForSave } = await import('@/lib/artifact-content-utils')
+    
+    childLogger.debug('Preparing content data for database storage')
+    const contentData = prepareContentForSave(content, kind)
+    
+    // Log which column will receive the content
+    const targetColumn = kind === 'image' ? 'content_url' : 
+                        kind === 'site' ? 'content_site_definition' : 'content_text'
+    childLogger.debug({ 
+      targetColumn,
+      hasContent: !!contentData[targetColumn as keyof typeof contentData],
+      contentData: {
+        content_text: contentData.content_text ? `${contentData.content_text.length} chars` : null,
+        content_url: contentData.content_url ? 'present' : null,
+        content_site_definition: contentData.content_site_definition ? 'present' : null
+      }
+    }, 'Content data prepared for sparse columns')
+    
+    childLogger.debug('Inserting artifact into database')
+    const [savedArtifact] = await db.insert(artifact).values({
+      id,
+      title,
+      kind,
+      ...contentData, // Spread the content into appropriate columns
+      userId,
+      authorId,
+      createdAt: createdAt ?? new Date()
+    }).returning()
+    
+    childLogger.info({ 
+      savedArtifactId: savedArtifact.id,
+      savedArtifactKind: savedArtifact.kind,
+      savedArtifactTitle: savedArtifact.title
+    }, 'Artifact saved successfully to database')
+    
+    if (content) {
+      childLogger.debug('Starting background summary generation')
+      generateAndSaveSummary(id, content, kind).catch(err => {
+        childLogger.error({ err }, 'Async summary generation failed')
+      })
+    }
+    
+    return [savedArtifact]
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      title,
+      kind,
+      contentLength: content?.length,
+      userId,
+      authorId
+    }, 'Failed to save artifact to database')
+    throw error
   }
-  return [savedArtifact]
 }
 
 export async function getArtifactsById ({ id }: { id: string }): Promise<Array<Artifact>> {
-  return await db.select().from(artifact).where(and(eq(artifact.id, id), isNull(artifact.deletedAt))).orderBy(asc(artifact.createdAt))
+  console.log('🔍 [DEBUG] getArtifactsById - Query for id:', id)
+  const result = await db.select().from(artifact).where(and(eq(artifact.id, id), isNull(artifact.deletedAt))).orderBy(asc(artifact.createdAt))
+  console.log('🔍 [DEBUG] getArtifactsById - Result:', {
+    id,
+    count: result.length,
+    artifacts: result.map(a => {
+      // Get content from appropriate column
+      const { getDisplayContent } = require('@/lib/artifact-content-utils')
+      const content = getDisplayContent(a)
+      return {
+        id: a.id,
+        kind: a.kind,
+        title: a.title,
+        contentLength: content?.length,
+        contentPreview: `${content?.substring(0, 100)}...`,
+        summary: a.summary,
+        createdAt: a.createdAt
+      }
+    })
+  })
+  return result
 }
 
 export async function getArtifactById ({ id, version, versionTimestamp }: {
@@ -270,7 +337,7 @@ export async function getPagedArtifactsByUserId ({ userId, page = 1, pageSize = 
   searchQuery?: string;
   kind?: ArtifactKind;
 }): Promise<{
-  data: Pick<Artifact, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'>[],
+  data: Artifact[],
   totalCount: number
 }> {
   const offset = (page - 1) * pageSize
@@ -287,14 +354,8 @@ export async function getPagedArtifactsByUserId ({ userId, page = 1, pageSize = 
   }).from(artifact).where(baseWhere).as('subquery')
   const latestArtifactsQuery = db.select({ id: artifact.id }).from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1)))
   const totalCountResult = await db.select({ count: count() }).from(latestArtifactsQuery.as('latest_artifacts'))
-  const data = await db.select({
-    id: artifact.id,
-    title: artifact.title,
-    createdAt: artifact.createdAt,
-    content: artifact.content,
-    kind: artifact.kind,
-    summary: artifact.summary,
-  }).from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1))).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
+  const rawData = await db.select().from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1))).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
+  const data = rawData.map(row => row.Artifact)
   return { data, totalCount: totalCountResult[0]?.count ?? 0 }
 }
 
@@ -302,7 +363,7 @@ export async function getRecentArtifactsByUserId ({ userId, limit = 5, kind, }: 
   userId: string;
   limit?: number;
   kind?: ArtifactKind;
-}): Promise<Pick<Artifact, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'>[]> {
+}): Promise<Artifact[]> {
   const result = await getPagedArtifactsByUserId({ userId, page: 1, pageSize: limit, kind })
   return result.data
 }

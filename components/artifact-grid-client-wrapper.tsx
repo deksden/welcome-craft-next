@@ -29,7 +29,7 @@ import type { ArtifactKind } from '@/lib/types'
 const PAGE_SIZE = 12
 const skeletonKeys = Array.from({ length: PAGE_SIZE }, (_, i) => `sk-item-${i}`)
 
-interface ArtifactApiResponse {
+interface ArtifactListApiResponse {
   data: ArtifactDocument[];
   totalCount: number;
 }
@@ -69,7 +69,7 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
     router.push(`${pathname}${finalQuery}`, { scroll: false })
   }, [currentPage, searchTerm, router, pathname, createQueryString])
 
-  const { data, error, isLoading, mutate } = useSWR<ArtifactApiResponse>(
+  const { data, error, isLoading, mutate } = useSWR<ArtifactListApiResponse>(
     `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}&searchQuery=${encodeURIComponent(searchTerm)}`,
     fetcher,
     {
@@ -85,7 +85,7 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
         artifactId: doc.id,
         title: doc.title,
         kind: doc.kind as ArtifactKind,
-        content: doc.content || '',
+        content: doc.content,
         isVisible: true,
         status: 'idle',
         saveStatus: 'saved',

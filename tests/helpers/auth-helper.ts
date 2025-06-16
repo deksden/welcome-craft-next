@@ -95,7 +95,7 @@ export async function clearTestAuth(page: Page): Promise<void> {
 /**
  * Навигация на защищенную страницу с проверкой аутентификации
  */
-export async function navigateWithAuth(page: Page, url: string = '/'): Promise<void> {
+export async function navigateWithAuth(page: Page, url = '/'): Promise<void> {
   console.log(`🧭 Navigating to ${url} with auth...`);
   
   await page.goto(url);
