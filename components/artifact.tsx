@@ -106,6 +106,14 @@ function PureArtifact ({
       : null,
     fetcher,
     {
+      refreshInterval: (data) => {
+        if (!data || data.length === 0) return 3000;
+        const latest = data[data.length - 1];
+        // Keep polling if content is null or summary is missing
+        const needsContent = !latest.content || latest.content === '';
+        const needsSummary = !latest.summary;
+        return (needsContent || needsSummary) ? 3000 : 0;
+      },
       onSuccess: (data) => {
         console.log('🔍 [DEBUG] Artifact - SWR success:', {
           artifactId: artifact.artifactId,
@@ -260,7 +268,7 @@ function PureArtifact ({
               isInline={false}
               isCurrentVersion={isCurrentVersion}
               getDocumentContentById={getArtifactContentByIdx}
-              isLoading={isArtifactsFetching && !artifact.content}
+              isLoading={isArtifactsFetching || (currentArtifact && (!currentArtifact.content || currentArtifact.content === ''))}
               metadata={metadata as any}
               setMetadata={setMetadata as any}
             />

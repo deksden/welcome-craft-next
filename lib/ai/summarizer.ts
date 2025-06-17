@@ -20,6 +20,23 @@ import { artifact } from '../db/schema'
 import { desc, eq } from 'drizzle-orm'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 
+// Извлекает структурную информацию из site content (без конкретных artifactId)
+const extractSiteStructure = (content: string): string => {
+  try {
+    const siteDefinition = JSON.parse(content)
+    const structure = {
+      theme: siteDefinition.theme,
+      blocks: siteDefinition.blocks?.map((block: any) => ({
+        type: block.type,
+        slots: Object.keys(block.slots || {})
+      })) || []
+    }
+    return JSON.stringify(structure, null, 2)
+  } catch {
+    return content // Fallback если JSON невалидный
+  }
+}
+
 const getSummaryPrompt = (kind: ArtifactKind, content: string): string => {
   switch (kind) {
     case 'image':
@@ -28,6 +45,10 @@ const getSummaryPrompt = (kind: ArtifactKind, content: string): string => {
       return `Сделай очень краткое саммари для этого фрагмента кода (не более 15 слов), объясняя его назначение: \n\n${content}`
     case 'sheet':
       return `Сделай очень краткое саммари для этой таблицы (не более 15 слов), описывая ее содержимое: \n\n${content}`
+    case 'site': {
+      const structure = extractSiteStructure(content)
+      return `Опиши структуру этого сайта кратко (не более 15 слов) - какие блоки включены: \n\n${structure}`
+    }
     case 'text':
     default:
       return `Сделай очень краткое саммари для этого текста (не более 20 слов): \n\n${content}`
@@ -64,6 +85,13 @@ export async function generateAndSaveSummary (
       }
     }
   } catch (error) {
+    // Проверяем на ошибки квоты/ограничений AI модели
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes('quota') || errorMessage.includes('limit') || errorMessage.includes('rate')) {
+      console.warn(`SYS_SUMMARIZER: AI quota/limit reached for artifact ${artifactId}, skipping summary generation`)
+      return // Тихо пропускаем, не спамим
+    }
+    
     console.error(`SYS_SUMMARIZER: Failed to generate summary for artifact ${artifactId}`, error)
   }
 }

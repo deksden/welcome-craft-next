@@ -1,0 +1,278 @@
+/Users/deksden/.nvm/versions/node/v22.14.0/bin/pnpm run dev
+
+> welcome-craft-next@0.1.10 dev /Users/deksden/Documents/_Projects/welcome-craft-next
+> next dev --turbo
+
+   ▲ Next.js 15.3.0-canary.31 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.8.101:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+Creating turbopack project {
+  dir: '/Users/deksden/Documents/_Projects/welcome-craft-next',
+  testMode: true
+}
+ ✓ Compiled in 451ms
+ ✓ Ready in 1291ms
+ ⚠ Webpack is configured while Turbopack is not, which may cause problems.
+ ⚠ See instructions if you need to configure Turbopack:
+  https://nextjs.org/docs/app/api-reference/next-config-js/turbo
+
+ ○ Compiling /api/history ...
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+[2025-06-17 14:01:40.651 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET /api/auth/session 200 in 2703ms
+ GET /api/auth/session 200 in 21ms
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET /api/artifact?id=7f20e5ef-d1ec-4555-a6ec-2ea2341de64e 200 in 6399ms
+ GET /api/history?limit=20 200 in 6424ms
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET / 307 in 10758ms
+ ✓ Compiled /api/history in 12.4s
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+[Error: Failed to find Server Action "007de069da86f85488f23dafb2d79b17b245380fbb". This request might be from an older or newer deployment.
+Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
+ GET /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 3681ms
+ POST /chat/00d8a974-9630-4812-8d5e-54d35eec59f1 200 in 16120ms
+ GET /api/auth/session 200 in 49ms
+ GET /api/auth/session 200 in 80ms
+[2025-06-17 14:01:55.379 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+ ○ Compiling /api/artifacts/recent ...
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET /api/history?limit=20 200 in 684ms
+ ✓ Compiled /api/artifacts/recent in 1166ms
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1428ms
+ GET /api/artifacts/recent?limit=5 200 in 2394ms
+🔍 [DEBUG] ArtifactPreview - fullArtifact computed: {
+  artifactId: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  hasArtifacts: false,
+  artifactsLength: undefined,
+  latestArtifact: null
+}
+[2025-06-17 14:02:10.745 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+ GET /api/history?limit=20 200 in 607ms
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1186ms
+[2025-06-17 14:08:22.257 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+ GET /api/auth/session 200 in 105ms
+ GET /api/auth/session 200 in 34ms
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 3801ms
+ GET /api/history?limit=20 200 in 5696ms
+[2025-06-17 14:08:29.981 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET /api/history?limit=20 200 in 779ms
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1369ms
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  versionParam: null,
+  versionTimestampParam: null
+}
+ GET /api/artifact?id=7f20e5ef-d1ec-4555-a6ec-2ea2341de64e 200 in 669ms
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '213d40c1-bada-4488-801f-24dc40d3a85c',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '007f2cd5-666b-4c33-ae1a-49bae16ac7ab',
+  versionParam: null,
+  versionTimestampParam: null
+}
+ ○ Compiling /api/artifacts ...
+ GET /api/artifact?id=213d40c1-bada-4488-801f-24dc40d3a85c 200 in 629ms
+ ✓ Compiled /api/artifacts in 632ms
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: 'a0541d95-7184-4ab8-ad2a-8f8e7842dd31',
+  versionParam: null,
+  versionTimestampParam: null
+}
+ GET /api/artifact?id=007f2cd5-666b-4c33-ae1a-49bae16ac7ab 200 in 3142ms
+ GET /api/artifacts?tags=contacts 200 in 3235ms
+ GET /api/artifact?id=a0541d95-7184-4ab8-ad2a-8f8e7842dd31 200 in 3549ms
+ GET /api/artifacts?tags=links 200 in 1153ms
+ GET /api/artifacts?kind=text&tags=hero%2Cheading 200 in 1085ms
+ GET /api/artifacts?tags=hero%2Cimage 200 in 4689ms
+ GET /api/artifacts?tags=hero%2Csubheading 200 in 4704ms
+ GET /api/artifacts?tags=hero%2Cheading 200 in 5062ms
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET /api/artifacts?kind=text&tags=hero%2Csubheading 200 in 1056ms
+ GET /api/artifacts?kind=image&tags=hero%2Cimage 200 in 1027ms
+ GET /api/artifacts?kind=sheet&tags=contacts 200 in 1046ms
+ GET /api/artifacts?kind=sheet&tags=links 200 in 1099ms
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1183ms
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  versionParam: null,
+  versionTimestampParam: null
+}
+ GET /api/artifact?id=7f20e5ef-d1ec-4555-a6ec-2ea2341de64e 200 in 626ms
+[2025-06-17 14:09:16.617 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '213d40c1-bada-4488-801f-24dc40d3a85c',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: 'a0541d95-7184-4ab8-ad2a-8f8e7842dd31',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '007f2cd5-666b-4c33-ae1a-49bae16ac7ab',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1933ms
+ GET /api/artifact?id=a0541d95-7184-4ab8-ad2a-8f8e7842dd31 200 in 2582ms
+ GET /api/artifact?id=213d40c1-bada-4488-801f-24dc40d3a85c 200 in 2713ms
+ GET /api/artifact?id=7f20e5ef-d1ec-4555-a6ec-2ea2341de64e 200 in 2724ms
+ GET /api/history?limit=20 200 in 2728ms
+ GET /api/artifact?id=007f2cd5-666b-4c33-ae1a-49bae16ac7ab 200 in 2726ms
+[2025-06-17 14:09:22.036 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '213d40c1-bada-4488-801f-24dc40d3a85c',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '007f2cd5-666b-4c33-ae1a-49bae16ac7ab',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: 'a0541d95-7184-4ab8-ad2a-8f8e7842dd31',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ GET /api/history?limit=20 200 in 574ms
+ GET /api/artifact?id=7f20e5ef-d1ec-4555-a6ec-2ea2341de64e 200 in 576ms
+ GET /api/artifact?id=213d40c1-bada-4488-801f-24dc40d3a85c 200 in 580ms
+ GET /api/artifact?id=007f2cd5-666b-4c33-ae1a-49bae16ac7ab 200 in 587ms
+ GET /api/artifact?id=a0541d95-7184-4ab8-ad2a-8f8e7842dd31 200 in 599ms
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1193ms
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1155ms
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: 'a0541d95-7184-4ab8-ad2a-8f8e7842dd31',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '007f2cd5-666b-4c33-ae1a-49bae16ac7ab',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '213d40c1-bada-4488-801f-24dc40d3a85c',
+  versionParam: null,
+  versionTimestampParam: null
+}
+[2025-06-17 14:11:32.781 +0200] TRACE: Entering getChatsByUserId
+    namespace: "lib:db:queries"
+    userId: "9a5c69c7-6b38-4a13-8e30-303454745424"
+    limit: 20
+    startingAfter: null
+    endingBefore: null
+🔍 [DEBUG] GET /api/artifact - Request params: {
+  id: '7f20e5ef-d1ec-4555-a6ec-2ea2341de64e',
+  versionParam: null,
+  versionTimestampParam: null
+}
+🚀 Using REAL AI Models (Google Gemini)
+process.env.TRANSPORT1=console-inline
+[FAB_LOGGER INFO] Using "console-inline" transport. Other transports will be ignored.
+ POST /chat/4750cb20-c597-4617-9429-e7c7be383c28 200 in 1928ms
+ GET /api/artifact?id=a0541d95-7184-4ab8-ad2a-8f8e7842dd31 200 in 2688ms
+ GET /api/artifact?id=213d40c1-bada-4488-801f-24dc40d3a85c 200 in 2697ms
+ GET /api/history?limit=20 200 in 2705ms
+ GET /api/artifact?id=007f2cd5-666b-4c33-ae1a-49bae16ac7ab 200 in 2709ms
+ GET /api/artifact?id=7f20e5ef-d1ec-4555-a6ec-2ea2341de64e 200 in 2721ms
+
+

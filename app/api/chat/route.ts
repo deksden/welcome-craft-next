@@ -1,12 +1,13 @@
 /**
  * @file app/api/chat/route.ts
  * @description API маршрут для обработки запросов чата, переписанный под новую архитектуру.
- * @version 5.5.0
- * @date 2025-06-13
- * @updated Удален инструмент siteGenerate, так как его логика перенесена в artifactCreate.
+ * @version 5.6.0
+ * @date 2025-06-17
+ * @updated Fixed artifact references persistence - save all new messages including role: 'data' to database.
  *
  * ## HISTORY:
  *
+ * v5.6.0 (2025-06-17): Fixed artifact references persistence - save all new messages including role: 'data' to database.
  * v5.5.0 (2025-06-13): Removed siteGenerate tool.
  * v5.4.1 (2025-06-10): Улучшена обработка ошибок InvalidToolArgumentsError и добавлена проверка в onFinish.
  * v5.4.0 (2025-06-10): Исправлены ошибки типизации (TS18046, TS2322, TS2769, TS2345) через явный парсинг `postRequestBodySchema`.
@@ -29,7 +30,7 @@ import {
 import { auth, type UserType } from '@/app/app/(auth)/auth'
 import { getTestSession } from '@/lib/test-auth'
 import { type ArtifactContext, type RequestHints, systemPrompt } from '@/lib/ai/prompts'
-import { deleteChatSoftById, getChatById, getMessageCountByUserId, saveChat, saveMessages, } from '@/lib/db/queries'
+import { deleteChatSoftById, getChatById, getMessageCountByUserId, getMessagesByChatId, saveChat, saveMessages, } from '@/lib/db/queries'
 import { generateUUID } from '@/lib/utils'
 import { generateTitleFromUserMessage } from '@/app/app/(main)/chat/actions'
 import { artifactCreate } from '@/artifacts/tools/artifactCreate'
@@ -120,16 +121,26 @@ export async function POST (request: Request) {
       ? { id: activeArtifactId, title: activeArtifactTitle, kind: activeArtifactKind }
       : getContextFromHistory(messages)
 
-    await saveMessages({
-      messages: [{
-        chatId,
-        id: latestMessage.id,
-        role: 'user',
-        parts: latestMessage.parts ?? [{ type: 'text', text: latestMessage.content }],
-        attachments: latestMessage.experimental_attachments ?? [],
-        createdAt: new Date(),
-      }]
-    })
+    // Save all new user messages, including those with role: 'data' (artifact references)
+    // We need to determine which messages are new by checking what's already in the DB
+    const existingMessages = await getMessagesByChatId({ id: chatId })
+    const existingMessageIds = new Set(existingMessages.map(m => m.id))
+    
+    const newMessages = messages.filter(msg => !existingMessageIds.has(msg.id))
+    
+    if (newMessages.length > 0) {
+      await saveMessages({
+        messages: newMessages.map(msg => ({
+          chatId,
+          id: msg.id,
+          role: msg.role,
+          parts: msg.parts ?? [{ type: 'text', text: msg.content }],
+          attachments: msg.experimental_attachments ?? [],
+          createdAt: new Date(),
+        }))
+      })
+      childLogger.info({ newMessagesCount: newMessages.length }, 'Saved new user messages to database')
+    }
 
     childLogger.info('Starting text stream with AI model')
 

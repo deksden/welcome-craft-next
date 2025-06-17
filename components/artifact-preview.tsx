@@ -44,7 +44,14 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
     artifactId ? `/api/artifact?id=${artifactId}` : null,
     fetcher,
     {
-      refreshInterval: (data) => (data && data.length > 0 && !data[data.length - 1].summary ? 3000 : 0),
+      refreshInterval: (data) => {
+        if (!data || data.length === 0) return 3000;
+        const latest = data[data.length - 1];
+        // Keep polling if content is null or summary is missing
+        const needsContent = !latest.content || latest.content === '';
+        const needsSummary = !latest.summary;
+        return (needsContent || needsSummary) ? 3000 : 0;
+      },
       onSuccess: (data) => {
         console.log('🔍 [DEBUG] ArtifactPreview - SWR success:', {
           artifactId,
@@ -130,7 +137,7 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
       />
       <div
         className={cn('h-[257px] overflow-y-scroll border rounded-b-2xl dark:bg-muted border-t-0 dark:border-zinc-700', { 'p-6': artifactKind !== 'image' })}>
-        {isLoading && !fullArtifact ? <InlineArtifactSkeleton/> :
+        {(isLoading && !fullArtifact) || (fullArtifact && (!fullArtifact.content || fullArtifact.content === '')) ? <InlineArtifactSkeleton/> :
           artifactKind === 'image' ? <ImageEditor title={artifactTitle as string}
                                                   content={fullArtifact?.content ?? ''} status="idle"
                                                   isInline={true}/> :

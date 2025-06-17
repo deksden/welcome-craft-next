@@ -29,11 +29,13 @@ export async function GET (request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const pageParam = searchParams.get('page')
     const pageSizeParam = searchParams.get('pageSize')
-    const searchQuery = searchParams.get('searchQuery') || undefined
+    const searchQuery = searchParams.get('search') || searchParams.get('searchQuery') || undefined // ✅ Support both parameter names
     const kind = searchParams.get('kind') as ArtifactKind | undefined
+    const tagsParam = searchParams.get('tags')
+    const cursor = searchParams.get('cursor')
 
     const page = pageParam ? Number.parseInt(pageParam, 10) : 1
-    const pageSize = pageSizeParam ? Number.parseInt(pageSizeParam, 10) : 10
+    const pageSize = pageSizeParam ? Number.parseInt(pageSizeParam, 10) : 20 // ✅ Default 20 for better UX
 
     if (Number.isNaN(page) || page <= 0) {
       return new ChatSDKError('bad_request:api', 'Invalid page parameter.').toResponse()
@@ -42,18 +44,34 @@ export async function GET (request: NextRequest) {
       return new ChatSDKError('bad_request:api', 'Invalid pageSize parameter. Must be between 1 and 50.').toResponse()
     }
 
+    // TODO: Add tags filtering support to getPagedArtifactsByUserId
+    // const tags = tagsParam ? tagsParam.split(',').map(t => t.trim()) : undefined
+
     const queryParams = { userId: session.user.id, page, pageSize, searchQuery, kind }
 
     const result = await getPagedArtifactsByUserId(queryParams)
 
     // Normalize artifacts for API response (add unified content field)
     const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
-    const normalizedResult = {
-      ...result,
-      data: result.data.map(normalizeArtifactForAPI)
+    const normalizedArtifacts = result.data.map(normalizeArtifactForAPI)
+    
+    // ✅ Format response for infinite scroll compatibility
+    const totalPages = Math.ceil(result.totalCount / pageSize)
+    const hasMore = page < totalPages
+    const nextCursor = hasMore ? `page-${page + 1}` : undefined
+
+    const response = {
+      artifacts: normalizedArtifacts,
+      hasMore,
+      nextCursor,
+      totalCount: result.totalCount,
+      currentPage: page,
+      pageSize,
+      // Legacy format for backward compatibility
+      data: normalizedArtifacts,
     }
 
-    return NextResponse.json(normalizedResult)
+    return NextResponse.json(response)
 
   } catch (error) {
     if (error instanceof ChatSDKError) {

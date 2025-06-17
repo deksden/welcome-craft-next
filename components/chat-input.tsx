@@ -1,12 +1,18 @@
 /**
  * @file components/chat-input.tsx
  * @description Компонент для ввода сообщений, включая текст и файлы с авто-созданием артефактов.
- * @version 2.0.4
- * @date 2025-06-10
- * @updated Stringified content for 'data' role messages in append (TS2322).
+ * @version 2.6.0
+ * @date 2025-06-17
+ * @updated CRITICAL FIX: Replace addMessageWithCustomId with append() to send clipboard artifacts to AI instead of only adding to UI.
  */
 
 /** HISTORY:
+ * v2.6.0 (2025-06-17): CRITICAL FIX: Replace addMessageWithCustomId with append() to send clipboard artifacts to AI instead of only adding to UI.
+ * v2.5.0 (2025-06-17): FINAL FIX: Properly implemented custom UUID preservation using setMessages with type casting for artifact clipboard and file upload flows.
+ * v2.4.0 (2025-06-17): Fixed UUID format issues by using setMessages instead of append to preserve valid UUID format.
+ * v2.3.0 (2025-06-17): Fixed artifact display architecture - replaced role: 'data' with proper tool-invocation simulation.
+ * v2.2.0 (2025-06-17): Fixed artifact references display - added parts[] support for new Message_v2 schema.
+ * v2.1.0 (2025-06-17): Added isSubmitting state to prevent race conditions when adding site artifacts to new chat.
  * v2.0.4 (2025-06-10): Fixed TS2322 by stringifying the content for 'data' role messages, as append expects content to be a string.
  * v2.0.3 (2025-06-10): Changed message role to 'data' and content structure for appending artifact info to resolve TS2322 with useChat.append.
  * v2.0.2 (2025-06-10): Fixed TS2322 by restructuring appended 'tool' message to use 'content' field for ToolResultPart array, not 'parts'.
@@ -19,11 +25,11 @@
 
 import type { Attachment, UIMessage } from 'ai'
 import type React from 'react'
-import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useRef, useState, } from 'react'
+import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState, } from 'react'
 import Textarea from 'react-textarea-autosize'
 import { upload } from '@vercel/blob/client'
 
-import { ArrowUpIcon, PaperclipIcon, CrossIcon } from './icons'
+import { ArrowUpIcon, CrossIcon } from './icons'
 import { PreviewAttachment } from './preview-attachment'
 import { Button } from './ui/button'
 import { SuggestedActions } from './suggested-actions'
@@ -34,6 +40,7 @@ import type { UIArtifact } from './artifact'
 import { toast } from './toast'
 import { generateUUID } from '@/lib/utils'
 import { clearArtifactFromClipboard } from '@/app/app/(main)/artifacts/actions'
+import { AttachmentMenu } from './attachment-menu'
 
 async function createArtifactFromUpload (url: string, name: string, type: string) {
   const response = await fetch('/api/artifacts/create-from-upload', {
@@ -62,6 +69,7 @@ export function ChatInput ({
   setClipboardArtifact,
   messages,
   append,
+  setMessages,
   handleSubmit,
   session,
   initialChatModel,
@@ -77,6 +85,7 @@ export function ChatInput ({
   setClipboardArtifact: Dispatch<SetStateAction<{ artifactId: string; title: string; kind: string } | null>>;
   messages: Array<UIMessage>;
   append: UseChatHelpers['append'];
+  setMessages: UseChatHelpers['setMessages'];
   handleSubmit: UseChatHelpers['handleSubmit'];
   session: Session;
   initialChatModel: string;
@@ -95,11 +104,38 @@ export function ChatInput ({
     }
   }, [setClipboardArtifact])
 
+  const handleClipboardAttach = useCallback(() => {
+    // Force show the clipboard artifact if it exists but isn't shown
+    if (clipboardArtifact) {
+      toast({ type: 'success', description: 'Артефакт готов к отправке' })
+    }
+  }, [clipboardArtifact])
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Reset isSubmitting flag when status changes (e.g., from loading back to ready)
+  useEffect(() => {
+    if (status === 'ready' && isSubmitting) {
+      setIsSubmitting(false)
+    }
+  }, [status, isSubmitting])
+
+  // Helper function to add message with custom UUID
+  const addMessageWithCustomId = useCallback((newMessage: UIMessage) => {
+    setMessages((prev) => [...prev, newMessage as any])
+  }, [setMessages])
+
   const submitForm = useCallback(() => {
     if (status !== 'ready') {
       toast({ type: 'error', description: 'Please wait for the model to finish its response!' })
       return
     }
+
+    // Prevent double submissions / race conditions
+    if (isSubmitting) {
+      return
+    }
+    setIsSubmitting(true)
 
     const options: Parameters<typeof handleSubmit>[1] = {
       body: {
@@ -110,22 +146,58 @@ export function ChatInput ({
     }
 
     if (clipboardArtifact) {
-      append({
-        id: generateUUID(),
-        role: 'data',
-        content: JSON.stringify({
-          type: 'artifact-reference',
-          artifactId: clipboardArtifact.artifactId,
-          title: clipboardArtifact.title,
-          kind: clipboardArtifact.kind,
-        }),
-      })
+      // Simulate user message with tool-invocation result (proper architecture)
+      const toolCallId = `call_${Math.random().toString(36).substring(2, 8)}`
+      const newMessageId = generateUUID()
+      const toolResult = {
+        artifactId: clipboardArtifact.artifactId,
+        artifactKind: clipboardArtifact.kind,
+        artifactTitle: clipboardArtifact.title,
+        description: `Артефакт "${clipboardArtifact.title}" добавлен в чат`,
+        version: 1,
+        totalVersions: 1,
+        updatedAt: new Date().toISOString(),
+        summary: null,
+      }
+
+      const newMessage = {
+        id: newMessageId,
+        role: 'user' as const,
+        content: input.trim() || 'Добавляю артефакт в чат',
+        parts: [
+          {
+            type: 'text' as const,
+            text: input.trim() || 'Добавляю артефакт в чат'
+          },
+          {
+            type: 'tool-invocation' as const,
+            toolInvocation: {
+              toolName: 'artifactCreate',
+              toolCallId: toolCallId,
+              state: 'result' as const,
+              args: {
+                title: clipboardArtifact.title,
+                kind: clipboardArtifact.kind,
+                prompt: 'Артефакт добавлен из буфера'
+              },
+              result: toolResult
+            }
+          }
+        ]
+      }
+
+      // Send message with clipboard artifact to AI using append
+      append(newMessage, options)
       setClipboardArtifact(null)
+      setInput('')
+      setIsSubmitting(false)
+      return
     }
 
     handleSubmit(undefined, options)
     setInput('')
-  }, [status, handleSubmit, setInput, artifact, clipboardArtifact, append, setClipboardArtifact])
+    setIsSubmitting(false)
+  }, [status, handleSubmit, setInput, input, artifact, clipboardArtifact, setClipboardArtifact, isSubmitting, append])
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -146,16 +218,37 @@ export function ChatInput ({
 
           const artifactMetadata = await createArtifactFromUpload(newBlob.url, newBlob.pathname, newBlob.contentType)
 
-          append({
-            id: generateUUID(),
-            role: 'data',
-            content: JSON.stringify({ // Stringify the object for the content field
-              type: 'tool-result',
-              toolCallId: generateUUID(),
-              toolName: 'artifactCreate',
-              result: artifactMetadata
-            })
-          })
+          const toolCallId = `call_${Math.random().toString(36).substring(2, 8)}`
+          const newMessageId = generateUUID()
+          
+          const newMessage = {
+            id: newMessageId,
+            role: 'user' as const,
+            content: `Загружен файл: ${file.name}`,
+            parts: [
+              {
+                type: 'text' as const,
+                text: `Загружен файл: ${file.name}`
+              },
+              {
+                type: 'tool-invocation' as const,
+                toolInvocation: {
+                  toolName: 'artifactCreate',
+                  toolCallId: toolCallId,
+                  state: 'result' as const,
+                  args: {
+                    title: file.name,
+                    kind: file.type.startsWith('image/') ? 'image' : 'text',
+                    prompt: 'Файл загружен пользователем'
+                  },
+                  result: artifactMetadata
+                }
+              }
+            ]
+          }
+
+          // Use helper function to add message with custom UUID
+          addMessageWithCustomId(newMessage)
         }
         toast({ type: 'success', description: 'Artifact(s) created successfully!' })
 
@@ -169,7 +262,7 @@ export function ChatInput ({
         }
       }
     },
-    [append],
+    [addMessageWithCustomId],
   )
 
   return (
@@ -234,15 +327,13 @@ export function ChatInput ({
 
         <div className="flex w-full items-center justify-between gap-2 pt-2">
           <div className="flex gap-1">
-            <Button
+            <AttachmentMenu
               data-testid="chat-input-attach-menu"
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
+              onFileAttach={() => fileInputRef.current?.click()}
+              onClipboardAttach={handleClipboardAttach}
+              hasClipboardContent={!!clipboardArtifact}
               disabled={status !== 'ready' || uploadingFiles.length > 0}
-            >
-              <PaperclipIcon size={18}/>
-            </Button>
+            />
             <ModelSelector
               data-testid="chat-input-model-selector"
               session={session}
@@ -262,7 +353,7 @@ export function ChatInput ({
                 e.preventDefault()
                 submitForm()
               }}
-              disabled={input.length === 0 || uploadingFiles.length > 0 || status !== 'ready'}
+              disabled={input.length === 0 || uploadingFiles.length > 0 || status !== 'ready' || isSubmitting}
             >
               <ArrowUpIcon size={18}/>
             </Button>

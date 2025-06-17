@@ -31,10 +31,6 @@ export async function GET (request: Request) {
   }
 
   const session = await getAuthSession()
-  console.log('🔍 [DEBUG] GET /api/artifact - Auth session:', { 
-    authenticated: !!session?.user?.id, 
-    userId: session?.user?.id 
-  })
   
   if (!session?.user?.id) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
@@ -43,16 +39,7 @@ export async function GET (request: Request) {
   if (versionParam || versionTimestampParam) {
     const version = versionParam ? Number.parseInt(versionParam, 10) : undefined
     const versionTimestamp = versionTimestampParam ? new Date(versionTimestampParam) : undefined
-    console.log('🔍 [DEBUG] GET /api/artifact - Getting specific version:', { version, versionTimestamp })
     const result = await getArtifactById({ id, version, versionTimestamp })
-    console.log('🔍 [DEBUG] GET /api/artifact - Specific version result:', { 
-      found: !!result, 
-      kind: result?.doc?.kind,
-      title: result?.doc?.title,
-      hasContentText: !!result?.doc?.content_text,
-      hasContentUrl: !!result?.doc?.content_url,
-      hasContentSiteDefinition: !!result?.doc?.content_site_definition
-    })
     if (!result) {
       return new ChatSDKError('not_found:artifact').toResponse()
     }
@@ -70,29 +57,15 @@ export async function GET (request: Request) {
     return Response.json(normalizedResult, { status: 200 })
   }
 
-  console.log('🔍 [DEBUG] GET /api/artifact - Getting all versions for id:', id)
   const artifacts = await getArtifactsById({ id })
-  console.log('🔍 [DEBUG] GET /api/artifact - All versions result:', { 
-    count: artifacts.length,
-    firstArtifact: artifacts[0] ? {
-      kind: artifacts[0].kind,
-      title: artifacts[0].title,
-      summary: artifacts[0].summary,
-      hasContentText: !!artifacts[0].content_text,
-      hasContentUrl: !!artifacts[0].content_url,
-      hasContentSiteDefinition: !!artifacts[0].content_site_definition
-    } : null
-  })
   
   const [artifact] = artifacts
 
   if (!artifact) {
-    console.log('🔍 [DEBUG] GET /api/artifact - Artifact not found')
     return new ChatSDKError('not_found:artifact').toResponse()
   }
 
   if (artifact.userId !== session.user.id) {
-    console.log('🔍 [DEBUG] GET /api/artifact - Access denied, userId mismatch')
     return new ChatSDKError('forbidden:artifact').toResponse()
   }
 
@@ -100,7 +73,6 @@ export async function GET (request: Request) {
   const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
   const normalizedArtifacts = artifacts.map(normalizeArtifactForAPI)
   
-  console.log('🔍 [DEBUG] GET /api/artifact - Returning artifacts:', normalizedArtifacts.length)
   return Response.json(normalizedArtifacts, { status: 200 })
 }
 

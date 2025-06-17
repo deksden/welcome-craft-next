@@ -1,12 +1,14 @@
 /**
  * @file components/message.tsx
  * @description Компонент для отображения одного сообщения в чате.
- * @version 2.0.0
- * @date 2025-06-10
- * @updated Renders ArtifactPreview for artifact-related tool results and uses AI_TOOL_NAMES constants.
+ * @version 2.2.0
+ * @date 2025-06-17
+ * @updated Removed legacy role: 'data' handling - now uses proper tool-invocation architecture.
  */
 
 /** HISTORY:
+ * v2.2.0 (2025-06-17): Removed legacy role: 'data' handling - now uses proper tool-invocation architecture.
+ * v2.1.0 (2025-06-17): Fixed artifact references display - improved parts[] parsing for Message_v2 schema compatibility.
  * v2.0.0 (2025-06-10): Updated to handle new artifact tool names using AI_TOOL_NAMES and render ArtifactPreview component.
  * v1.9.4 (2025-06-10): Fixed TS2304 by adding DocumentToolResult to the import statement from './document'.
  * v1.9.3 (2025-06-10): Fixed TS2307 by removing import for missing DocumentPreview and updated logic to use DocumentToolCall and DocumentToolResult components for relevant tool invocations.
@@ -100,6 +102,8 @@ const PurePreviewMessage = ({
   const hasToolResultForImage = message.parts?.some(
     part => (part as any).type === 'tool-result' && (part as any).result?.kind === 'image'
   )
+
+  // Legacy 'data' role handling removed - now using proper tool-invocation architecture
 
   return (
     <AnimatePresence>

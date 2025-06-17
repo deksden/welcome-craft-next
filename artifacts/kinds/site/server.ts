@@ -19,15 +19,13 @@ interface SiteDefinition {
 export const siteTool: ArtifactTool = {
   kind: 'site',
   create: async ({ prompt, session }) => {
-    // В данном контексте `prompt` - это тема сайта или описание.
-    // Пока мы используем упрощенную логику для поиска блоков.
+    // При создании артефакта типа 'site' через AI инструменты
     const childLogger = logger.child({ userId: session.user.id, prompt })
     childLogger.trace('Entering siteTool.create')
 
     const siteDefinition: SiteDefinition = { theme: 'default', blocks: [] }
 
-    // TODO: В будущем здесь будет логика AI для выбора блоков на основе промпта.
-    // Сейчас мы просто берем все доступные блоки для демонстрации.
+    // Автоматически создаем базовые блоки для сайта
     const blockTypesToInclude = Object.keys(blockDefinitions)
 
     for (const blockType of blockTypesToInclude) {
@@ -41,13 +39,37 @@ export const siteTool: ArtifactTool = {
         // Ищем первый подходящий артефакт по первому тегу
         const firstTag = slotDef.tags?.[0]
         if (firstTag) {
-          const { data } = await getPagedArtifactsByUserId({
-            userId: session.user.id as string, // сессия проверена на уровне выше
+          // ✅ Handle both single kind and array of kinds
+          const kindToSearch = Array.isArray(slotDef.kind) ? slotDef.kind[0] : slotDef.kind
+          
+          // Сначала ищем по тегу
+          let { data } = await getPagedArtifactsByUserId({
+            userId: session.user.id as string,
             searchQuery: firstTag,
             page: 1,
             pageSize: 1,
-            kind: slotDef.kind,
+            kind: kindToSearch,
           })
+          
+          // Если не нашли по тегу, ищем любой артефакт нужного типа
+          if (data.length === 0) {
+            const fallbackSearch = await getPagedArtifactsByUserId({
+              userId: session.user.id as string,
+              searchQuery: '',
+              page: 1,
+              pageSize: 1,
+              kind: kindToSearch,
+            })
+            data = fallbackSearch.data
+            childLogger.info({ 
+              blockType, 
+              slotName, 
+              fallbackUsed: true,
+              kindToSearch,
+              fallbackResultsCount: data.length 
+            }, 'Used fallback search for slot')
+          }
+          
           artifactId = data[0]?.id ?? ''
           childLogger.info({ blockType, slotName, tag: firstTag, foundArtifactId: artifactId }, 'Searched for artifact for slot')
         }

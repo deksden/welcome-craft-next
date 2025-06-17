@@ -1,12 +1,13 @@
 /**
  * @file artifacts/kinds/site/client.tsx
- * @description Редактор артефакта типа "Сайт".
- * @version 0.1.0
+ * @description Визуальный редактор артефакта типа "Сайт".
+ * @version 0.2.0
  * @date 2025-06-12
- * @updated Initial version.
+ * @updated Refactored to visual block-based editor with dynamic UI.
  */
 
 /** HISTORY:
+ * v0.2.0 (2025-06-16): Complete refactor to visual editor with BlockCard components.
  * v0.1.0 (2025-06-12): Initial version of site artifact editor.
  */
 
@@ -14,11 +15,9 @@
 
 import * as React from 'react'
 import { Artifact } from '@/components/create-artifact'
-
-interface BlockSlotData {
-  artifactId?: string
-  versionTimestamp?: string
-}
+import { BlockCard } from './components/block-card'
+import { blockDefinitions } from '@/site-blocks'
+import type { BlockSlotData } from '@/site-blocks/types'
 
 interface SiteBlock {
   type: string
@@ -32,72 +31,159 @@ interface SiteDefinition {
 
 type Metadata = undefined
 
-export const siteArtifact = new Artifact<'site', Metadata>({
-  kind: 'site',
-  description: 'Site artifact editor',
-  initialize: async () => {},
-  onStreamPart: () => {},
-  content: ({ content, onSaveContent }) => {
-    const [definition, setDefinition] = React.useState<SiteDefinition>(() => {
-      try {
-        return content ? JSON.parse(content) : { theme: 'default', blocks: [] }
-      } catch {
-        return { theme: 'default', blocks: [] }
-      }
-    })
-
-    const handleChange = (
-      blockIndex: number,
-      slot: string,
-      field: 'artifactId' | 'versionTimestamp',
-      value: string,
-    ) => {
-      setDefinition((prev) => {
-        const next = { ...prev }
-        next.blocks = [...prev.blocks]
-        const blk = { ...next.blocks[blockIndex] }
-        blk.slots = { ...blk.slots }
-        blk.slots[slot] = { ...blk.slots[slot], [field]: value || undefined }
-        next.blocks[blockIndex] = blk
-        onSaveContent(JSON.stringify(next), true)
-        return next
-      })
+/**
+ * @description Компонент визуального редактора сайта
+ * @param content - JSON-строка с определением сайта
+ * @param onSaveContent - функция сохранения изменений
+ */
+function SiteEditor({ 
+  content, 
+  onSaveContent,
+  isLoading = false
+}: { 
+  content?: string | null
+  onSaveContent: (content: string, debounce?: boolean) => void
+  isLoading?: boolean
+}) {
+  const [siteDefinition, setSiteDefinition] = React.useState<SiteDefinition>(() => {
+    try {
+      return content ? JSON.parse(content) : { theme: 'default', blocks: [] }
+    } catch {
+      return { theme: 'default', blocks: [] }
     }
+  })
 
+  // АВТОСОХРАНЕНИЕ ОТКЛЮЧЕНО - сохраняем только при замене слотов
+  // React.useEffect отключен - сохранение происходит только в handleBlockChange
+
+  // Функция для создания структурного отпечатка сайта (без конкретных artifactId)
+  const getStructuralFingerprint = React.useCallback((definition: SiteDefinition) => {
+    return JSON.stringify({
+      theme: definition.theme,
+      blocks: definition.blocks.map(block => ({
+        type: block.type,
+        slots: Object.fromEntries(
+          Object.entries(block.slots).map(([slotName, _]) => [slotName, 'present'])
+        )
+      }))
+    })
+  }, [])
+
+  const [lastStructuralFingerprint, setLastStructuralFingerprint] = React.useState<string>('')
+
+  React.useEffect(() => {
+    // Устанавливаем начальный структурный отпечаток
+    setLastStructuralFingerprint(getStructuralFingerprint(siteDefinition))
+  }, []) // Только при первой загрузке
+
+  const handleBlockChange = React.useCallback((
+    blockIndex: number, 
+    updatedBlock: SiteBlock
+  ) => {
+    setSiteDefinition(prev => {
+      const newDefinition = { ...prev }
+      newDefinition.blocks = [...prev.blocks]
+      newDefinition.blocks[blockIndex] = updatedBlock
+      
+      // Проверяем, изменилась ли структура (а не только слоты)
+      const newFingerprint = getStructuralFingerprint(newDefinition)
+      const structureChanged = newFingerprint !== lastStructuralFingerprint
+      
+      // Сохраняем при изменении слотов (замене артефактов)
+      // Но генерируем summary только при изменении структуры
+      onSaveContent(JSON.stringify(newDefinition), true)
+      
+      if (structureChanged) {
+        setLastStructuralFingerprint(newFingerprint)
+        // TODO: Здесь можно добавить отдельный флаг для принудительной генерации summary
+      }
+      
+      return newDefinition
+    })
+  }, [onSaveContent, getStructuralFingerprint, lastStructuralFingerprint])
+
+  // Show loading skeleton while content is being loaded
+  if (isLoading || (!content && !siteDefinition.blocks.length)) {
     return (
-      <div className="space-y-4 p-4 text-sm">
-        {definition.blocks.map((block, i) => (
-          <div key={block.type} className="border p-2 rounded">
-            <h4 className="font-medium mb-2">{block.type}</h4>
-            {Object.entries(block.slots).map(([slotName, slot]) => (
-              <div key={slotName} className="mb-2">
-                <label htmlFor={`${block.type}-${slotName}-${i}`} className="block text-muted-foreground text-xs mb-1">
-                  {slotName}
-                </label>
-                <input
-                  id={`${block.type}-${slotName}-${i}`}
-                  className="border rounded px-2 py-1 w-full mb-1"
-                  placeholder="Artifact ID"
-                  value={slot.artifactId || ''}
-                  onChange={(e) =>
-                    handleChange(i, slotName, 'artifactId', e.target.value)
-                  }
-                />
-                <input
-                  className="border rounded px-2 py-1 w-full"
-                  placeholder="Version timestamp (optional)"
-                  value={slot.versionTimestamp || ''}
-                  onChange={(e) =>
-                    handleChange(i, slotName, 'versionTimestamp', e.target.value)
-                  }
-                />
+      <div className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {['skeleton-1', 'skeleton-2', 'skeleton-3'].map((key) => (
+            <div key={key} className="border rounded-lg p-4 animate-pulse">
+              <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+              <div className="h-3 bg-muted rounded w-1/2 mb-4" />
+              <div className="space-y-2">
+                <div className="h-2 bg-muted rounded" />
+                <div className="h-2 bg-muted rounded w-4/5" />
               </div>
-            ))}
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
+        <div className="text-center text-muted-foreground mt-8">
+          <p className="text-sm">Загружается контент сайта...</p>
+        </div>
       </div>
     )
-  },
+  }
+
+  if (siteDefinition.blocks.length === 0) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        <h3 className="text-lg font-medium mb-2">Сайт пустой</h3>
+        <p className="text-sm">
+          Этот сайт пока не содержит блоков. Используйте AI для генерации контента сайта.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {siteDefinition.blocks.map((block, index) => {
+          const blockDefinition = blockDefinitions[block.type]
+          
+          if (!blockDefinition) {
+            return (
+              <div 
+                key={`${block.type}-${index}`} 
+                className="p-4 border border-destructive rounded-lg"
+              >
+                <h4 className="font-medium text-destructive">
+                  Неизвестный блок: {block.type}
+                </h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Определение блока не найдено в системе
+                </p>
+              </div>
+            )
+          }
+
+          return (
+            <BlockCard
+              key={`${block.type}-${index}`}
+              block={block}
+              blockDefinition={blockDefinition}
+              onChange={(updatedBlock) => handleBlockChange(index, updatedBlock)}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export const siteArtifact = new Artifact<'site', Metadata>({
+  kind: 'site',
+  description: 'Visual site editor with dynamic block management',
+  initialize: async () => {},
+  onStreamPart: () => {},
+  content: ({ content, onSaveContent, isLoading }) => (
+    <SiteEditor 
+      content={content} 
+      onSaveContent={(content, debounce = true) => onSaveContent(content, debounce)} 
+      isLoading={isLoading}
+    />
+  ),
   actions: [],
   toolbar: [],
 })

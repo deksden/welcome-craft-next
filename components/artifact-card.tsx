@@ -27,7 +27,6 @@ import {
   CodeIcon,
   FileIcon,
   ImageIcon,
-  MessageCircleReplyIcon,
   MoreHorizontalIcon,
   PencilEditIcon,
   TrashIcon
@@ -71,11 +70,6 @@ export function ArtifactCard ({ artifact, onRefresh, onCardClick }: ArtifactCard
     setIsDeleting(false)
   }
 
-  const handleDiscuss = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    toast({ type: 'loading', description: 'Создание чата для обсуждения...' })
-    router.push(`/api/chat/discuss-artifact?artifactId=${artifact.id}`)
-  }
 
   const handleRename = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -104,10 +98,6 @@ export function ArtifactCard ({ artifact, onRefresh, onCardClick }: ArtifactCard
               <DropdownMenuItem onClick={handleRename}>
                 <PencilEditIcon className="mr-2 size-4"/>
                 Переименовать
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDiscuss}>
-                <MessageCircleReplyIcon className="mr-2 size-4"/>
-                Обсудить в чате
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleDelete}

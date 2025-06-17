@@ -3,12 +3,13 @@
 /**
  * @file app/(main)/chat/[id]/page.tsx
  * @description Страница отображения конкретного чата.
- * @version 1.2.0
- * @date 2025-06-11
- * @updated Добавлено логирование для некорректных данных сообщений.
+ * @version 1.3.0
+ * @date 2025-06-17
+ * @updated Fixed artifact references display - extract content from parts[] for legacy compatibility.
  */
 
 /** HISTORY:
+ * v1.3.0 (2025-06-17): Fixed artifact references display - extract content from parts[] for legacy compatibility.
  * v1.2.0 (2025-06-11): Добавлено логирование.
  * v1.1.0 (2025-06-09): Удален компонент DataStreamHandler.
  */
@@ -49,11 +50,20 @@ function convertToUIMessages (messages: Array<DBMessage>, chatId: string): Array
       attachments = []
     }
 
+    // Extract text content from parts for legacy compatibility
+    let content = ''
+    if (parts.length > 0) {
+      const textPart = parts.find(part => part.type === 'text')
+      if (textPart) {
+        content = textPart.text
+      }
+    }
+
     return {
       id: message.id,
       parts: parts,
       role: message.role as UIMessage['role'],
-      content: '', // content теперь deprecated
+      content: content, // Extract from parts for compatibility
       createdAt: message.createdAt,
       experimental_attachments: attachments,
     }

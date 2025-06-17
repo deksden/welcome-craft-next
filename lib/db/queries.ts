@@ -18,7 +18,7 @@
 
 import 'server-only'
 
-import { and, asc, count, desc, eq, gt, gte, ilike, inArray, isNull, sql, type SQL, } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, gte, inArray, isNull, sql, type SQL, } from 'drizzle-orm'
 import { createLogger } from '@fab33/fab-logger'
 
 import {
@@ -280,26 +280,7 @@ export async function saveArtifact ({ id, title, kind, content, userId, authorId
 }
 
 export async function getArtifactsById ({ id }: { id: string }): Promise<Array<Artifact>> {
-  console.log('🔍 [DEBUG] getArtifactsById - Query for id:', id)
   const result = await db.select().from(artifact).where(and(eq(artifact.id, id), isNull(artifact.deletedAt))).orderBy(asc(artifact.createdAt))
-  console.log('🔍 [DEBUG] getArtifactsById - Result:', {
-    id,
-    count: result.length,
-    artifacts: result.map(a => {
-      // Get content from appropriate column
-      const { getDisplayContent } = require('@/lib/artifact-content-utils')
-      const content = getDisplayContent(a)
-      return {
-        id: a.id,
-        kind: a.kind,
-        title: a.title,
-        contentLength: content?.length,
-        contentPreview: `${content?.substring(0, 100)}...`,
-        summary: a.summary,
-        createdAt: a.createdAt
-      }
-    })
-  })
   return result
 }
 
@@ -341,7 +322,24 @@ export async function getPagedArtifactsByUserId ({ userId, page = 1, pageSize = 
   totalCount: number
 }> {
   const offset = (page - 1) * pageSize
-  const baseWhere = and(eq(artifact.userId, userId), isNull(artifact.deletedAt), searchQuery ? ilike(artifact.title, `%${searchQuery}%`) : undefined, kind ? eq(artifact.kind, kind) : undefined)
+  
+  // ✅ Enhanced search: поиск по title, summary, и content_text для полнотекстового поиска
+  let searchConditions: SQL<unknown> | undefined
+  if (searchQuery) {
+    const searchPattern = `%${searchQuery}%`
+    searchConditions = sql`(
+      ${artifact.title} ILIKE ${searchPattern} OR 
+      ${artifact.summary} ILIKE ${searchPattern} OR 
+      ${artifact.content_text} ILIKE ${searchPattern}
+    )`
+  }
+  
+  const baseWhere = and(
+    eq(artifact.userId, userId), 
+    isNull(artifact.deletedAt), 
+    searchConditions,
+    kind ? eq(artifact.kind, kind) : undefined
+  )
   const subquery = db.select({
     id: artifact.id, rn: sql<number>`row_number
       () OVER (PARTITION BY

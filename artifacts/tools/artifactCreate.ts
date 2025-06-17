@@ -39,7 +39,7 @@ interface CreateArtifactProps {
 export const artifactCreate = ({ session }: CreateArtifactProps) =>
   tool({
     description:
-      'Creates a new artifact (like text, code, image, or sheet) based on a title and a detailed prompt. Use this when the user explicitly asks to "create", "write", "generate", or "make" something new.',
+      'Creates a new artifact reference (metadata only) with a title and type. This tool creates only a REFERENCE/LINK to the artifact, not the actual content. The content is generated asynchronously in the background. To access the full content of any artifact, use artifactContent tool with the artifact ID. Use this when the user explicitly asks to "create", "write", "generate", or "make" something new.',
     parameters: CreateArtifactSchema,
     execute: async (args: CreateArtifactParams) => {
       const startTime = Date.now()

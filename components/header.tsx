@@ -1,12 +1,13 @@
 /**
  * @file components/header.tsx
  * @description Глобальный тулбар (шапка) приложения.
- * @version 1.2.1
- * @date 2025-06-06
- * @updated Исправлены классы Tailwind (h-4/w-4 -> size-4).
+ * @version 1.3.0
+ * @date 2025-06-17
+ * @updated Fixed "New Chat" button to directly create new chat instead of going to homepage.
  */
 
 /** HISTORY:
+ * v1.3.0 (2025-06-17): Fixed "New Chat" button to directly navigate to new chat with generated UUID instead of homepage.
  * v1.2.1 (2025-06-06): Исправлены классы Tailwind.
  * v1.2.0 (2025-06-06): Добавлена подсветка кнопки "Share".
  * v1.1.0 (2025-06-05): Убран ModelSelector, обновлен вызов SidebarUserNav.
@@ -26,6 +27,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher'
 import { PlusIcon, ShareIcon } from '@/components/icons'
 import { ShareDialog } from './share-dialog'
 import { useChatVisibility } from '@/hooks/use-chat-visibility'
+import { generateUUID } from '@/lib/utils'
 import * as Package from '../package.json'
 import type { VisibilityType } from '@/lib/types'
 
@@ -61,8 +63,8 @@ export function Header () {
           variant="ghost"
           size="sm"
           onClick={() => {
-            router.push('/')
-            router.refresh()
+            const newChatId = generateUUID()
+            router.push(`/chat/${newChatId}`)
           }}
         >
           <PlusIcon className="mr-2 size-4"/>

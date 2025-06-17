@@ -23,7 +23,7 @@ import { getDisplayContent } from '@/lib/artifact-content-utils'
 const logger = createLogger('artifacts:tools:artifactContent')
 
 export const artifactContent = tool({
-  description: 'Gets the full content of an artifact by its ID and optional version. Use this to read a document to answer a question or perform a task.',
+  description: 'Gets the full content of an artifact by its ID and optional version. CRITICAL: Always use this tool when you need to read, analyze, or discuss an existing artifact that the user referenced or attached. Artifact references only contain metadata (ID, title, type) - this tool retrieves the actual content (text, code, data, etc.). Use this to read a document to answer a question or perform a task.',
   parameters: z.object({
     artifactId: z.string({ message: 'Invalid artifact ID. Please provide a valid UUID.' }).describe('The UUID of the artifact to retrieve.'),
     version: z.number().optional().describe('The specific version number (1-indexed). If omitted, the latest version is returned.'),

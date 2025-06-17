@@ -116,6 +116,33 @@ export function Chat ({
     }).catch(() => {})
   }, [])
 
+  // Listen for clipboard artifact events from artifact actions
+  useEffect(() => {
+    const handleClipboardArtifactAdded = (event: CustomEvent) => {
+      setClipboardArtifact(event.detail)
+    }
+
+    window.addEventListener('clipboard-artifact-added', handleClipboardArtifactAdded as EventListener)
+    return () => {
+      window.removeEventListener('clipboard-artifact-added', handleClipboardArtifactAdded as EventListener)
+    }
+  }, [])
+
+  // Additional check for clipboard content when window gains focus
+  // This handles cases where clipboard was modified from another page
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      getArtifactFromClipboard().then((data) => {
+        setClipboardArtifact(data)
+      }).catch(() => {})
+    }
+
+    window.addEventListener('focus', handleWindowFocus)
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus)
+    }
+  }, [])
+
   useAutoResume({
     autoResume,
     initialMessages,
@@ -152,6 +179,7 @@ export function Chat ({
           setClipboardArtifact={setClipboardArtifact}
           messages={messages}
           append={append}
+          setMessages={setMessages}
           session={session}
             initialChatModel={initialChatModel}
             artifact={artifact}

@@ -1,12 +1,13 @@
 /**
  * @file components/app-sidebar.tsx
  * @description Компонент боковой панели приложения с навигацией.
- * @version 2.1.0
- * @date 2025-06-10
- * @updated Импорт ArtifactKind теперь из общего файла lib/types.
+ * @version 2.2.0
+ * @date 2025-06-17
+ * @updated Fixed recent artifacts click behavior - removed redundant navigation to artifacts list page.
  */
 
 /** HISTORY:
+ * v2.2.0 (2025-06-17): Fixed recent artifacts click behavior - removed redundant navigation to artifacts list page.
  * v2.1.0 (2025-06-10): Импорт ArtifactKind из lib/types.
  * v2.0.0 (2025-06-09): Рефакторинг. "Контент" переименован в "Артефакты", обновлены маршруты и API-вызовы.
  * v1.8.0 (2025-06-06): Исправлена структура SidebarMenu/SidebarMenuItem.
@@ -102,7 +103,6 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
       return
     }
     toast({ type: 'loading', description: `Открываю "${doc.title}"...` })
-    router.push(`/artifacts?openArtifactId=${doc.id}`)
     setArtifact({
       artifactId: doc.id,
       title: doc.title,
@@ -198,7 +198,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                 )}
                 {!isLoadingRecentArtifacts && recentArtifacts?.map((doc) => (
                   <SidebarArtifactItem
-                    key={doc.id}
+                    key={`${doc.id}-${doc.createdAt}`}
                     artifact={doc}
                     isActive={activeArtifactId === doc.id}
                     onClick={() => handleArtifactClick(doc)}

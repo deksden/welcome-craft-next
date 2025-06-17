@@ -21,8 +21,7 @@ import { type Dispatch, memo, type SetStateAction, useState } from 'react'
 import type { ArtifactActionContext } from './create-artifact'
 import { cn } from '@/lib/utils'
 import { toast } from '@/components/toast'
-import { CheckCircleFillIcon, LoaderIcon, MessageCircleReplyIcon, MessageCircleIcon, VercelIcon } from './icons'
-import { useRouter } from 'next/navigation'
+import { CheckCircleFillIcon, LoaderIcon, MessageCircleIcon, VercelIcon } from './icons'
 import { useArtifact } from '@/hooks/use-artifact'
 import { copyArtifactToClipboard } from '@/app/app/(main)/artifacts/actions'
 
@@ -59,7 +58,6 @@ function PureArtifactActions ({
   setMetadata,
 }: ArtifactActionsProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
   const { setArtifact } = useArtifact()
 
   const artifactDefinition = artifactDefinitions.find(
@@ -70,11 +68,6 @@ function PureArtifactActions ({
     throw new Error('Artifact definition not found!')
   }
 
-  const handleDiscuss = () => {
-    toast({ type: 'loading', description: 'Создание чата для обсуждения...' })
-    setArtifact(prev => ({ ...prev, isVisible: false }))
-    router.push(`/api/chat/discuss-artifact?artifactId=${artifact.artifactId}`)
-  }
 
   const handleAddToChat = async () => {
     if (!artifact.artifactId) return
@@ -85,7 +78,25 @@ function PureArtifactActions ({
         title: artifact.title,
         kind: artifact.kind,
       })
-      toast({ type: 'success', description: 'Ссылка на артефакт скопирована' })
+      
+      // Check if we're in a chat context by looking for active chat component
+      // Use DOM to detect if chat is currently visible instead of relying on URL
+      const chatElement = document.querySelector('[data-testid="chat-input-container"]')
+      const isInChat = !!chatElement
+      
+      if (isInChat) {
+        // Trigger a custom event to notify chat component about new clipboard content
+        window.dispatchEvent(new CustomEvent('clipboard-artifact-added', {
+          detail: {
+            artifactId: artifact.artifactId,
+            title: artifact.title,
+            kind: artifact.kind,
+          }
+        }))
+        toast({ type: 'success', description: 'Артефакт добавлен в чат' })
+      } else {
+        toast({ type: 'success', description: 'Ссылка на артефакт скопирована' })
+      }
     } catch (error) {
       toast({ type: 'error', description: 'Не удалось добавить в чат' })
     } finally {
@@ -105,20 +116,6 @@ function PureArtifactActions ({
 
   return (
     <div className="flex flex-row gap-1 items-center">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            data-testid="artifact-actions-discuss-button"
-            variant="outline"
-            className="h-fit p-2 dark:hover:bg-zinc-700"
-            onClick={handleDiscuss}
-            disabled={isLoading || artifact.status === 'streaming'}
-          >
-            <MessageCircleReplyIcon size={18}/>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Обсудить в чате</TooltipContent>
-      </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
