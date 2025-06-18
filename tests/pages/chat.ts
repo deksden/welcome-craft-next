@@ -7,7 +7,7 @@ export class ChatPage {
   constructor(private page: Page) {}
 
   public get sendButton() {
-    return this.page.getByTestId('send-button');
+    return this.page.getByTestId('send-button'); // ❌ ИЗВЕСТНО: Должно быть 'chat-input-send-button', но факт 'send-button'
   }
 
   public get stopButton() {
@@ -15,7 +15,7 @@ export class ChatPage {
   }
 
   public get chatInput() {
-    return this.page.getByTestId('chat-input');
+    return this.page.getByTestId('chat-input'); // ❌ ИЗВЕСТНО: Должно быть 'chat-input-textarea', но факт 'chat-input'
   }
 
   public get scrollContainer() {

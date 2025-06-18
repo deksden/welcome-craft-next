@@ -121,25 +121,44 @@
 - **Приоритет:** Новую бизнес-логику сначала покрывать юнит-тестами
 - **Запуск:** `pnpm test:unit:watch` для быстрого фидбека
 
-### E2E-тестирование (Playwright)
-- **Селекторы:** ОБЯЗАТЕЛЬНО использовать `data-testid`
-- **Именование testid:** `[компонент]-[действие]` (example: `chat-send-button`)
-- **Хелперы:** Использовать `tests/helpers/test-utils.ts`
+### E2E-тестирование (Playwright) - ЖЕЛЕЗОБЕТОННЫЕ ТЕСТЫ
 
-### Иерархическая система testid
-Структурированная система с префиксами зон UI:
+**АРХИТЕКТУРА:** Page Object Model (POM) с fail-fast локаторами
+
+#### Основные принципы Железобетонных Тестов:
+1. **POM для всей UI логики** — вся логика взаимодействия инкапсулирована в Page Objects
+2. **data-testid для всех интерактивных элементов** — строгое правило селекторов 
+3. **Fail-fast локаторы с 2-секундным timeout** — быстрое обнаружение проблем
+4. **Декларативный синтаксис** — `authPage.registerUser()` вместо императивных шагов
+5. **Никаких hardcoded URLs** — все URL через конфигурацию
+
+#### Структура тестов:
+- **Page Objects:** `tests/pages/` — AuthPage, ChatPage, ArtifactPage
+- **Fail-fast утилиты:** `TestUtils.fastLocator()` с timeout 2000ms
+- **Регрессионные тесты:** `tests/e2e/regression/` — стабильные сценарии
+
+#### Новая иерархическая система testid:
+- `auth-*` — формы аутентификации (email-input, password-input, submit-button)
 - `header-*` — шапка приложения (логотип, новый чат, share, тема, пользователь)
 - `sidebar-*` — боковая панель (чаты, артефакты, управление)
-- `chat-*` — зона чата (сообщения, input, suggested actions)
+- `chat-input-*` — зона ввода чата (textarea, send-button, attach-menu)
 - `artifact-*` — панель артефактов (контент, действия, редакторы)
 
-### UI хелперы
-Использовать `tests/helpers/ui-helpers.ts`:
+#### Пример использования POM:
 ```typescript
-ui.header.createNewChat()
-ui.chatInput.sendMessage()
-ui.artifactPanel.close()
+const authPage = new AuthPage(page)
+await authPage.registerRobust(email, password) // Декларативно
+await authPage.waitForToast('successfully') // Fail-fast проверка
+
+const testUtils = new TestUtils(page)
+const button = await testUtils.fastLocator('submit-button') // 2s timeout
 ```
+
+#### Миграция с legacy UI helpers:
+- ❌ **Устарело:** `ui.header.createNewChat()` — сложная система ui-helpers
+- ✅ **Новое:** `authPage.registerUser()` — простые Page Objects
+- ❌ **Устарело:** `page.getByRole('button')` — медленные селекторы
+- ✅ **Новое:** `fastLocator('submit-button')` — быстрые fail-fast локаторы
 
 ---
 

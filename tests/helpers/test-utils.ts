@@ -1,6 +1,14 @@
 /**
- * Утилиты для E2E тестов WelcomeCraft
- * Содержит переиспользуемые функции для надежного тестирования
+ * @file tests/helpers/test-utils.ts
+ * @description Упрощенные утилиты для Железобетонных Тестов с fail-fast локаторами
+ * @version 2.0.0
+ * @date 2025-06-18
+ * @updated Refactored to Page Object Model foundation with fail-fast locators
+ */
+
+/** HISTORY:
+ * v2.0.0 (2025-06-18): Железобетонные Тесты - добавлены fail-fast локаторы, упрощена sendMessage
+ * v1.0.0 (previous): Legacy complex test utilities
  */
 
 import type { Page, Locator } from '@playwright/test';
@@ -10,8 +18,68 @@ import { getTestHeaders, } from './test-config';
 export class TestUtils {
   constructor(public page: Page) {}
 
+  // =============================================================================
+  // FAIL-FAST LOCATORS - Основа для Page Object Model
+  // =============================================================================
+
   /**
-   * Надежное ожидание элемента с retry логикой
+   * Fail-fast локатор с 2-секундным таймаутом
+   * Основа для всех POM селекторов
+   */
+  async fastLocator(testId: string, options?: {
+    timeout?: number;
+    state?: 'visible' | 'attached' | 'detached' | 'hidden';
+  }): Promise<Locator> {
+    const { timeout = 2000, state = 'visible' } = options || {};
+    
+    const locator = this.page.getByTestId(testId);
+    
+    try {
+      await locator.waitFor({ state, timeout });
+      return locator;
+    } catch (error) {
+      throw new Error(`❌ FAIL-FAST: Element [${testId}] not found in ${timeout}ms (state: ${state})`);
+    }
+  }
+
+  /**
+   * Универсальный хелпер ожидания элемента с retry логикой
+   * @deprecated Используйте fastLocator() для новых тестов
+   */
+  async waitFor(condition: () => Promise<boolean>, options?: {
+    timeout?: number;
+    interval?: number;
+    description?: string;
+  }): Promise<void> {
+    const { timeout = 5000, interval = 100, description = 'condition' } = options || {};
+    
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < timeout) {
+      try {
+        if (await condition()) {
+          return;
+        }
+      } catch {
+        // Игнорируем ошибки в condition
+      }
+      
+      await this.page.waitForTimeout(interval);
+    }
+    
+    throw new Error(`❌ TIMEOUT: ${description} not met in ${timeout}ms`);
+  }
+
+  /**
+   * Явный хелпер ожидания для стабилизации UI
+   */
+  async waitForStability(ms: number = 500): Promise<void> {
+    await this.page.waitForTimeout(ms);
+  }
+
+  /**
+   * Legacy метод ожидания элемента
+   * @deprecated Используйте fastLocator() для новых тестов
    */
   async waitForElement(selector: string, options?: {
     timeout?: number;
@@ -20,18 +88,24 @@ export class TestUtils {
   }): Promise<Locator> {
     const { timeout = 30000, retries = 3, state = 'visible' } = options || {};
     
-    for (let i = 0; i < retries; i++) {
-      try {
-        const element = this.page.locator(`[data-testid="${selector}"]`);
-        await element.waitFor({ state, timeout: timeout / retries });
-        return element;
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await this.page.waitForTimeout(1000);
+    // Делегируем к новому методу для совместимости
+    try {
+      return await this.fastLocator(selector, { timeout, state });
+    } catch (error) {
+      // Fallback к старой логике для совместимости
+      for (let i = 0; i < retries; i++) {
+        try {
+          const element = this.page.locator(`[data-testid="${selector}"]`);
+          await element.waitFor({ state, timeout: timeout / retries });
+          return element;
+        } catch (error) {
+          if (i === retries - 1) throw error;
+          await this.page.waitForTimeout(1000);
+        }
       }
+      
+      throw new Error(`Element ${selector} not found after ${retries} retries`);
     }
-    
-    throw new Error(`Element ${selector} not found after ${retries} retries`);
   }
 
   /**
@@ -58,94 +132,20 @@ export class TestUtils {
   }
 
   /**
-   * Безопасная отправка сообщения с проверкой состояния
+   * Упрощенная отправка сообщения для POM (замена сложной legacy логики)
+   * Будет заменена на Page Object методы
+   * @deprecated Используйте ChatPage.sendMessage() в новых тестах
    */
   async sendMessage(message: string, options?: { waitForResponse?: boolean }): Promise<void> {
     const { waitForResponse = true } = options || {};
     
-    console.log('🔤 Sending message:', message);
+    console.log('🔤 Sending message (legacy):', message);
     
-    // Найти и заполнить поле ввода
-    const input = this.page.getByTestId('chat-input');
-    await input.click();
+    // Простая логика без сложных проверок
+    const input = await this.fastLocator('chat-input-textarea');
     await input.fill(message);
     
-    // Проверить что текст действительно введён
-    const inputValue = await input.inputValue();
-    console.log('📝 Input value after fill:', inputValue);
-    
-    if (inputValue !== message) {
-      console.log('⚠️ Input value mismatch, retrying...');
-      await this.page.waitForTimeout(500);
-      await input.clear();
-      await input.fill(message);
-    }
-    
-    // Найти кнопку отправки и проверить что она активна
-    const sendButton = await this.waitForElement('send-button');
-    
-    // Проверяем что кнопка не disabled
-    const isDisabled = await sendButton.getAttribute('disabled');
-    console.log('🔘 Send button disabled status:', isDisabled);
-    
-    if (isDisabled !== null) {
-      console.log('❌ Send button is disabled, debugging conditions...');
-      
-      // Отладочная информация
-      const debugInfo = await this.page.evaluate(() => {
-        const input = document.querySelector('[data-testid="chat-input"]') as HTMLInputElement;
-        const btn = document.querySelector('[data-testid="send-button"]') as HTMLButtonElement;
-        
-        // Проверяем состояние через React DevTools или window объекты
-        const chatStatus = (window as any).__CHAT_STATUS__ || 'unknown';
-        
-        return {
-          inputLength: input?.value?.length || 0,
-          inputValue: input?.value || 'EMPTY',
-          buttonDisabled: btn?.disabled || false,
-          uploadingFiles: document.querySelectorAll('[data-testid="attachments-preview"]').length,
-          chatStatus: chatStatus,
-          // Проверяем presence селекторов которые могут указывать на loading
-          hasLoadingIndicators: document.querySelectorAll('[data-testid*="loading"], [data-testid*="generating"]').length,
-        };
-      });
-      
-      console.log('🐛 Debug info:', debugInfo);
-      
-      // Если проблема с input, попробуем ещё раз
-      if (debugInfo.inputLength === 0) {
-        console.log('⚠️ Input is empty, refilling...');
-        await input.clear();
-        await this.page.waitForTimeout(500);
-        await input.fill(message);
-        
-        const newValue = await input.inputValue();
-        console.log('📝 New input value:', newValue);
-      }
-      
-      // Ждем разблокировки кнопки
-      try {
-        await this.page.waitForFunction(
-          () => {
-            const btn = document.querySelector('[data-testid="send-button"]') as HTMLButtonElement;
-            return btn && !btn.disabled;
-          },
-          { timeout: 5000 }
-        );
-      } catch (error) {
-        console.log('⚠️ Button still disabled after timeout, trying force click...');
-        // Force click может сработать если проблема только в UI
-        await sendButton.click({ force: true });
-        console.log('✅ Forced click sent');
-        
-        if (waitForResponse) {
-          await this.waitForAIGeneration();
-        }
-        return;
-      }
-    }
-    
-    console.log('✅ Clicking send button...');
+    const sendButton = await this.fastLocator('chat-input-send-button');
     await sendButton.click();
     
     if (waitForResponse) {
