@@ -1,30 +1,25 @@
 /**
  * @file components/sign-out-form.tsx
  * @description Форма для выхода пользователя из системы.
- * @version 1.0.1
- * @date 2025-06-07
- * @updated Изменен URL перенаправления после выхода на `/login`.
+ * @version 1.1.0
+ * @date 2025-06-18
+ * @updated Обновлен для использования logout action с очисткой world cookies.
  */
 
 /** HISTORY:
+ * v1.1.0 (2025-06-18): Обновлен для использования logout action с очисткой world cookies.
  * v1.0.1 (2025-06-07): Изменен редирект на `/login` для корректного выхода.
  * v1.0.0 (2025-05-25): Начальная версия.
  */
 import Form from 'next/form'
 
-import { signOut } from '@/app/app/(auth)/auth'
+import { logout } from '@/app/app/(auth)/actions'
 
 export const SignOutForm = () => {
   return (
     <Form
       className="w-full"
-      action={async () => {
-        'use server'
-
-        await signOut({
-          redirectTo: '/login',
-        })
-      }}
+      action={logout}
     >
       <button
         type="submit"

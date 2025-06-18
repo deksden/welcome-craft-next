@@ -36,6 +36,7 @@ describe('AI Tool - artifactContent', () => {
       authorId: 'test-user-123',
       deletedAt: null,
       summary: 'Тест',
+      publication_state: [],
     },
     totalVersions: 1,
   }

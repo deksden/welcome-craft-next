@@ -1,12 +1,13 @@
 /**
  * @file lib/types.ts
  * @description Общие типы данных для всего приложения.
- * @version 1.2.0
- * @date 2025-06-12
- * @updated Добавлен тип сайта в artifactKinds.
+ * @version 1.3.0
+ * @date 2025-06-17
+ * @updated Добавлен PublicationInfo интерфейс для системы публикации.
  */
 
 /** HISTORY:
+ * v1.3.0 (2025-06-17): Добавлен PublicationInfo интерфейс для системы публикации с TTL.
  * v1.2.0 (2025-06-12): Добавлен тип 'site' в artifactKinds.
  * v1.1.0 (2025-06-10): Добавлены ArtifactKind и artifactKinds.
  * v1.0.0 (2025-06-06): Создан файл и добавлен тип VisibilityType.
@@ -32,6 +33,21 @@ export interface ArtifactApiResponse {
   authorId: string | null
   deletedAt: Date | null
   content: string  // Unified content field from normalizeArtifactForAPI
+}
+
+/**
+ * @description Информация о публикации артефакта из определенного источника
+ * @feature Система публикации с поддержкой TTL и множественных источников
+ */
+export interface PublicationInfo {
+  /** Источник, инициировавший публикацию */
+  source: 'direct' | 'chat' | 'site';
+  /** ID чата или сайта-источника */
+  sourceId: string;
+  /** Дата публикации */
+  publishedAt: string; // ISO-8601
+  /** Дата истечения публикации (null = бессрочно) */
+  expiresAt: string | null; // ISO-8601
 }
 
 // END OF: lib/types.ts

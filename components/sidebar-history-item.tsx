@@ -38,7 +38,6 @@ import { memo } from 'react'
 import { useChatVisibility } from '@/hooks/use-chat-visibility'
 import { Button } from './ui/button'
 import { cn } from '@/lib/utils'
-import type { VisibilityType } from '@/lib/types'
 import { toast } from './toast'
 
 const PureChatItem = ({
@@ -54,9 +53,10 @@ const PureChatItem = ({
   onRename: (chatId: string, currentTitle: string) => void;
   setOpenMobile: (open: boolean) => void;
 }) => {
+  const isPublished = chat.published_until && chat.published_until > new Date()
   const { visibilityType, setVisibilityType } = useChatVisibility({
     chatId: chat.id,
-    initialVisibilityType: chat.visibility as VisibilityType,
+    initialVisibilityType: isPublished ? 'public' : 'private',
   })
 
   const router = useRouter()

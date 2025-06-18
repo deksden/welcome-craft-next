@@ -32,6 +32,7 @@ export const sheetArtifact = new Artifact<'sheet', Metadata>({
     isCurrentVersion,
     onSaveContent,
     status,
+    isReadonly = false,
   }) => {
     return (
       <SpreadsheetEditor
@@ -40,6 +41,7 @@ export const sheetArtifact = new Artifact<'sheet', Metadata>({
         isCurrentVersion={isCurrentVersion}
         saveContent={onSaveContent}
         status={status}
+        isReadonly={isReadonly}
       />
     );
   },

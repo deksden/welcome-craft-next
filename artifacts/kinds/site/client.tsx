@@ -17,6 +17,7 @@ import * as React from 'react'
 import { Artifact } from '@/components/create-artifact'
 import { BlockCard } from './components/block-card'
 import { blockDefinitions } from '@/site-blocks'
+import { GlobeIcon } from '@/components/icons'
 import type { BlockSlotData } from '@/site-blocks/types'
 
 interface SiteBlock {
@@ -39,11 +40,13 @@ type Metadata = undefined
 function SiteEditor({ 
   content, 
   onSaveContent,
-  isLoading = false
+  isLoading = false,
+  isReadonly = false
 }: { 
   content?: string | null
   onSaveContent: (content: string, debounce?: boolean) => void
   isLoading?: boolean
+  isReadonly?: boolean
 }) {
   const [siteDefinition, setSiteDefinition] = React.useState<SiteDefinition>(() => {
     try {
@@ -80,6 +83,8 @@ function SiteEditor({
     blockIndex: number, 
     updatedBlock: SiteBlock
   ) => {
+    if (isReadonly) return; // Не позволяем изменения в readonly режиме
+    
     setSiteDefinition(prev => {
       const newDefinition = { ...prev }
       newDefinition.blocks = [...prev.blocks]
@@ -100,7 +105,7 @@ function SiteEditor({
       
       return newDefinition
     })
-  }, [onSaveContent, getStructuralFingerprint, lastStructuralFingerprint])
+  }, [onSaveContent, getStructuralFingerprint, lastStructuralFingerprint, isReadonly])
 
   // Show loading skeleton while content is being loaded
   if (isLoading || (!content && !siteDefinition.blocks.length)) {
@@ -164,6 +169,7 @@ function SiteEditor({
               block={block}
               blockDefinition={blockDefinition}
               onChange={(updatedBlock) => handleBlockChange(index, updatedBlock)}
+              isReadonly={isReadonly}
             />
           )
         })}
@@ -184,7 +190,21 @@ export const siteArtifact = new Artifact<'site', Metadata>({
       isLoading={isLoading}
     />
   ),
-  actions: [],
+  actions: [
+    {
+      icon: <GlobeIcon size={16} />,
+      label: 'Публикация',
+      description: 'Управление публикацией сайта',
+      onClick: (context) => {
+        // Открываем диалог публикации сайта
+        // Используем custom event для коммуникации
+        window.dispatchEvent(new CustomEvent('open-site-publication-dialog', {
+          detail: { content: context.content }
+        }))
+        return Promise.resolve()
+      }
+    }
+  ],
   toolbar: [],
 })
 

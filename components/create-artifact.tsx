@@ -11,7 +11,7 @@
  * v1.0.0 (2025-06-10): Initial version. Fixed TS2307 by removing DataStreamDelta import and typing streamPart as any due to removal of DataStreamHandler.
  */
 
-import type { Suggestion } from '@/lib/db/schema'
+import type { Suggestion } from '@/lib/db/types'
 import type { UseChatHelpers } from '@ai-sdk/react'
 import type { ComponentType, Dispatch, ReactNode, SetStateAction } from 'react'
 import type { UIArtifact } from './artifact'
@@ -58,6 +58,7 @@ interface ArtifactContent<M = any> {
   isLoading: boolean;
   metadata: M;
   setMetadata: Dispatch<SetStateAction<M>>;
+  isReadonly?: boolean;
 }
 
 interface InitializeParameters<M = any> {

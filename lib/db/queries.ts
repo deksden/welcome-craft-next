@@ -33,11 +33,12 @@ import {
   user,
   type User,
 } from './schema'
-import type { ArtifactKind, VisibilityType } from '@/lib/types'
+import type { ArtifactKind, } from '@/lib/types'
 import { generateUUID } from '../utils'
 // import { generateHashedPassword } from './utils'; // TODO: Restore when generateHashedPassword is available
 import { generateAndSaveSummary } from '../ai/summarizer'
 import { db } from '@/lib/db'
+import { getCurrentWorldContext, createWorldFilter, type WorldContext } from './world-context'
 
 console.log(`process.env.TRANSPORT1=${process.env.TRANSPORT1}`)
 const logger = createLogger('lib:db:queries')
@@ -83,15 +84,15 @@ export async function createGuestUser () {
 }
 
 // --- Chat Queries ---
-export async function saveChat ({ id, userId, title, visibility }: {
+export async function saveChat ({ id, userId, title, published_until }: {
   id: string;
   userId: string;
   title: string;
-  visibility: VisibilityType;
+  published_until?: Date | null;
 }) {
   const childLogger = logger.child({ chatId: id, userId })
-  childLogger.trace({ title, visibility }, 'Entering saveChat')
-  return await db.insert(chat).values({ id, createdAt: new Date(), userId, title, visibility }).onConflictDoNothing()
+  childLogger.trace({ title, published_until }, 'Entering saveChat')
+  return await db.insert(chat).values({ id, createdAt: new Date(), userId, title, published_until }).onConflictDoNothing()
 }
 
 export async function deleteChatSoftById ({ id, userId }: { id: string; userId: string }) {
@@ -116,25 +117,54 @@ export async function renameChatTitle ({ id, newTitle, userId }: { id: string; n
   return await db.update(chat).set({ title: newTitle }).where(and(eq(chat.id, id), eq(chat.userId, userId)))
 }
 
-export async function updateChatVisiblityById ({ chatId, visibility }: {
+export async function updateChatPublishedUntil ({ chatId, published_until }: {
   chatId: string;
-  visibility: VisibilityType;
+  published_until: Date | null;
 }) {
-  const childLogger = logger.child({ chatId, visibility })
-  childLogger.trace('Entering updateChatVisiblityById')
-  return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId))
+  const childLogger = logger.child({ chatId, published_until })
+  childLogger.trace('Entering updateChatPublishedUntil')
+  return await db.update(chat).set({ published_until }).where(eq(chat.id, chatId))
 }
 
-export async function getChatsByUserId ({ id, limit, startingAfter, endingBefore, }: {
+export async function getChatsByUserId ({ 
+  id, 
+  limit, 
+  startingAfter, 
+  endingBefore, 
+  worldContext 
+}: {
   id: string;
   limit: number;
   startingAfter: string | null;
   endingBefore: string | null;
+  worldContext?: WorldContext | null; // Optional parameter for world isolation
 }) {
-  const childLogger = logger.child({ userId: id, limit, startingAfter, endingBefore })
+  // Use current world context if not provided
+  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContext();
+  const childLogger = logger.child({ 
+    userId: id, 
+    limit, 
+    startingAfter, 
+    endingBefore, 
+    worldContext: actualWorldContext 
+  });
+  
   childLogger.trace('Entering getChatsByUserId')
+  console.log('🌍 getChatsByUserId with world context:', {
+    userId: id,
+    worldContext: actualWorldContext,
+    isWorldIsolationEnabled: !!actualWorldContext?.worldId
+  });
+  
   const extendedLimit = limit + 1
-  const baseWhere = and(eq(chat.userId, id), isNull(chat.deletedAt))
+  let baseWhere = and(eq(chat.userId, id), isNull(chat.deletedAt))
+  
+  // Add world isolation if enabled
+  if (actualWorldContext?.worldId) {
+    const worldFilter = createWorldFilter(actualWorldContext)
+    baseWhere = and(baseWhere, eq(chat.world_id, worldFilter.world_id))
+    console.log('🌍 Applied world filter:', worldFilter)
+  }
 
   const query = (cursorCondition?: SQL<any>) =>
     db.select().from(chat).where(cursorCondition ? and(baseWhere, cursorCondition) : baseWhere).orderBy(desc(chat.createdAt)).limit(extendedLimit)
@@ -311,16 +341,36 @@ export async function deleteArtifactVersionsAfterTimestamp ({ id, timestamp, }: 
   return await db.delete(artifact).where(and(eq(artifact.id, id), gt(artifact.createdAt, timestamp))).returning()
 }
 
-export async function getPagedArtifactsByUserId ({ userId, page = 1, pageSize = 10, searchQuery, kind }: {
+export async function getPagedArtifactsByUserId ({ 
+  userId, 
+  page = 1, 
+  pageSize = 10, 
+  searchQuery, 
+  kind,
+  worldContext
+}: {
   userId: string;
   page?: number;
   pageSize?: number;
   searchQuery?: string;
   kind?: ArtifactKind;
+  worldContext?: WorldContext | null; // Optional parameter for world isolation
 }): Promise<{
   data: Artifact[],
   totalCount: number
 }> {
+  // Use current world context if not provided
+  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContext();
+  
+  console.log('🌍 getPagedArtifactsByUserId with world context:', {
+    userId,
+    worldContext: actualWorldContext,
+    isWorldIsolationEnabled: !!actualWorldContext?.worldId,
+    page,
+    pageSize,
+    searchQuery,
+    kind
+  });
   const offset = (page - 1) * pageSize
   
   // ✅ Enhanced search: поиск по title, summary, и content_text для полнотекстового поиска
@@ -334,12 +384,19 @@ export async function getPagedArtifactsByUserId ({ userId, page = 1, pageSize = 
     )`
   }
   
-  const baseWhere = and(
+  let baseWhere = and(
     eq(artifact.userId, userId), 
     isNull(artifact.deletedAt), 
     searchConditions,
     kind ? eq(artifact.kind, kind) : undefined
   )
+  
+  // Add world isolation if enabled
+  if (actualWorldContext?.worldId) {
+    const worldFilter = createWorldFilter(actualWorldContext)
+    baseWhere = and(baseWhere, eq(artifact.world_id, worldFilter.world_id))
+    console.log('🌍 Applied artifact world filter:', worldFilter)
+  }
   const subquery = db.select({
     id: artifact.id, rn: sql<number>`row_number
       () OVER (PARTITION BY
@@ -357,12 +414,24 @@ export async function getPagedArtifactsByUserId ({ userId, page = 1, pageSize = 
   return { data, totalCount: totalCountResult[0]?.count ?? 0 }
 }
 
-export async function getRecentArtifactsByUserId ({ userId, limit = 5, kind, }: {
+export async function getRecentArtifactsByUserId ({ 
+  userId, 
+  limit = 5, 
+  kind,
+  worldContext
+}: {
   userId: string;
   limit?: number;
   kind?: ArtifactKind;
+  worldContext?: WorldContext | null; // Optional parameter for world isolation
 }): Promise<Artifact[]> {
-  const result = await getPagedArtifactsByUserId({ userId, page: 1, pageSize: limit, kind })
+  const result = await getPagedArtifactsByUserId({ 
+    userId, 
+    page: 1, 
+    pageSize: limit, 
+    kind,
+    worldContext
+  })
   return result.data
 }
 
@@ -380,6 +449,23 @@ export async function renameArtifactById ({ artifactId, newTitle, userId }: {
   userId: string;
 }) {
   return await db.update(artifact).set({ title: newTitle }).where(and(eq(artifact.id, artifactId), eq(artifact.userId, userId)))
+}
+
+/**
+ * @description Обновляет артефакт по ID с переданными данными
+ * @param id ID артефакта для обновления
+ * @param updateData Данные для обновления
+ * @returns Promise с результатом обновления
+ * @feature Система публикации с поддержкой TTL
+ */
+export async function updateArtifactById ({ 
+  id, 
+  updateData 
+}: { 
+  id: string; 
+  updateData: Partial<Artifact>; 
+}) {
+  return await db.update(artifact).set(updateData).where(eq(artifact.id, id))
 }
 
 // --- Suggestion Queries ---

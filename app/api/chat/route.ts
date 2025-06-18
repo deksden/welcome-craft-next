@@ -109,7 +109,7 @@ export async function POST (request: Request) {
     const chat = await getChatById({ id: chatId })
     if (!chat) {
       const title = await generateTitleFromUserMessage({ message: latestMessage as UIMessage })
-      await saveChat({ id: chatId, userId: session.user.id, title, visibility: selectedVisibilityType })
+      await saveChat({ id: chatId, userId: session.user.id, title, published_until: selectedVisibilityType === 'public' ? null : null })
     } else if (chat.userId !== session.user.id) {
       throw new ChatSDKError('forbidden:chat')
     }

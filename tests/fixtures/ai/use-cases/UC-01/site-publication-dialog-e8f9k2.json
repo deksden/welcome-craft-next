@@ -1,0 +1,35 @@
+{
+  "id": "site-publication-dialog-e8f9k2",
+  "name": "AI Fixture: Site Publication Dialog Creation",
+  "useCaseId": "UC-01",
+  "worldId": "SITE_READY_FOR_PUBLICATION",
+  "input": {
+    "prompt": "Create a site publication dialog for publishing an onboarding site with TTL options including 1 month, 3 months, 1 year, indefinite, and custom date picker. The site is ready for publication and should include proper security controls.",
+    "model": "artifact-model",
+    "settings": {
+      "temperature": 0.1,
+      "maxTokens": 2048
+    },
+    "context": {
+      "useCaseId": "UC-01",
+      "worldId": "SITE_READY_FOR_PUBLICATION",
+      "operation": "site-dialog-creation"
+    }
+  },
+  "output": {
+    "content": "# Site Publication Configuration\n\nYour onboarding site \"Developer Onboarding\" is ready for publication. Configure the access settings below:\n\n## Publication Settings\n\n**Site Access:** Public (anyone with the link)\n**Security Level:** Read-only for anonymous users\n\n## Time-to-Live (TTL) Options\n\nSelect how long the site should remain publicly accessible:\n\n- ⏰ **1 Month** - Expires: 2025-07-18\n- ⏰ **3 Months** - Expires: 2025-09-18  \n- ⏰ **1 Year** - Expires: 2026-06-18\n- ♾️ **Indefinite** - No expiration\n- 📅 **Custom Date** - Choose specific date\n\n## Generated Public URL\n\n```\nhttps://welcome-onboard.ru/s/abc123-dev-onboarding\n```\n\n## Security Features\n\n✅ Anonymous read-only access\n✅ No editing capabilities for public users\n✅ Automatic TTL enforcement\n✅ Owner retains full access\n✅ Revocation capability\n\n**Recommendation:** For onboarding sites, 1-3 months TTL provides good balance between accessibility and security.",
+    "usage": {
+      "promptTokens": 89,
+      "completionTokens": 234,
+      "totalTokens": 323
+    },
+    "finishReason": "stop",
+    "timestamp": "2025-06-18T12:30:45.123Z",
+    "duration": 1247
+  },
+  "metadata": {
+    "createdAt": "2025-06-18T12:30:45.123Z",
+    "hash": "e8f9k2d7p1",
+    "tags": ["UC-01", "site-publication", "dialog", "ttl"]
+  }
+}

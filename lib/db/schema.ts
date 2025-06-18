@@ -1,12 +1,14 @@
 /**
  * @file lib/db/schema.ts
  * @description Определения таблиц базы данных с использованием Drizzle ORM.
- * @version 2.1.0
- * @date 2025-06-12
- * @updated Поле content переведено на JSON, добавлен вид артефакта site.
+ * @version 2.3.0
+ * @date 2025-06-18
+ * @updated Добавлены поля world_id для поддержки трехуровневой системы тестирования (Phase 2).
  */
 
 /** HISTORY:
+ * v2.3.0 (2025-06-18): Добавлены поля world_id во все основные таблицы для изоляции тестовых миров (Phase 2).
+ * v2.2.0 (2025-06-17): Добавлены поля publication_state (Artifact) и published_until (Chat) для системы публикации с TTL.
  * v2.1.0 (2025-06-12): Поле content переведено на JSON и добавлен тип 'site'.
  * v2.0.0 (2025-06-09): Переименована таблица Document->Artifact, добавлены поля deletedAt и isDismissed.
  * v1.4.0 (2025-06-09): Удалена неиспользуемая таблица `stream`.
@@ -15,11 +17,15 @@
 
 import type { InferSelectModel } from 'drizzle-orm'
 import { boolean, foreignKey, json, jsonb, pgTable, primaryKey, text, timestamp, uuid, varchar, } from 'drizzle-orm/pg-core'
+import type { PublicationInfo } from '@/lib/types'
 
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
+  // Phase 2: Поле для изоляции тестовых миров
+  // NULL = production user, 'WORLD_ID' = test user в конкретном мире
+  world_id: varchar('world_id', { length: 64 }),
 })
 
 export type User = InferSelectModel<typeof user>;
@@ -31,10 +37,11 @@ export const chat = pgTable('Chat', {
   userId: uuid('userId')
     .notNull()
     .references(() => user.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
+  published_until: timestamp('published_until'), // NULL = private, timestamp = published until this date
   deletedAt: timestamp('deletedAt'), // Для мягкого удаления
+  // Phase 2: Поле для изоляции тестовых миров
+  // NULL = production chat, 'WORLD_ID' = test chat в конкретном мире
+  world_id: varchar('world_id', { length: 64 }),
 })
 
 export type Chat = InferSelectModel<typeof chat>;
@@ -61,6 +68,9 @@ export const message = pgTable('Message_v2', {
   parts: json('parts').notNull(),
   attachments: json('attachments').notNull(),
   createdAt: timestamp('createdAt').notNull(),
+  // Phase 2: Поле для изоляции тестовых миров (наследуется от chat)
+  // NULL = production message, 'WORLD_ID' = test message в конкретном мире
+  world_id: varchar('world_id', { length: 64 }),
 })
 
 export type DBMessage = InferSelectModel<typeof message>;
@@ -91,6 +101,13 @@ export const artifact = pgTable(
       .references(() => user.id),
     authorId: uuid('authorId').references(() => user.id),
     deletedAt: timestamp('deletedAt'), // Для мягкого удаления
+    
+    // Система публикации - массив объектов с информацией о публикации из разных источников
+    publication_state: jsonb('publication_state').$type<PublicationInfo[]>().default([]).notNull(),
+    
+    // Phase 2: Поле для изоляции тестовых миров
+    // NULL = production artifact, 'WORLD_ID' = test artifact в конкретном мире
+    world_id: varchar('world_id', { length: 64 }),
   },
   (table) => {
     return {
@@ -116,6 +133,9 @@ export const suggestion = pgTable(
       .notNull()
       .references(() => user.id),
     createdAt: timestamp('createdAt').notNull(),
+    // Phase 2: Поле для изоляции тестовых миров (наследуется от artifact)
+    // NULL = production suggestion, 'WORLD_ID' = test suggestion в конкретном мире
+    world_id: varchar('world_id', { length: 64 }),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.id] }),

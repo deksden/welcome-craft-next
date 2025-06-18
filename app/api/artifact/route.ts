@@ -1,12 +1,13 @@
 /**
  * @file app/api/artifact/route.ts
- * @description API маршрут для работы с артефактами.
- * @version 1.3.0
- * @date 2025-06-12
- * @updated Added versionTimestamp support for single-version retrieval.
+ * @description API маршрут для работы с артефактами с поддержкой публичного доступа.
+ * @version 2.0.0
+ * @date 2025-06-17
+ * @updated Added publication system support for public access.
  */
 
 /** HISTORY:
+ * v2.0.0 (2025-06-17): Added publication system support for public access.
  * v1.3.0 (2025-06-12): GET endpoint accepts versionTimestamp.
  * v1.2.0 (2025-06-10): Импорт ArtifactKind из lib/types.
  * v1.1.0 (2025-06-09): Исправлены типы ошибок и логика для соответствия новой схеме.
@@ -17,6 +18,7 @@ import { getAuthSession } from '@/lib/test-auth'
 import { deleteArtifactVersionsAfterTimestamp, getArtifactsById, getArtifactById, saveArtifact, } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
+import { isArtifactPublished } from '@/lib/publication-utils'
 
 export async function GET (request: Request) {
   const { searchParams } = new URL(request.url)
@@ -31,10 +33,7 @@ export async function GET (request: Request) {
   }
 
   const session = await getAuthSession()
-  
-  if (!session?.user?.id) {
-    return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
-  }
+  const isAuthenticated = !!session?.user?.id
 
   if (versionParam || versionTimestampParam) {
     const version = versionParam ? Number.parseInt(versionParam, 10) : undefined
@@ -43,7 +42,12 @@ export async function GET (request: Request) {
     if (!result) {
       return new ChatSDKError('not_found:artifact').toResponse()
     }
-    if (result.doc.userId !== session.user.id) {
+    
+    // Permission logic: owner + any status / non-owner + published only
+    const isOwner = isAuthenticated && result.doc.userId === session.user.id
+    const isPublished = isArtifactPublished(result.doc)
+    
+    if (!isOwner && !isPublished) {
       return new ChatSDKError('forbidden:artifact').toResponse()
     }
     
@@ -65,7 +69,11 @@ export async function GET (request: Request) {
     return new ChatSDKError('not_found:artifact').toResponse()
   }
 
-  if (artifact.userId !== session.user.id) {
+  // Permission logic: owner + any status / non-owner + published only
+  const isOwner = isAuthenticated && artifact.userId === session.user.id
+  const isPublished = isArtifactPublished(artifact)
+  
+  if (!isOwner && !isPublished) {
     return new ChatSDKError('forbidden:artifact').toResponse()
   }
 
@@ -84,6 +92,7 @@ export async function POST (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter id is required.').toResponse()
   }
 
+  // POST operations require authentication
   const session = await getAuthSession()
   if (!session?.user?.id) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
@@ -123,6 +132,7 @@ export async function DELETE (request: Request) {
     return new ChatSDKError('bad_request:api', 'Parameter timestamp is required.').toResponse()
   }
 
+  // DELETE operations require authentication
   const session = await getAuthSession()
   if (!session?.user?.id) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()

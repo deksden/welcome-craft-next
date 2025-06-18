@@ -49,6 +49,7 @@ describe('AI Tool - artifactEnhance', () => {
       authorId: 'test-user-123',
       deletedAt: null,
       summary: 'старое саммари',
+      publication_state: [],
     },
     totalVersions: 1,
   }

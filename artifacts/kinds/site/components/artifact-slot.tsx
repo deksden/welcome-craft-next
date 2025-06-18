@@ -36,6 +36,7 @@ interface ArtifactSlotProps {
   slotDefinition: BlockSlotDefinition
   currentValue: BlockSlotData
   onChange: (newValue: BlockSlotData) => void
+  isReadonly?: boolean
 }
 
 interface ArtifactResponse {
@@ -65,11 +66,13 @@ const fetcher = async (url: string): Promise<ArtifactResponse> => {
  * @param slotDefinition - определение слота из блока
  * @param currentValue - текущее значение слота (ID и версия)
  * @param onChange - обработчик изменения значения слота
+ * @param isReadonly - если true, отключает все интерактивные действия
  */
 export function ArtifactSlot({ 
   slotDefinition, 
   currentValue, 
-  onChange 
+  onChange,
+  isReadonly = false
 }: ArtifactSlotProps) {
   const [selectorOpen, setSelectorOpen] = React.useState(false)
 
@@ -105,8 +108,18 @@ export function ArtifactSlot({
     console.log('Select version - to be implemented')
   }, [])
 
-  // Если нет выбранного артефакта - показываем кнопку добавления
+  // Если нет выбранного артефакта - показываем кнопку добавления (или просто текст в readonly режиме)
   if (!currentValue.artifactId || currentValue.artifactId === '' || error) {
+    if (isReadonly) {
+      return (
+        <div className="w-full h-auto min-h-[60px] flex items-center justify-center border border-dashed border-muted-foreground/20 rounded-lg">
+          <span className="text-sm text-muted-foreground">
+            {slotDefinition.caption} (не назначен)
+          </span>
+        </div>
+      )
+    }
+
     return (
       <TooltipProvider>
         <Tooltip>
@@ -137,7 +150,7 @@ export function ArtifactSlot({
     )
   }
 
-  // Если артефакт выбран - показываем карточку с действиями
+  // Если артефакт выбран - показываем карточку с действиями (или только карточку в readonly режиме)
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1">
@@ -160,34 +173,38 @@ export function ArtifactSlot({
         )}
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <MoreHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setSelectorOpen(true)}>
-            Выбрать другой...
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleUseLatest}>
-            Использовать последнюю версию
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleSelectVersion}>
-            Выбрать версию...
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleClear} className="text-destructive">
-            Очистить
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {!isReadonly && (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setSelectorOpen(true)}>
+                Выбрать другой...
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleUseLatest}>
+                Использовать последнюю версию
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSelectVersion}>
+                Выбрать версию...
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleClear} className="text-destructive">
+                Очистить
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-      <ArtifactSelectorSheet
-        open={selectorOpen}
-        onOpenChange={setSelectorOpen}
-        slotDefinition={slotDefinition}
-        onSelect={handleSelect}
-      />
+          <ArtifactSelectorSheet
+            open={selectorOpen}
+            onOpenChange={setSelectorOpen}
+            slotDefinition={slotDefinition}
+            onSelect={handleSelect}
+          />
+        </>
+      )}
     </div>
   )
 }

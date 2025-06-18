@@ -65,6 +65,7 @@ describe('AI Tool - artifactUpdate', () => {
       authorId: 'test-user-123',
       deletedAt: null,
       summary: 'старое саммари',
+      publication_state: [],
     },
     totalVersions: 1,
   }

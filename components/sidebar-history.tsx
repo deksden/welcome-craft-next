@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { SidebarGroup, SidebarMenu, useSidebar, } from '@/components/ui/sidebar'
-import type { Chat } from '@/lib/db/schema'
+import type { Chat } from '@/lib/db/types'
 import { fetcher } from '@/lib/utils'
 import { ChatItem } from './sidebar-history-item'
 import useSWRInfinite from 'swr/infinite'

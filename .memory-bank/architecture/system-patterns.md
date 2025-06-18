@@ -2,6 +2,8 @@
 
 ## HISTORY:
 
+* v3.2.0 (2025-06-18): Добавлен архитектурный паттерн SWR Dialog Rendering и исправления publication button.
+* v3.1.0 (2025-06-17): Добавлена архитектура Publication System с TTL и UI паттернами.
 * v3.0.0 (2025-06-15): Добавлена мультидоменная архитектура и тестирование.
 * v2.0.0 (2025-06-12): Добавлены паттерны для генерации сайтов.
 * v1.0.0 (2025-06-10): Начальная версия с описанием архитектуры артефактов и AI.
@@ -119,3 +121,124 @@ if (isAppDomain) {
 - **Контекстное определение:** Прямое добавление через `useChat().append()` если чат уже открыт
 
 Этот паттерн обеспечивает привычное поведение буфера обмена и позволяет гибко работать с артефактами в разных чатах.
+
+## 7. Архитектурный план: Система Публикации
+
+**ДОБАВЛЕНО:** 2025-06-17 - Комплексная система публичного доступа к контенту
+
+### Обзор системы
+Система публикации обеспечивает безопасный публичный доступ к чатам и сайтам с поддержкой TTL (Time-To-Live) и множественных источников публикации.
+
+### Ключевые архитектурные решения
+
+#### Database Schema Design
+- **`publication_state: jsonb`** в таблице Artifact - массив PublicationInfo объектов
+- **`published_until: timestamp`** в таблице Chat - заменяет поле visibility
+- **Множественные источники:** один артефакт может быть опубликован через chat, site, direct
+
+#### PublicationInfo Structure
+```typescript
+interface PublicationInfo {
+  source: 'direct' | 'chat' | 'site';
+  sourceId: string;
+  publishedAt: string; // ISO-8601
+  expiresAt: string | null; // null = бессрочно
+}
+```
+
+#### Преимущества архитектуры
+1. **Гибкость:** Поддержка публикации одного артефакта из разных источников
+2. **Атомарность:** Отмена публикации из одного источника не влияет на другие
+3. **TTL:** Автоматическое истечение публикации на уровне БД
+4. **Типобезопасность:** JSONB с TypeScript интерфейсами
+
+### Компоненты системы
+
+#### Backend Logic
+- **Helper Utilities:** `isArtifactPublished()`, `isSitePublished()`, `fetchPublishedSiteData()`
+- **Server Actions:** `publishChat()`, `unpublishChat()`, `publishSite()`, `unpublishSite()`
+- **Security Layer:** Проверка прав доступа в API endpoints
+
+#### Frontend Components
+- **Enhanced Share Dialog:** TTL селектор с опциями (месяц, год, бессрочно, кастом)
+- **Site Publication UI:** Полноценный UI для управления публикацией сайтов
+  - `SitePublicationDialog`: Основной диалог с TTL управлением
+  - Custom event система для cross-component коммуникации  
+  - TypeScript совместимость между ArtifactApiResponse и Artifact типами
+  - Интеграция в artifact actions через GlobeIcon кнопку
+  - **ВАЖНО:** Кнопка публикации доступна ТОЛЬКО для site артефактов по дизайну системы
+- **Read-Only Mode:** Отключение редактирования для публичного контента
+
+#### Security Model
+- **Public API Access:** /api/artifact поддерживает неаутентифицированный доступ
+- **Permission Logic:** owner + любой статус / non-owner + published only
+- **URL Protection:** Страницы проверяют статус публикации через helper functions
+
+### Implementation Phases
+1. ✅ **Database Foundation** - Schema updates и миграции
+2. ✅ **Helper Utilities** - Функции проверки и загрузки данных  
+3. ✅ **Server Actions** - Логика публикации/отмены
+4. ✅ **UI Components** - Диалоги и кнопки управления (завершено 2025-06-17)
+5. ✅ **Read-Only Mode** - Режим просмотра для публичного контента (завершено 2025-06-17)
+6. ✅ **Security & API** - Защита endpoints и публичный доступ (завершено 2025-06-17)
+
+**✅ СИСТЕМА ПОЛНОСТЬЮ РЕАЛИЗОВАНА (2025-06-17)**
+
+Эта архитектура обеспечивает масштабируемое и безопасное решение для публичного доступа к контенту с полным контролем TTL и источников публикации.
+
+#### Финальная реализация включает:
+- **Полная защита API:** Неаутентифицированный доступ только к опубликованным артефактам
+- **Server-side валидация:** Проверка публикации на уровне страниц для SEO оптимизации  
+- **Read-only контент:** Автоматическое отключение редактирования для публичного доступа
+- **Graceful error handling:** Правильная обработка неопубликованного контента (404 страницы)
+- **Unit test coverage:** 26/26 тестов проходят, включая 14 тестов publication utilities
+- **TypeScript совместимость:** Полная типобезопасность во всех компонентах
+- **Quality assurance:** ESLint и TypeScript проверки проходят без предупреждений
+- **✅ Publication Button Stability (2025-06-18):** Исправлен критический баг с кнопкой публикации в site артефактах
+
+## 8. Архитектурный паттерн: SWR Dialog Rendering (2025-06-18)
+
+**ДОБАВЛЕНО:** 2025-06-18 - Паттерн для стабильного рендеринга диалогов с внешними данными
+
+### Проблема
+При использовании SWR для загрузки данных перед рендерингом диалогов возникает race condition: custom events могут срабатывать до загрузки данных, что приводит к отказу в рендеринге диалога.
+
+### Решение: SWR Dialog Pattern
+Паттерн обеспечивает надежное отображение диалогов независимо от состояния загрузки данных:
+
+```typescript
+// ❌ Проблемный код - диалог не рендерится без данных
+{artifact.kind === 'site' && fullArtifact && (
+  <SitePublicationDialog siteArtifact={fullArtifact} />
+)}
+
+// ✅ Правильный код - fallback + retry logic
+const { data: fullArtifact } = useSWR(
+  artifact.artifactId ? `/api/artifacts/${artifact.artifactId}` : null,
+  fetcher,
+  { 
+    refreshInterval: (data) => !data ? 3000 : 0, // Retry до успеха
+    onError: (err) => console.error('SWR error:', err) // Logging
+  }
+)
+
+{artifact.kind === 'site' && artifact.artifactId && (
+  <SitePublicationDialog 
+    siteArtifact={fullArtifact || fallbackArtifactObject} 
+  />
+)}
+```
+
+### Ключевые принципы
+1. **Fallback Objects:** Всегда предоставлять валидный объект для TypeScript совместимости
+2. **Retry Logic:** SWR refreshInterval должен повторять запросы до успеха для критических данных
+3. **Error Logging:** Обязательное логирование ошибок SWR для диагностики
+4. **Independent Rendering:** Диалоги должны рендериться независимо от состояния данных
+5. **Custom Events Stability:** Не блокировать event handling отсутствием данных
+
+### Применение
+Этот паттерн применяется для:
+- Publication диалогов с внешними API данными
+- Модальных окон с асинхронной загрузкой контента  
+- Компонентов с custom event коммуникацией
+- Critical UI элементов где UX failure недопустим

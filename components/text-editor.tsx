@@ -6,7 +6,7 @@ import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import React, { memo, useEffect, useRef } from 'react';
 
-import type { Suggestion } from '@/lib/db/schema';
+import type { Suggestion } from '@/lib/db/types';
 import {
   documentSchema,
   handleTransaction,
@@ -30,6 +30,7 @@ type EditorProps = {
   isCurrentVersion: boolean;
   currentVersionIndex: number;
   suggestions: Array<Suggestion>;
+  isReadonly?: boolean;
 };
 
 function PureEditor({
@@ -37,6 +38,7 @@ function PureEditor({
   onSaveContent,
   suggestions,
   status,
+  isReadonly = false,
 }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView | null>(null);
@@ -63,6 +65,7 @@ function PureEditor({
 
       editorRef.current = new EditorView(containerRef.current, {
         state,
+        editable: () => !isReadonly,
       });
     }
 
@@ -79,7 +82,8 @@ function PureEditor({
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.setProps({
-        dispatchTransaction: (transaction) => {
+        editable: () => !isReadonly,
+        dispatchTransaction: isReadonly ? undefined : (transaction) => {
           handleTransaction({
             transaction,
             editorRef,
@@ -88,7 +92,7 @@ function PureEditor({
         },
       });
     }
-  }, [onSaveContent]);
+  }, [onSaveContent, isReadonly]);
 
   useEffect(() => {
     if (editorRef.current && content) {

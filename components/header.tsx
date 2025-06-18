@@ -25,8 +25,10 @@ import { Button } from '@/components/ui/button'
 import { SidebarUserNav } from '@/components/sidebar-user-nav'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 import { PlusIcon, ShareIcon } from '@/components/icons'
-import { ShareDialog } from './share-dialog'
-import { useChatVisibility } from '@/hooks/use-chat-visibility'
+import { EnhancedShareDialog } from './enhanced-share-dialog'
+import { WorldIndicator } from './world-indicator'
+import { useChatPublication } from '@/hooks/use-chat-publication'
+import { isChatPublished } from '@/lib/publication-client-utils'
 import { generateUUID } from '@/lib/utils'
 import * as Package from '../package.json'
 import type { VisibilityType } from '@/lib/types'
@@ -42,9 +44,8 @@ export function Header () {
   const { data: activeChatContext } = useSWR<ActiveChatContext | null>('active-chat-context', null, { fallbackData: null })
   const [isShareDialogOpen, setShareDialogOpen] = React.useState(false)
 
-  const chatVisibilityHook = useChatVisibility({
+  const chatPublicationHook = useChatPublication({
     chatId: activeChatContext?.chatId,
-    initialVisibilityType: activeChatContext?.visibility,
   })
 
   return (
@@ -55,6 +56,7 @@ export function Header () {
         <Link href="/" className="font-bold text-lg" data-testid="header-project-logo">
           {Package.appName}
         </Link>
+        <WorldIndicator />
       </div>
 
       <div className="flex items-center justify-end gap-2">
@@ -70,21 +72,20 @@ export function Header () {
           <PlusIcon className="mr-2 size-4"/>
           New Chat
         </Button>
-        {activeChatContext && chatVisibilityHook && (
+        {activeChatContext && chatPublicationHook.chat && (
           <>
             <Button
               data-testid="header-share-button"
-              variant={chatVisibilityHook.visibilityType === 'public' ? 'secondary' : 'ghost'}
+              variant={isChatPublished(chatPublicationHook.chat) ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setShareDialogOpen(true)}
             >
               <ShareIcon className="mr-2 size-4"/>
               Share
             </Button>
-            <ShareDialog
-              chatId={activeChatContext.chatId}
-              visibility={chatVisibilityHook.visibilityType}
-              onVisibilityChange={chatVisibilityHook.setVisibilityType}
+            <EnhancedShareDialog
+              chat={chatPublicationHook.chat}
+              onChatUpdate={chatPublicationHook.updateChat}
               open={isShareDialogOpen}
               onOpenChange={setShareDialogOpen}
             />

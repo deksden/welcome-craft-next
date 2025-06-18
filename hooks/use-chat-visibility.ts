@@ -24,7 +24,7 @@ import {
   type ChatHistory,
 } from '@/components/sidebar-history';
 import type { VisibilityType } from '@/lib/types';
-import type { Chat } from '@/lib/db/schema';
+import type { Chat } from '@/lib/db/types';
 
 export function useChatVisibility({
   chatId,

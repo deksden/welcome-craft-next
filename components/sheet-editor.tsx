@@ -14,6 +14,7 @@ type SheetEditorProps = {
   status: string;
   isCurrentVersion: boolean;
   currentVersionIndex: number;
+  isReadonly?: boolean;
 };
 
 const MIN_ROWS = 50;
@@ -24,6 +25,7 @@ const PureSpreadsheetEditor = ({
   saveContent,
   status,
   isCurrentVersion,
+  isReadonly = false,
 }: SheetEditorProps) => {
   const { theme } = useTheme();
 
@@ -60,7 +62,7 @@ const PureSpreadsheetEditor = ({
     const dataColumns = Array.from({ length: MIN_COLS }, (_, i) => ({
       key: i.toString(),
       name: String.fromCharCode(65 + i),
-      renderEditCell: textEditor,
+      renderEditCell: isReadonly ? undefined : textEditor,
       width: 120,
       cellClass: cn(`border-t dark:bg-zinc-950 dark:text-zinc-50`, {
         'border-l': i !== 0,
@@ -71,7 +73,7 @@ const PureSpreadsheetEditor = ({
     }));
 
     return [rowNumberColumn, ...dataColumns];
-  }, []);
+  }, [isReadonly]);
 
   const initialRows = useMemo(() => {
     return parseData.map((row, rowIndex) => {
@@ -99,6 +101,8 @@ const PureSpreadsheetEditor = ({
   };
 
   const handleRowsChange = (newRows: any[]) => {
+    if (isReadonly) return; // Не позволяем изменения в readonly режиме
+    
     setLocalRows(newRows);
 
     const updatedData = newRows.map((row) => {
@@ -115,9 +119,9 @@ const PureSpreadsheetEditor = ({
       columns={columns}
       rows={localRows}
       enableVirtualization
-      onRowsChange={handleRowsChange}
+      onRowsChange={isReadonly ? undefined : handleRowsChange}
       onCellClick={(args) => {
-        if (args.column.key !== 'rowNumber') {
+        if (!isReadonly && args.column.key !== 'rowNumber') {
           args.selectCell(true);
         }
       }}

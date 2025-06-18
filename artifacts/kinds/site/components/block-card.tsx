@@ -27,6 +27,7 @@ interface BlockCardProps {
   block: SiteBlock
   blockDefinition: BlockDefinition
   onChange: (updatedBlock: SiteBlock) => void
+  isReadonly?: boolean
 }
 
 /**
@@ -34,16 +35,20 @@ interface BlockCardProps {
  * @param block - данные блока из siteDefinition
  * @param blockDefinition - определение блока с метаданными
  * @param onChange - обработчик изменения блока
+ * @param isReadonly - если true, отключает редактирование
  */
 export function BlockCard({ 
   block, 
   blockDefinition, 
-  onChange 
+  onChange,
+  isReadonly = false
 }: BlockCardProps) {
   const handleSlotChange = React.useCallback((
     slotName: string,
     newSlotData: BlockSlotData
   ) => {
+    if (isReadonly) return; // Не позволяем изменения в readonly режиме
+    
     const updatedBlock: SiteBlock = {
       ...block,
       slots: {
@@ -52,7 +57,7 @@ export function BlockCard({
       },
     }
     onChange(updatedBlock)
-  }, [block, onChange])
+  }, [block, onChange, isReadonly])
 
   return (
     <Card>
@@ -71,6 +76,7 @@ export function BlockCard({
               slotDefinition={slotDefinition}
               currentValue={block.slots[slotName] || {}}
               onChange={(newSlotData) => handleSlotChange(slotName, newSlotData)}
+              isReadonly={isReadonly}
             />
           </div>
         ))}

@@ -2,6 +2,7 @@ import { auth } from '@/app/app/(auth)/auth';
 import { getTestSession } from '@/lib/test-auth';
 import type { NextRequest } from 'next/server';
 import { getChatsByUserId } from '@/lib/db/queries';
+import { getWorldContextFromRequest } from '@/lib/db/world-context';
 import { ChatSDKError } from '@/lib/errors';
 
 export async function GET(request: NextRequest) {
@@ -26,12 +27,29 @@ export async function GET(request: NextRequest) {
     return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse();
   }
 
-  const chats = await getChatsByUserId({
+  // Get world context from request cookies
+  const worldContext = getWorldContextFromRequest(request);
+  
+  console.log('🌍 API /history using world context:', {
+    userId: session.user.id,
+    worldContext,
+    limit
+  });
+
+  // Use enhanced getChatsByUserId with automatic world isolation
+  const result = await getChatsByUserId({
     id: session.user.id,
     limit,
     startingAfter,
     endingBefore,
+    worldContext
+  });
+  
+  console.log('🌍 API /history returned chats:', {
+    count: result.chats.length,
+    hasMore: result.hasMore,
+    worldContext
   });
 
-  return Response.json(chats);
+  return Response.json(result);
 }

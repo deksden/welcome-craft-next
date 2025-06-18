@@ -1,6 +1,6 @@
-# 📋 WelcomeCraft Project Backlog
+# 📋 WelcomeCraft Project Tasks
 
-**AI-Unified Recall Architecture** — Kanban доска для управления задачами
+**AURA: AI-Unified Recall Architecture** — Kanban доска для управления задачами
 
 **Последнее обновление:** 2025-06-17  
 **Статус:** ✅ КРИТИЧЕСКИЕ СТАБИЛИЗАЦИОННЫЕ ФИКСЫ ЗАВЕРШЕНЫ - все активные баги исправлены
@@ -37,6 +37,90 @@
     - [ ] Возможность выбрать и закрепить конкретную версию
     - [ ] Информация о том, когда и кем была создана версия
 
+- [ ] **#005: Publication System - Database Schema Foundation** `Priority: High` `Status: Backlog` `Type: Architecture`
+  - **Description:** Обновление схемы базы данных для поддержки системы публикации с TTL и множественными источниками
+  - **Prerequisite for:** All other publication system tasks
+  - **Files to modify:**
+    - `lib/db/schema.ts` - добавление полей publication_state и published_until
+    - `lib/types.ts` - определение PublicationInfo interface
+  - **Acceptance Criteria:**
+    - [ ] Добавлено поле `publication_state: jsonb` в таблицу Artifact (массив PublicationInfo)
+    - [ ] Заменено поле `visibility` на `published_until: timestamp` в таблице Chat
+    - [ ] Определен TypeScript interface PublicationInfo с полями source, sourceId, publishedAt, expiresAt
+    - [ ] Сгенерирована и применена миграция БД (`pnpm db:generate && pnpm db:migrate`)
+    - [ ] Проверена совместимость с существующими данными
+
+- [ ] **#006: Publication System - Helper Utilities** `Priority: High` `Status: Backlog` `Type: Backend`
+  - **Description:** Создание утилит для проверки статуса публикации и загрузки данных
+  - **Depends on:** #005 (Database Schema Foundation)
+  - **Files to create/modify:**
+    - `lib/publication-utils.ts` - функции isArtifactPublished, isSitePublished, fetchPublishedSiteData
+  - **Acceptance Criteria:**
+    - [ ] Функция `isArtifactPublished(artifact)` проверяет активные записи в publication_state
+    - [ ] Функция `isSitePublished(siteArtifact)` проверяет публикацию именно как сайта
+    - [ ] Функция `fetchPublishedSiteData(siteId)` безопасно загружает данные для рендеринга
+    - [ ] Правильная обработка TTL - проверка expiresAt против текущей даты
+    - [ ] Единый запрос для загрузки всех артефактов сайта через inArray
+
+- [ ] **#007: Publication System - Server Actions Implementation** `Priority: High` `Status: Backlog` `Type: Backend`
+  - **Description:** Реализация серверных действий для публикации и отмены публикации чатов и сайтов
+  - **Depends on:** #006 (Helper Utilities)
+  - **Files to create/modify:**
+    - `app/app/(main)/chat/actions.ts` - publishChat, unpublishChat
+    - `app/app/(main)/artifacts/actions.ts` - publishSite, unpublishSite
+  - **Acceptance Criteria:**
+    - [ ] `publishChat(chatId, expiresAt)` находит артефакты в сообщениях и обновляет publication_state
+    - [ ] `unpublishChat(chatId)` устанавливает published_until=null и удаляет записи из publication_state
+    - [ ] `publishSite(siteId, expiresAt)` добавляет запись в publication_state сайта
+    - [ ] `unpublishSite(siteId)` удаляет запись с source='site' из publication_state
+    - [ ] Атомарные операции с правильной обработкой ошибок
+    - [ ] Валидация входных параметров и проверка прав доступа
+
+- [ ] **#008: Publication System - Enhanced Share Dialog** `Priority: High` `Status: Backlog` `Type: Frontend`
+  - **Description:** Обновление диалога "Share" для чатов с выбором TTL и управлением публикацией
+  - **Depends on:** #007 (Server Actions Implementation)
+  - **Files to modify:**
+    - `components/share-dialog.tsx` - добавление TTL селектора и интеграция с publishChat
+  - **Acceptance Criteria:**
+    - [ ] Select компонент с опциями: "Месяц", "3 месяца", "Год", "Бессрочно", "Указать дату..."
+    - [ ] Popover с Calendar компонентом для кастомных дат
+    - [ ] Кнопка "Share and Copy" вызывает publishChat с выбранной датой
+    - [ ] Кнопка "Stop Sharing" вызывает unpublishChat
+    - [ ] Отображение текущего статуса публикации и времени истечения
+    - [ ] Корректная генерация и копирование публичного URL
+
+
+
+- [ ] **#011: Publication System - Security and API Updates** `Priority: Critical` `Status: Backlog` `Type: Security`
+  - **Description:** Обновление API endpoints и защита страниц для поддержки публичного доступа
+  - **Depends on:** #006 (Helper Utilities)
+  - **Files to modify:**
+    - `app/site/(hosting)/s/[siteId]/page.tsx` - защита публичных сайтов
+    - `app/api/artifact/route.ts` - поддержка публичного доступа
+  - **Acceptance Criteria:**
+    - [ ] Страница публичного сайта проверяет isSitePublished() и возвращает notFound() для неопубликованных
+    - [ ] `/api/artifact` поддерживает публичный доступ для опубликованных артефактов
+    - [ ] Правильная логика: нет сессии → проверить publication_state → 401/403 если не опубликован
+    - [ ] Корректная обработка случаев: owner + published, non-owner + published, non-owner + private
+    - [ ] Proper HTTP status codes (401 vs 403) в зависимости от ситуации
+    - [ ] Security audit всех публичных endpoints
+
+- [ ] **#012: Update Legacy Code for Publication System Compatibility** `Priority: High` `Status: Backlog` `Type: Refactor`
+  - **Description:** Обновление существующего кода для совместимости с новой системой публикации и полного ТЗ workflow
+  - **Prerequisite:** #005 (Database Schema Foundation) - COMPLETED
+  - **Files to review and update:**
+    - `app/api/chat/route.ts` - корректная логика создания чатов с published_until
+    - `components/share-dialog.tsx` - подготовка для TTL селектора
+    - `hooks/use-chat-visibility.ts` - адаптация под published_until поле
+    - All chat creation/update workflows - замена visibility на published_until
+  - **Acceptance Criteria:**
+    - [ ] Все существующие чат workflows корректно работают с published_until полем
+    - [ ] Share dialog готов для расширения TTL функциональностью
+    - [ ] Нет breaking changes в существующей функциональности
+    - [ ] Все тесты проходят после изменений
+    - [ ] Временная логика visibility → published_until mapping работает корректно
+    - [ ] Подготовлена основа для следующих задач публикации (#006-#011)
+
 ---
 
 ## 📝 To Do (Готово к работе)
@@ -47,7 +131,15 @@
 
 ## 🚀 In Progress (В работе)
 
-*(В настоящее время нет активных задач в работе)*
+- [ ] **#010: Publication System - Read-Only Mode Implementation** `Priority: Medium` `Status: In Progress` `Type: Frontend`
+  - **Description:** Реализация read-only режима для публичных чатов и артефактов
+  - **Dependencies:** #006 (Helper Utilities), #009 (Site Publication UI)
+  - **Acceptance Criteria:**
+    - [ ] Проп isReadonly передается во все компоненты редактирования
+    - [ ] Отключение возможности редактирования для не-владельцев публичного контента
+    - [ ] Визуальные индикаторы read-only режима
+    - [ ] Скрытие кнопок редактирования для readonly контента
+    - [ ] Корректная работа во всех типах редакторов (text, code, site)
 
 ---
 
@@ -58,6 +150,30 @@
 ---
 
 ## ✅ Done (Выполнено)
+
+- [x] **#009: Publication System - Site Publication UI** `Priority: Medium` `Status: Done` `Type: Feature`
+  - **Description:** Создание пользовательского интерфейса для управления публикацией сайт-артефактов с поддержкой TTL и статус индикаторов
+  - **Completed:** 2025-06-17
+  - **Result:** ✅ Полностью реализован UI для публикации сайтов с интеграцией в artifact систему
+  - **Dependencies:** #008 (Enhanced Share Dialog), #007 (Server Actions), #006 (Helper Utilities)
+  - **Technical Implementation:**
+    - ✅ **SitePublicationDialog создан** - полноценный диалог с TTL управлением для сайтов
+    - ✅ **Интеграция в site artifacts** - action кнопка добавлена в site artifact через custom events
+    - ✅ **TypeScript совместимость исправлена** - решена проблема типов между ArtifactApiResponse и Artifact
+    - ✅ **Artifact.tsx интеграция** - добавлены отдельные SWR запросы для полной информации об артефакте
+    - ✅ **Site artifact actions** - publication action интегрирован в artifacts/kinds/site/client.tsx
+    - ✅ **Custom event система** - коммуникация между компонентами через window events
+    - ✅ **Lint compliance** - все accessibility требования соблюдены
+  - **Components Created:**
+    - ✅ `components/site-publication-dialog.tsx` - основной диалог публикации
+    - ✅ `components/site-publish-action.tsx` - action компонент для интеграции
+    - ✅ Интеграция в `components/artifact.tsx` с SWR для полных данных артефакта
+    - ✅ Обновлен `artifacts/kinds/site/client.tsx` с publication action
+  - **Quality Assurance:**
+    - ✅ TypeScript compilation: `pnpm typecheck` ✅
+    - ✅ ESLint validation: `pnpm lint` ✅
+    - ✅ Unit tests: 26/26 passed ✅
+  - **Impact:** Пользователи теперь могут управлять публикацией сайтов с TTL поддержкой прямо из artifact панели
 
 - [x] **#SSR-HYDRATION-ERROR-001: Fix hydration error with next-themes data-rm-theme attribute mismatch** `Priority: Critical` `Status: Done` `Type: Bug`
   - **Description:** Приложение крашится с ошибкой "Hydration failed because the server rendered HTML didn't match the client" из-за различий в data-rm-theme атрибуте
@@ -642,9 +758,9 @@
 
 ## 📊 Статистика
 
-**Всего задач выполнено:** 40  
-**Активных задач:** 0  
-**В бэклоге:** 4  
+**Всего задач выполнено:** 42  
+**Активных задач:** 1  
+**В бэклоге:** 7  
 
 **✅ ВСЕ КРИТИЧЕСКИЕ ФИКСЫ ЗАВЕРШЕНЫ И ПОДТВЕРЖДЕНЫ (2025-06-17):**
 - ✅ **SSR HYDRATION ERROR ПОЛНОСТЬЮ УСТРАНЕНА** - приложение больше не крашится при навигации

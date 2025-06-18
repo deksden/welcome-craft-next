@@ -90,11 +90,11 @@ export const codeArtifact = new Artifact<'code', Metadata>({
       }));
     }
   },
-  content: ({ metadata, setMetadata, ...props }) => {
+  content: ({ metadata, setMetadata, isReadonly = false, ...props }) => {
     return (
       <>
         <div className="px-1">
-          <CodeEditor {...props} />
+          <CodeEditor {...props} isReadonly={isReadonly} />
         </div>
 
         {metadata?.outputs && (

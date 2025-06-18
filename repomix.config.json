@@ -33,6 +33,8 @@
       "*.patch",
       "*.log",
       "*-lock.*",
+      ".memory-bank/libs/Vercel*.md",
+      ".memory-bank/done/",
       "LICENSE"
     ]
   },

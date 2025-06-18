@@ -28,6 +28,37 @@ export async function middleware (request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') ?? 'localhost:3000'
 
+  // World context logging - detailed diagnostics with fallback support
+  let worldCookie = request.cookies.get('world_id')
+  const fallbackWorldCookie = request.cookies.get('world_id_fallback')
+  
+  // Get all cookie names for diagnostics
+  const allCookieNames: string[] = []
+  request.cookies.getAll().forEach(cookie => {
+    allCookieNames.push(cookie.name)
+  })
+  
+  // Use fallback if main cookie is not available
+  if (!worldCookie && fallbackWorldCookie) {
+    worldCookie = fallbackWorldCookie
+    console.log('🌍 Using fallback world cookie')
+  }
+  
+  console.log('🌍 MIDDLEWARE DIAGNOSTIC:', {
+    pathname: url.pathname,
+    hostname,
+    worldCookie: worldCookie ? worldCookie.value : 'NOT_FOUND',
+    fallbackWorldCookie: fallbackWorldCookie ? fallbackWorldCookie.value : 'NOT_FOUND',
+    allCookieNames,
+    cookieCount: allCookieNames.length
+  })
+  
+  if (worldCookie) {
+    console.log(`🌍 Request to ${url.pathname} in world: ${worldCookie.value}`)
+  } else {
+    console.log(`🌍 Request to ${url.pathname} - NO WORLD COOKIE (checked both world_id and world_id_fallback)`)
+  }
+
   // Определяем домен для админ-панели  
   const isAppDomain = process.env.NODE_ENV === 'production'
     ? hostname === 'app.welcome-onboard.ru'

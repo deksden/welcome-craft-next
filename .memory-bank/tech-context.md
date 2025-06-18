@@ -105,3 +105,5 @@
 -   `pnpm test:unit`: Запуск юнит-тестов.
 -   `pnpm db:generate`: Генерация новых миграций после изменения схемы в `lib/db/schema.ts`.
 -   `pnpm db:studio`: Открыть Drizzle Studio для работы с БД.
+
+Установка компонентов Shadcn UI: `pnpm dlx shadcn@latest add badge`

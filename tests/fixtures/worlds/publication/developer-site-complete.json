@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "title": "Onboarding для разработчика",
+  "description": "Комплексный онбординг-сайт для нового разработчика с полной структурой блоков",
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "hero-welcome",
+      "slots": {
+        "title": {
+          "type": "direct",
+          "content": "Добро пожаловать в команду разработки!"
+        },
+        "subtitle": {
+          "type": "direct", 
+          "content": "Мы рады видеть вас в нашей технологической семье. Этот сайт поможет вам быстро адаптироваться и стать частью команды."
+        },
+        "welcome_text": {
+          "type": "artifact",
+          "artifactId": "artifact-welcome-text",
+          "version": "latest",
+          "description": "Приветственное письмо от CEO"
+        }
+      }
+    },
+    {
+      "type": "key-contacts",
+      "id": "contacts-dev-team",
+      "slots": {
+        "contacts_data": {
+          "type": "artifact",
+          "artifactId": "artifact-dev-contacts", 
+          "version": "latest",
+          "description": "Контакты команды разработки"
+        }
+      }
+    },
+    {
+      "type": "useful-links",
+      "id": "links-developer",
+      "slots": {
+        "links_content": {
+          "type": "direct",
+          "content": "# Полезные ссылки для разработчиков\n\n## 🛠️ Инструменты разработки\n- [GitLab](https://gitlab.company.com) - система контроля версий\n- [Jira](https://jira.company.com) - управление задачами\n- [Confluence](https://wiki.company.com) - техническая документация\n\n## 📋 Процессы\n- [Code Review Guidelines](https://wiki.company.com/code-review) - стандарты ревью кода\n- [Development Workflow](https://wiki.company.com/dev-workflow) - процесс разработки\n- [Release Process](https://wiki.company.com/releases) - процедуры релизов"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "created": "2025-06-18T10:00:00Z",
+    "target_role": "developer",
+    "complexity": "comprehensive",
+    "status": "ready_for_publication"
+  }
+}

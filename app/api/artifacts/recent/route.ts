@@ -10,6 +10,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/app/(auth)/auth'
 import { getTestSession } from '@/lib/test-auth'
 import { getRecentArtifactsByUserId } from '@/lib/db/queries'
+import { getWorldContextFromRequest } from '@/lib/db/world-context'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 
@@ -35,7 +36,28 @@ export async function GET (request: NextRequest) {
       return new ChatSDKError('bad_request:api', 'Invalid limit parameter. Must be between 1 and 20.').toResponse()
     }
 
-    const recentArtifacts = await getRecentArtifactsByUserId({ userId: session.user.id, limit, kind })
+    // Get world context from request cookies
+    const worldContext = getWorldContextFromRequest(request);
+    
+    console.log('🌍 API /artifacts/recent using world context:', {
+      userId: session.user.id,
+      worldContext,
+      limit,
+      kind
+    });
+
+    // Use enhanced getRecentArtifactsByUserId with automatic world isolation
+    const recentArtifacts = await getRecentArtifactsByUserId({ 
+      userId: session.user.id, 
+      limit, 
+      kind,
+      worldContext
+    });
+    
+    console.log('🌍 API /artifacts/recent returned artifacts:', {
+      count: recentArtifacts.length,
+      worldContext
+    });
 
     // Normalize artifacts for API response (add unified content field)
     const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')

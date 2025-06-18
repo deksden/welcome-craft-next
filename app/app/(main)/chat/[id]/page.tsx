@@ -100,7 +100,8 @@ export default async function Page (props: { params: Promise<{ id: string }> }) 
   }
 
   // Если чат существует - проверяем права доступа
-  if (chat.visibility === 'private') {
+  const isPublished = chat.published_until && chat.published_until > new Date()
+  if (!isPublished) {
     if (!session.user) {
       return notFound()
     }

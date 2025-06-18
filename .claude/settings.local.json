@@ -69,7 +69,13 @@
       "WebFetch(domain:ai.google.dev)",
       "Bash(biome lint:*)",
       "WebFetch(domain:ai-sdk.dev)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm db:generate:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(for file in components/artifact.tsx components/code-editor.tsx components/enhanced-share-dialog.tsx components/sidebar-history.tsx components/site-publication-dialog.tsx components/site-publish-action.tsx components/text-editor.tsx hooks/use-chat-publication.ts hooks/use-chat-visibility.ts)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(pnpm db:migrate:*)"
     ],
     "deny": []
   }

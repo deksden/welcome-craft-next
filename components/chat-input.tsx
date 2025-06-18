@@ -310,7 +310,7 @@ export function ChatInput ({
         )}
 
         <Textarea
-          data-testid="chat-input-textarea"
+          data-testid="chat-input"
           placeholder="Send a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -345,7 +345,7 @@ export function ChatInput ({
           <div className="flex items-center gap-2">
             <p className="text-xs text-muted-foreground">⌘+Enter to send</p>
             <Button
-              data-testid="chat-input-send-button"
+              data-testid="send-button"
               size="icon"
               variant="outline"
               className="rounded-full"

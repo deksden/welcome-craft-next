@@ -3,12 +3,14 @@
 /**
  * @file components/artifact.tsx
  * @description Основной компонент-контейнер для артефакта.
- * @version 2.4.0
- * @date 2025-06-10
- * @updated Определения artifactKinds и ArtifactKind теперь импортируются из lib/types.
+ * @version 2.6.0
+ * @date 2025-06-18
+ * @updated Fixed site publication button - improved SWR retry logic and dialog rendering conditions.
  */
 
 /** HISTORY:
+ * v2.6.0 (2025-06-18): Fixed site publication button - improved SWR retry logic and dialog rendering conditions.
+ * v2.5.0 (2025-06-18): Fixed runtime error - added safety check for undefined latest object in SWR refreshInterval.
  * v2.4.0 (2025-06-10): Определения artifactKinds и ArtifactKind теперь импортируются из lib/types.
  * v2.3.0 (2025-06-11): Added 'use client' directive.
  * v2.2.0 (2025-06-10): Добавлен экспорт `artifactKinds` и исправлена ошибка типизации в VersionFooter.
@@ -24,6 +26,7 @@ import { Toolbar } from './toolbar'
 import { VersionFooter } from './version-footer'
 import { ArtifactActions } from './artifact-actions'
 import { ArtifactCloseButton } from './artifact-close-button'
+import { SitePublicationDialog } from './site-publication-dialog'
 import { useArtifact } from '@/hooks/use-artifact'
 import { codeArtifact } from '@/artifacts/kinds/code/client'
 import { imageArtifact } from '@/artifacts/kinds/image/client'
@@ -39,6 +42,7 @@ import type { Session } from 'next-auth'
 import { toast } from './toast'
 import { createClientLogger } from '@/lib/client-logger'
 import type { ArtifactKind, ArtifactApiResponse } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
+import type { Artifact as ArtifactData } from '@/lib/db/types'
 
 const logger = createClientLogger('Artifact')
 
@@ -74,6 +78,7 @@ function PureArtifact ({
   status,
   stop,
   setMessages,
+  isReadonly,
 }: {
   chatId: string;
   input: string;
@@ -95,6 +100,25 @@ function PureArtifact ({
   const artifactLogger = logger.child({ artifactId: artifact.artifactId, kind: artifact.kind })
 
   const [isToolbarVisible, setIsToolbarVisible] = useState(false)
+  const [isSitePublicationDialogOpen, setIsSitePublicationDialogOpen] = useState(false)
+  
+  // Отдельный запрос для получения полной информации артефакта (включая publication_state)
+  const { data: fullArtifact, error: fullArtifactError } = useSWR<ArtifactData>(
+    artifact.kind === 'site' && artifact.artifactId ? `/api/artifacts/${artifact.artifactId}` : null,
+    fetcher,
+    { 
+      refreshInterval: (data) => {
+        // Retry if we don't have the data yet
+        return !data ? 3000 : 0;
+      },
+      onError: (err) => {
+        console.error('🔍 [DEBUG] Full artifact fetch error:', {
+          artifactId: artifact.artifactId,
+          error: err.message
+        })
+      }
+    }
+  )
 
   const {
     data: artifacts,
@@ -109,6 +133,7 @@ function PureArtifact ({
       refreshInterval: (data) => {
         if (!data || data.length === 0) return 3000;
         const latest = data[data.length - 1];
+        if (!latest) return 3000; // Safety check for undefined latest
         // Keep polling if content is null or summary is missing
         const needsContent = !latest.content || latest.content === '';
         const needsSummary = !latest.summary;
@@ -213,6 +238,20 @@ function PureArtifact ({
     }
   }, [artifact.artifactId, artifactDefinition, setMetadata])
 
+  // Обработка события открытия диалога публикации сайта
+  useEffect(() => {
+    const handleOpenSitePublicationDialog = () => {
+      if (artifact.kind === 'site') {
+        setIsSitePublicationDialogOpen(true)
+      }
+    }
+
+    window.addEventListener('open-site-publication-dialog', handleOpenSitePublicationDialog)
+    return () => {
+      window.removeEventListener('open-site-publication-dialog', handleOpenSitePublicationDialog)
+    }
+  }, [artifact.kind])
+
   if (!artifactDefinition || !artifact.isVisible || isMobile) {
     return null
   }
@@ -242,15 +281,17 @@ function PureArtifact ({
             </TooltipTrigger>
             <TooltipContent>{artifact.displayMode === 'split' ? 'Enter Fullscreen' : 'Exit Fullscreen'}</TooltipContent>
           </Tooltip>
-          <ArtifactActions
-            artifact={artifact}
-            currentVersionIndex={currentVersionIndex}
-            handleVersionChange={handleVersionChange}
-            isCurrentVersion={isCurrentVersion}
-            mode={mode}
-            metadata={metadata}
-            setMetadata={setMetadata}
-          />
+          {!isReadonly && (
+            <ArtifactActions
+              artifact={artifact}
+              currentVersionIndex={currentVersionIndex}
+              handleVersionChange={handleVersionChange}
+              isCurrentVersion={isCurrentVersion}
+              mode={mode}
+              metadata={metadata}
+              setMetadata={setMetadata}
+            />
+          )}
         </div>
       </div>
       <div className="dark:bg-muted bg-background h-full overflow-y-scroll !max-w-full items-center">
@@ -264,31 +305,60 @@ function PureArtifact ({
               status={artifact.status}
               currentVersionIndex={currentVersionIndex}
               suggestions={[]}
-              onSaveContent={saveContent}
+              onSaveContent={isReadonly ? () => {} : saveContent}
               isInline={false}
               isCurrentVersion={isCurrentVersion}
               getDocumentContentById={getArtifactContentByIdx}
               isLoading={isArtifactsFetching || (currentArtifact && (!currentArtifact.content || currentArtifact.content === ''))}
               metadata={metadata as any}
               setMetadata={setMetadata as any}
+              isReadonly={isReadonly}
             />
           )
         })()}
-        {isCurrentVersion && <Toolbar
-          append={append}
-          status={status}
-          artifactKind={artifact.kind}
-          isToolbarVisible={isToolbarVisible}
-          setIsToolbarVisible={setIsToolbarVisible}
-          stop={stop}
-          setMessages={setMessages}
-        />}
+        {isCurrentVersion && !isReadonly && (
+          <Toolbar
+            append={append}
+            status={status}
+            artifactKind={artifact.kind}
+            isToolbarVisible={isToolbarVisible}
+            setIsToolbarVisible={setIsToolbarVisible}
+            stop={stop}
+            setMessages={setMessages}
+          />
+        )}
       </div>
       {!isCurrentVersion && (
         <VersionFooter
           currentVersionIndex={currentVersionIndex}
           documents={artifacts}
           handleVersionChange={handleVersionChange}
+        />
+      )}
+      
+      {/* Диалог публикации сайта */}
+      {artifact.kind === 'site' && artifact.artifactId && (
+        <SitePublicationDialog
+          siteArtifact={fullArtifact || {
+            id: artifact.artifactId,
+            title: artifact.title,
+            kind: 'site',
+            createdAt: new Date(),
+            userId: '',
+            authorId: null,
+            deletedAt: null,
+            summary: '',
+            content_site_definition: null,
+            content_text: null,
+            content_url: null,
+            publication_state: []
+          }}
+          onSiteUpdate={(updatedArtifact) => {
+            // Обновляем кеш с полной информацией об артефакте
+            mutate(`/api/artifacts/${artifact.artifactId}`, updatedArtifact, { revalidate: false })
+          }}
+          open={isSitePublicationDialogOpen}
+          onOpenChange={setIsSitePublicationDialogOpen}
         />
       )}
     </div>

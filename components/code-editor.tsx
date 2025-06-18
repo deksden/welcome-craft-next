@@ -6,7 +6,7 @@ import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { basicSetup } from 'codemirror';
 import React, { memo, useEffect, useRef } from 'react';
-import type { Suggestion } from '@/lib/db/schema';
+import type { Suggestion } from '@/lib/db/types';
 
 type EditorProps = {
   content: string;
@@ -15,9 +15,10 @@ type EditorProps = {
   isCurrentVersion: boolean;
   currentVersionIndex: number;
   suggestions: Array<Suggestion>;
+  isReadonly?: boolean;
 };
 
-function PureCodeEditor({ content, onSaveContent, status }: EditorProps) {
+function PureCodeEditor({ content, onSaveContent, status, isReadonly = false }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView | null>(null);
 
@@ -25,7 +26,12 @@ function PureCodeEditor({ content, onSaveContent, status }: EditorProps) {
     if (containerRef.current && !editorRef.current) {
       const startState = EditorState.create({
         doc: content,
-        extensions: [basicSetup, python(), oneDark],
+        extensions: [
+          basicSetup, 
+          python(), 
+          oneDark,
+          ...(isReadonly ? [EditorState.readOnly.of(true)] : [])
+        ],
       });
 
       editorRef.current = new EditorView({
@@ -63,13 +69,19 @@ function PureCodeEditor({ content, onSaveContent, status }: EditorProps) {
 
       const newState = EditorState.create({
         doc: editorRef.current.state.doc,
-        extensions: [basicSetup, python(), oneDark, updateListener],
+        extensions: [
+          basicSetup, 
+          python(), 
+          oneDark, 
+          ...(isReadonly ? [] : [updateListener]),
+          ...(isReadonly ? [EditorState.readOnly.of(true)] : [])
+        ],
         selection: currentSelection,
       });
 
       editorRef.current.setState(newState);
     }
-  }, [onSaveContent]);
+  }, [onSaveContent, isReadonly]);
 
   useEffect(() => {
     if (editorRef.current && content) {

@@ -1,0 +1,35 @@
+{
+  "id": "ai-site-generation-m3n8r5", 
+  "name": "AI Fixture: Designer Onboarding Site Generation",
+  "useCaseId": "UC-02",
+  "worldId": "CLEAN_USER_WORKSPACE",
+  "input": {
+    "prompt": "Create an onboarding site for a new designer named Alex. Include welcome message, key contacts for design team, and useful design resources and tools.",
+    "model": "artifact-model",
+    "settings": {
+      "temperature": 0.3,
+      "maxTokens": 3072
+    },
+    "context": {
+      "useCaseId": "UC-02",
+      "worldId": "CLEAN_USER_WORKSPACE", 
+      "operation": "site-generation"
+    }
+  },
+  "output": {
+    "content": "{\n  \"version\": \"1.0\",\n  \"title\": \"Welcome Alex - Designer Onboarding\",\n  \"description\": \"Comprehensive onboarding site for new designer Alex with team contacts and design resources\",\n  \"blocks\": [\n    {\n      \"type\": \"hero\",\n      \"id\": \"hero-welcome-alex\",\n      \"slots\": {\n        \"title\": {\n          \"type\": \"direct\",\n          \"content\": \"Welcome to the Design Team, Alex! 🎨\"\n        },\n        \"subtitle\": {\n          \"type\": \"direct\",\n          \"content\": \"We're thrilled to have you join our creative team. This site will help you get oriented with our design processes, meet your new teammates, and access the tools you'll need to create amazing user experiences.\"\n        }\n      }\n    },\n    {\n      \"type\": \"key-contacts\",\n      \"id\": \"contacts-design-team\",\n      \"slots\": {\n        \"contacts_data\": {\n          \"type\": \"direct\",\n          \"content\": \"Name,Role,Email,Slack\\nMaria Rodriguez,Design Director,maria.rodriguez@company.com,@maria\\nDavid Kim,Senior UX Designer,david.kim@company.com,@david.kim\\nSarah Chen,Design Systems Lead,sarah.chen@company.com,@sarah.design\\nTom Wilson,Product Designer,tom.wilson@company.com,@tom.w\\nAmy Zhang,User Researcher,amy.zhang@company.com,@amy.research\"\n        }\n      }\n    },\n    {\n      \"type\": \"useful-links\",\n      \"id\": \"links-design-resources\",\n      \"slots\": {\n        \"links_content\": {\n          \"type\": \"direct\",\n          \"content\": \"# 🎨 Design Resources & Tools\\n\\n## Essential Tools\\n- [Figma Workspace](https://figma.com/company) - Our primary design tool\\n- [Design System](https://design.company.com) - Component library and guidelines\\n- [Miro Board](https://miro.com/company) - Collaborative whiteboarding\\n\\n## Resources\\n- [Brand Guidelines](https://brand.company.com) - Logo, colors, typography\\n- [User Research Portal](https://research.company.com) - User insights and data\\n- [Design Process Guide](https://process.company.com) - Our design methodology\\n\\n## Communication\\n- **Slack Channels:** #design-team, #design-systems, #user-research\\n- **Weekly Sync:** Tuesdays 10am - Design Team Standup\\n- **Design Reviews:** Thursdays 2pm - Cross-team feedback sessions\"\n        }\n      }\n    }\n  ],\n  \"metadata\": {\n    \"created\": \"2025-06-18T12:35:22.456Z\",\n    \"target_role\": \"designer\",\n    \"target_person\": \"Alex\",\n    \"complexity\": \"comprehensive\",\n    \"ai_generated\": true\n  }\n}",
+    "usage": {
+      "promptTokens": 67,
+      "completionTokens": 512,
+      "totalTokens": 579
+    },
+    "finishReason": "stop",
+    "timestamp": "2025-06-18T12:35:22.456Z",
+    "duration": 2341
+  },
+  "metadata": {
+    "createdAt": "2025-06-18T12:35:22.456Z",
+    "hash": "m3n8r5k9t2",
+    "tags": ["UC-02", "site-generation", "designer", "onboarding"]
+  }
+}

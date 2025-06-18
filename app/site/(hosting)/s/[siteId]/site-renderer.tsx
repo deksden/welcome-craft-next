@@ -1,12 +1,13 @@
 /**
  * @file app/(site)/(hosting)/s/[siteId]/site-renderer.tsx
- * @description Client component that loads a site artifact and renders blocks.
- * @version 0.1.0
- * @date 2025-06-12
- * @updated Initial version.
+ * @description Client component that loads published site artifacts and renders blocks.
+ * @version 1.0.0
+ * @date 2025-06-17
+ * @updated Added publication system support and public access control.
  */
 
 /** HISTORY:
+ * v1.0.0 (2025-06-17): Added publication system support and public access control.
  * v0.1.0 (2025-06-12): Initial version.
  */
 
@@ -31,7 +32,7 @@ interface SiteDefinition {
 }
 
 export function SiteRenderer ({ siteId }: { siteId: string }) {
-  const { data, isLoading } = useSWR<any>(`/api/artifact?id=${siteId}`, fetcher)
+  const { data, isLoading, error } = useSWR<any>(`/api/artifact?id=${siteId}`, fetcher)
 
   if (isLoading || !data) {
     return (
@@ -43,10 +44,37 @@ export function SiteRenderer ({ siteId }: { siteId: string }) {
     )
   }
 
+  // Handle error responses (site not published or not found)
+  if (error || !data) {
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Сайт не найден
+        </h1>
+        <p className="text-gray-600">
+          Этот сайт не опубликован или не существует.
+        </p>
+      </div>
+    )
+  }
+
   const siteArtifact = Array.isArray(data) ? data.at(-1) : data.doc
-  const siteDefinition: SiteDefinition = siteArtifact?.content
-    ? JSON.parse(siteArtifact.content)
-    : { theme: 'default', blocks: [] }
+  
+  // Handle case where site artifact has no content yet
+  if (!siteArtifact?.content) {
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Сайт еще не готов
+        </h1>
+        <p className="text-gray-600">
+          Содержимое сайта находится в процессе генерации.
+        </p>
+      </div>
+    )
+  }
+
+  const siteDefinition: SiteDefinition = JSON.parse(siteArtifact.content)
 
   return (
     <div className="space-y-6">

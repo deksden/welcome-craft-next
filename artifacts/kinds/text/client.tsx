@@ -10,7 +10,7 @@ import {
   RedoIcon,
   UndoIcon,
 } from '@/components/icons';
-import type { Suggestion } from '@/lib/db/schema';
+import type { Suggestion } from '@/lib/db/types';
 import { toast } from 'sonner';
 import { getSuggestions } from '@/artifacts/actions';
 
@@ -66,6 +66,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
     getDocumentContentById,
     isLoading,
     metadata,
+    isReadonly = false,
   }) => {
     if (isLoading) {
       return <ArtifactSkeleton artifactKind="text" />;
@@ -88,6 +89,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
             currentVersionIndex={currentVersionIndex}
             status={status}
             onSaveContent={onSaveContent}
+            isReadonly={isReadonly}
           />
 
           {metadata?.suggestions &&

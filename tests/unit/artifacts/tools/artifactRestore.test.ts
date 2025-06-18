@@ -42,6 +42,7 @@ describe('AI Tool - artifactRestore', () => {
       authorId: 'test-user-123',
       deletedAt: null,
       summary: '...',
+      publication_state: [],
     },
     totalVersions: 1,
   }

@@ -15,6 +15,20 @@
       "when": 1734345600000,
       "tag": "0001_sparse_content_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1750171805433,
+      "tag": "0002_publication_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1750257012420,
+      "tag": "0003_uneven_blindfold",
+      "breakpoints": true
     }
   ]
 }
