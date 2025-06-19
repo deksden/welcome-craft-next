@@ -171,7 +171,18 @@ export async function publishChat({
     for (const message of messages) {
       if (message.parts && Array.isArray(message.parts)) {
         for (const part of message.parts) {
-          if (part && typeof part === 'object' && 'toolInvocations' in part) {
+          // Поддержка нового формата AI SDK Message_v2
+          if (part && typeof part === 'object' && (part as any).type === 'tool-invocation') {
+            const toolInvocation = (part as any).toolInvocation
+            if (toolInvocation?.result && typeof toolInvocation.result === 'object') {
+              const artifactId = toolInvocation.result.artifactId
+              if (artifactId && typeof artifactId === 'string') {
+                artifactIds.add(artifactId)
+              }
+            }
+          }
+          // Обратная совместимость со старым форматом (deprecated)
+          else if (part && typeof part === 'object' && 'toolInvocations' in part) {
             const toolInvocations = (part as any).toolInvocations
             if (Array.isArray(toolInvocations)) {
               for (const invocation of toolInvocations) {

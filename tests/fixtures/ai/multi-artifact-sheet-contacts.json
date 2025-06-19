@@ -1,0 +1,20 @@
+{
+  "description": "AI fixture для создания контактов команды разработки",
+  "trigger": {
+    "toolName": "artifactCreate",
+    "args": {
+      "kind": "sheet",
+      "title": "Контакты команды разработки",
+      "prompt": "контакты.*команда.*разработ"
+    }
+  },
+  "response": {
+    "result": "Name,Position,Email,Slack,Expertise,Availability\nАндрей Семенов,CTO,andrey.semenov@company.com,@andrey.cto,\"Strategy, Architecture\",Mon-Fri 9-18\nМария Козлова,Frontend Lead,maria.kozlova@company.com,@maria.frontend,\"React, TypeScript, UI/UX\",Mon-Fri 10-19\nАлександр Иванов,Senior Backend Engineer,alexander.ivanov@company.com,@alex.backend,\"Python, PostgreSQL, APIs\",Mon-Fri 9-18\nНикита Соколов,DevOps Engineer,nikita.sokolov@company.com,@nikita.devops,\"Kubernetes, AWS, CI/CD\",24/7 rotation\nЕлена Попова,QA Lead,elena.popova@company.com,@elena.qa,\"Test Automation, Quality\",Mon-Fri 9-18\nМаксим Федоров,Mobile Developer,maxim.fedorov@company.com,@maxim.mobile,\"React Native, iOS\",Tue-Sat 10-19\nДмитрий Волков,Senior Frontend,dmitry.volkov@company.com,@dmitry.frontend,\"Next.js, Performance\",Mon-Fri 11-20\nСергей Новиков,Backend Engineer,sergey.novikov@company.com,@sergey.backend,\"Microservices, Redis\",Mon-Fri 9-18\nАнна Морозова,Product Manager,anna.morozova@company.com,@anna.pm,\"Product Strategy, Requirements\",Mon-Fri 9-18\nИван Петров,Engineering Manager,ivan.petrov@company.com,@ivan.em,\"Team Management, Planning\",Mon-Fri 9-18",
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 100,
+      "completionTokens": 280,
+      "totalTokens": 380
+    }
+  }
+}

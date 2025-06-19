@@ -1,0 +1,57 @@
+{
+  "description": "AI fixture для tone adjustment suggestions",
+  "trigger": {
+    "toolName": "artifactEnhance", 
+    "args": {
+      "recipe": "suggest-tone-adjustments"
+    }
+  },
+  "response": {
+    "result": {
+      "suggestions": [
+        {
+          "id": "tone-001",
+          "type": "tone",
+          "severity": "medium",
+          "title": "Make tone more welcoming",
+          "description": "Add warmer, more personal language to the introduction",
+          "originalText": "Добро пожаловать в компанию. Вы будете работать в нашем отделе.",
+          "improvedText": "Мы очень рады приветствовать вас в нашей дружной семье! Вы присоединяетесь к замечательному отделу.",
+          "confidence": 0.92,
+          "category": "warmth-enhancement"
+        },
+        {
+          "id": "tone-002",
+          "type": "formality",
+          "severity": "low", 
+          "title": "Adjust formality level",
+          "description": "Make language slightly more professional while maintaining friendliness",
+          "originalText": "Если что-то непонятно, просто спроси любого!",
+          "improvedText": "При возникновении вопросов обращайтесь к любому коллеге - мы всегда готовы помочь.",
+          "confidence": 0.89,
+          "category": "formality-adjustment"
+        },
+        {
+          "id": "tone-003",
+          "type": "engagement",
+          "severity": "medium",
+          "title": "Increase engagement",
+          "description": "Add more interactive and encouraging language",
+          "originalText": "Ознакомьтесь с документацией.",
+          "improvedText": "Мы подготовили для вас интересную документацию - она поможет быстрее освоиться!",
+          "confidence": 0.87,
+          "category": "engagement-boost"
+        }
+      ],
+      "targetAudience": "new-employees",
+      "currentTone": "neutral-formal",
+      "suggestedTone": "warm-professional"
+    },
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 180,
+      "completionTokens": 320,
+      "totalTokens": 500
+    }
+  }
+}

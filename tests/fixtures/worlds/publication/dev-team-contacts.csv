@@ -1,0 +1,7 @@
+name,position,email,slack,github
+Dmitry Volkov,Tech Lead,dmitry.volkov@company.com,@dmitry_v,@dvolkov
+Anastasia Kim,Senior Developer,anastasia.kim@company.com,@anastasia_k,@akim
+Igor Fedorov,DevOps Engineer,igor.fedorov@company.com,@igor_f,@ifedorov
+Olga Morozova,QA Lead,olga.morozova@company.com,@olga_m,@omorozova
+Sergey Petrov,Backend Developer,sergey.petrov@company.com,@sergey_p,@spetrov
+EOF < /dev/null

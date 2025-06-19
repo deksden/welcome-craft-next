@@ -124,6 +124,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
+                data-testid="sidebar-chat-section"
                 onClick={() => {
                   if (sidebarState === 'collapsed') {
                     router.push('/')
@@ -161,6 +162,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  data-testid="sidebar-artifacts-button"
                   onClick={() => {
                     if (sidebarState === 'collapsed') {
                       router.push('/artifacts')
@@ -210,6 +212,7 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                 )}
                 <SidebarMenuItem className="mt-1">
                   <SidebarMenuButton
+                    data-testid="sidebar-all-artifacts-button"
                     onClick={() => {
                       router.push('/artifacts')
                       setOpenMobile(false)
@@ -228,7 +231,10 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
       </SidebarContent>
 
       <SidebarFooter className="p-2">
-        <SidebarTrigger className="ml-auto hidden md:flex">
+        <SidebarTrigger 
+          data-testid="sidebar-toggle-button"
+          className="ml-auto hidden md:flex"
+        >
           <ChevronLeftIcon
             className={`transition-transform duration-200 ${sidebarState === 'collapsed' ? 'rotate-180' : 'rotate-0'}`}/>
         </SidebarTrigger>

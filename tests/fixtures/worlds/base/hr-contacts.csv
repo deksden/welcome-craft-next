@@ -1,5 +1,5 @@
-Name,Email,Phone,Department,Role
-Sarah Wilson,sarah.wilson@company.com,+1-555-0101,HR,HR Manager
-Mike Johnson,mike.johnson@company.com,+1-555-0102,HR,HR Business Partner
-Lisa Chen,lisa.chen@company.com,+1-555-0103,HR,Recruiter
-David Brown,david.brown@company.com,+1-555-0104,HR,People Operations
+name,position,email,phone,department
+Anna Petrov,HR Manager,anna.petrov@company.com,+7-495-123-45-67,Human Resources
+Maria Ivanova,HR Specialist,maria.ivanova@company.com,+7-495-123-45-68,Human Resources
+Elena Smirnova,Recruitment Lead,elena.smirnova@company.com,+7-495-123-45-69,Human Resources
+EOF < /dev/null

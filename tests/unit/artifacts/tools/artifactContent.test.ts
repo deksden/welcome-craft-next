@@ -37,6 +37,7 @@ describe('AI Tool - artifactContent', () => {
       deletedAt: null,
       summary: 'Тест',
       publication_state: [],
+      world_id: null, // Production артефакт
     },
     totalVersions: 1,
   }

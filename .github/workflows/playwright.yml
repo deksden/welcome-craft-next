@@ -9,11 +9,20 @@ jobs:
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    # 🚀 СИСТЕМНАЯ ОПТИМИЗАЦИЯ: Matrix strategy для шардирования тестов
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
     env:
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
+      # 🚀 ШАРДИРОВАНИЕ: Передаем информацию о шарде в Playwright
+      SHARD_INDEX: ${{ matrix.shardIndex }}
+      SHARD_TOTAL: ${{ matrix.shardTotal }}
 
     steps:
       - uses: actions/checkout@v4
@@ -62,12 +71,46 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run Playwright tests
-        run: pnpm test
+      - name: Run Playwright tests (Sharded)
+        run: pnpm test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - uses: actions/upload-artifact@v4
         if: always() && !cancelled()
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shardIndex }}
           path: playwright-report/
           retention-days: 7
+          
+      - uses: actions/upload-artifact@v4
+        if: always() && !cancelled()
+        with:
+          name: test-results-shard-${{ matrix.shardIndex }}
+          path: test-results.json
+          retention-days: 7
+
+  # 🚀 СИСТЕМНАЯ ОПТИМИЗАЦИЯ: Агрегация результатов всех шардов
+  aggregate-results:
+    if: always()
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-shard-*
+          merge-multiple: true
+          path: all-reports/
+          
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-shard-*
+          merge-multiple: true
+          path: test-results/
+          
+      - name: Upload merged reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-merged
+          path: all-reports/
+          retention-days: 30

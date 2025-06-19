@@ -23,6 +23,7 @@ export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
+  name: text('name'), // Имя пользователя для UI
   // Phase 2: Поле для изоляции тестовых миров
   // NULL = production user, 'WORLD_ID' = test user в конкретном мире
   world_id: varchar('world_id', { length: 64 }),
@@ -46,18 +47,7 @@ export const chat = pgTable('Chat', {
 
 export type Chat = InferSelectModel<typeof chat>;
 
-// DEPRECATED: The following schema is deprecated and will be removed in the future.
-export const messageDeprecated = pgTable('Message', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  chatId: uuid('chatId')
-    .notNull()
-    .references(() => chat.id),
-  role: varchar('role').notNull(),
-  content: json('content').notNull(),
-  createdAt: timestamp('createdAt').notNull(),
-})
-
-export type MessageDeprecated = InferSelectModel<typeof messageDeprecated>;
+// Старая таблица Message удалена для исключения путаницы с новым форматом AI SDK
 
 export const message = pgTable('Message_v2', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),

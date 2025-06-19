@@ -49,7 +49,18 @@
     "test:legacy": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test:unit:ui": "vitest --ui"
+    "test:unit:ui": "vitest --ui",
+    "test:sharded": "pnpm exec playwright test --shard=1/4 & pnpm exec playwright test --shard=2/4 & pnpm exec playwright test --shard=3/4 & pnpm exec playwright test --shard=4/4 & wait",
+    "test:shard-1": "pnpm exec playwright test --shard=1/4",
+    "test:shard-2": "pnpm exec playwright test --shard=2/4", 
+    "test:shard-3": "pnpm exec playwright test --shard=3/4",
+    "test:shard-4": "pnpm exec playwright test --shard=4/4",
+    "test:performance": "time pnpm test:sharded",
+    "test:regression:sharded": "pnpm exec playwright test tests/e2e/regression --shard=1/2 & pnpm exec playwright test tests/e2e/regression --shard=2/2 & wait",
+    "test:optimized": "node scripts/test-sharding.js",
+    "test:analyze": "node scripts/test-sharding.js --analyze",
+    "test:validate-worlds": "node scripts/validate-worlds.js",
+    "test:validate-worlds:report": "node scripts/validate-worlds.js --detailed"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",

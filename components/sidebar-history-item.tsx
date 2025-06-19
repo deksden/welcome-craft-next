@@ -73,7 +73,7 @@ const PureChatItem = ({
   }
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem data-testid="sidebar-chat-item">
       <SidebarMenuButton asChild isActive={isActive}>
         <Link href={`/chat/${chat.id}`} onClick={handleLinkClick}>
           <span>{chat.title}</span>
@@ -83,6 +83,7 @@ const PureChatItem = ({
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <Button
+            data-testid="sidebar-chat-menu-button"
             variant="ghost"
             size="icon"
             className={cn(
@@ -97,13 +98,14 @@ const PureChatItem = ({
 
         <DropdownMenuContent side="bottom" align="end">
           <DropdownMenuItem
+            data-testid="sidebar-chat-rename-action"
             className="cursor-pointer"
             onSelect={() => onRename(chat.id, chat.title)}
           >
             <PencilEditIcon className="mr-2 size-4"/>
             <span>Переименовать</span>
           </DropdownMenuItem>
-          <DropdownMenuSub>
+          <DropdownMenuSub data-testid="sidebar-chat-share-menu">
             <DropdownMenuSubTrigger className="cursor-pointer">
               <ShareIcon className="mr-2 size-4"/>
               <span>Share</span>
@@ -141,6 +143,7 @@ const PureChatItem = ({
           </DropdownMenuSub>
 
           <DropdownMenuItem
+            data-testid="sidebar-chat-delete-action"
             className="cursor-pointer text-destructive focus:bg-destructive/15 focus:text-destructive dark:text-red-500"
             onSelect={() => onDelete(chat.id)}
           >

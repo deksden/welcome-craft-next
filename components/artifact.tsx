@@ -351,7 +351,8 @@ function PureArtifact ({
             content_site_definition: null,
             content_text: null,
             content_url: null,
-            publication_state: []
+            publication_state: [],
+            world_id: null
           }}
           onSiteUpdate={(updatedArtifact) => {
             // Обновляем кеш с полной информацией об артефакте

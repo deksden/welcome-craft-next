@@ -66,6 +66,7 @@ describe('AI Tool - artifactUpdate', () => {
       deletedAt: null,
       summary: 'старое саммари',
       publication_state: [],
+      world_id: null, // Production артефакт
     },
     totalVersions: 1,
   }

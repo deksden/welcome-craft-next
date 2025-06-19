@@ -1,22 +1,24 @@
 /**
  * @file tests/helpers/world-setup.ts
- * @description Утилиты для инициализации и очистки тестовых миров
- * @version 1.0.0
+ * @description Утилиты для инициализации и очистки тестовых миров с высокопроизводительным SeedEngine
+ * @version 2.0.0
  * @date 2025-06-18
- * @updated Начальная реализация без изменений БД (Phase 1)
+ * @updated Интеграция с SeedEngine для системной оптимизации E2E тестов
  */
 
 /** HISTORY:
+ * v2.0.0 (2025-06-18): Интеграция с высокопроизводительным SeedEngine для bulk операций
  * v1.0.0 (2025-06-18): Базовая реализация для Phase 1 без world_id в БД
  */
 
-import { readFile } from 'fs/promises'
-import { join } from 'path'
-import type { WorldId, WorldDefinition, WorldUser, WorldArtifact, WorldChat } from './worlds.config'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import type { WorldId, WorldUser, WorldArtifact, WorldChat } from './worlds.config'
 import { getWorldDefinition, validateWorld } from './worlds.config'
+import { seedEngine, type SeedResult } from './seed-engine'
 
 /**
- * @description Результат инициализации мира
+ * @description Расширенный результат инициализации мира с метриками производительности
  */
 export interface WorldSetupResult {
   worldId: WorldId
@@ -24,6 +26,8 @@ export interface WorldSetupResult {
   artifacts: SetupArtifact[]
   chats: SetupChat[]
   cleanup: () => Promise<void>
+  /** Метрики производительности от SeedEngine */
+  performance: SeedResult
 }
 
 /**
@@ -64,34 +68,62 @@ export interface SetupChat {
 }
 
 /**
- * @description Инициализирует тестовый мир для выполнения E2E тестов
+ * @description Инициализирует тестовый мир с использованием высокопроизводительного SeedEngine
  * 
- * @feature Phase 1 implementation - работает без изменений БД
+ * @feature Оптимизированная реализация с bulk операциями для максимальной производительности
  * @param worldId - ID мира для инициализации
- * @returns Promise с результатом настройки и функцией очистки
+ * @returns Promise с результатом настройки, метриками и функцией очистки
  */
 export async function setupWorld(worldId: WorldId): Promise<WorldSetupResult> {
-  console.log(`🌍 Setting up world: ${worldId}`)
+  console.log(`🌍 OPTIMIZED SETUP: Initializing world ${worldId} with SeedEngine...`)
   
   // Валидация мира
   validateWorld(worldId)
   const worldDef = getWorldDefinition(worldId)
   
-  // Инициализация компонентов
-  const users = await setupUsers(worldDef.users)
-  const artifacts = await setupArtifacts(worldDef.artifacts, users)
-  const chats = await setupChats(worldDef.chats, users)
+  // Используем SeedEngine для максимальной производительности
+  const seedResult = await seedEngine.seedWorld(worldId)
   
-  console.log(`✅ World ${worldId} setup complete:`, {
+  // Конвертируем результаты в совместимый формат
+  const users = worldDef.users.map((userData, index) => ({
+    testId: userData.testId,
+    name: userData.name,
+    email: userData.email,
+    role: userData.role,
+    dbId: seedResult.createdEntities.users[index]
+  }))
+
+  const artifacts = worldDef.artifacts.map((artifactData, index) => ({
+    testId: artifactData.testId,
+    title: artifactData.title,
+    kind: artifactData.kind,
+    ownerId: artifactData.ownerId,
+    dbId: seedResult.createdEntities.artifacts[index]
+  }))
+
+  const chats = worldDef.chats.map((chatData, index) => ({
+    testId: chatData.testId,
+    title: chatData.title,
+    ownerId: chatData.ownerId,
+    dbId: seedResult.createdEntities.chats[index]
+  }))
+  
+  console.log(`✅ OPTIMIZED SETUP: World ${worldId} ready in ${seedResult.totalTime}ms:`, {
     users: users.length,
     artifacts: artifacts.length,
-    chats: chats.length
+    chats: chats.length,
+    performance: {
+      totalTime: seedResult.totalTime,
+      usersTime: seedResult.operations.users.time,
+      artifactsTime: seedResult.operations.artifacts.time,
+      chatsTime: seedResult.operations.chats.time
+    }
   })
   
-  // Функция очистки
+  // Оптимизированная функция очистки
   const cleanup = async () => {
     if (worldDef.settings.autoCleanup) {
-      await cleanupWorld(worldId, { users, artifacts, chats })
+      await seedEngine.cleanupWorld(worldId)
     }
   }
   
@@ -100,7 +132,80 @@ export async function setupWorld(worldId: WorldId): Promise<WorldSetupResult> {
     users,
     artifacts,
     chats,
-    cleanup
+    cleanup,
+    performance: seedResult
+  }
+}
+
+/**
+ * @description LEGACY функция для обратной совместимости (будет удалена)
+ * @deprecated Используйте setupWorld() с SeedEngine для лучшей производительности
+ */
+export async function setupWorldLegacy(worldId: WorldId): Promise<WorldSetupResult> {
+  console.log(`⚠️ LEGACY SETUP: Using deprecated setupWorldLegacy for ${worldId}`)
+  
+  // Валидация мира
+  validateWorld(worldId)
+  const worldDef = getWorldDefinition(worldId)
+  
+  // Инициализация компонентов старым способом
+  const users = await setupUsers(worldDef.users)
+  const artifacts = await setupArtifacts(worldDef.artifacts, users)
+  const chats = await setupChats(worldDef.chats, users)
+  
+  console.log(`✅ LEGACY SETUP: World ${worldId} complete:`, {
+    users: users.length,
+    artifacts: artifacts.length,
+    chats: chats.length
+  })
+  
+  // Функция очистки
+  const cleanup = async () => {
+    if (worldDef.settings.autoCleanup) {
+      await cleanupWorld(worldId, { 
+        users, 
+        artifacts, 
+        chats,
+        performance: {
+          worldId,
+          totalTime: 0,
+          operations: {
+            users: { count: users.length, time: 0 },
+            artifacts: { count: artifacts.length, time: 0 },
+            chats: { count: chats.length, time: 0 },
+            messages: { count: 0, time: 0 }
+          },
+          createdEntities: {
+            users: users.map(u => u.dbId).filter(Boolean) as string[],
+            artifacts: artifacts.map(a => a.dbId).filter(Boolean) as string[],
+            chats: chats.map(c => c.dbId).filter(Boolean) as string[]
+          }
+        }
+      })
+    }
+  }
+  
+  return {
+    worldId,
+    users,
+    artifacts,
+    chats,
+    cleanup,
+    performance: {
+      worldId,
+      totalTime: 0,
+      operations: {
+        users: { count: users.length, time: 0 },
+        artifacts: { count: artifacts.length, time: 0 },
+        chats: { count: chats.length, time: 0 },
+        messages: { count: 0, time: 0 }
+      },
+      createdEntities: {
+        users: users.map(u => u.dbId).filter(Boolean) as string[],
+        artifacts: artifacts.map(a => a.dbId).filter(Boolean) as string[],
+        chats: chats.map(c => c.dbId).filter(Boolean) as string[]
+      }
+    }
   }
 }
 
@@ -116,7 +221,7 @@ async function setupUsers(userDefs: WorldUser[]): Promise<SetupUser[]> {
   const { createWorldUser } = await import('@/lib/db/world-queries')
   const { getCurrentWorldContext } = await import('@/lib/db/world-context')
   
-  const worldContext = getCurrentWorldContext()
+  const worldContext = await getCurrentWorldContext()
   
   for (const userDef of userDefs) {
     let dbId: string | undefined
@@ -164,7 +269,7 @@ async function setupArtifacts(
   const { createWorldArtifact } = await import('@/lib/db/world-queries')
   const { getCurrentWorldContext } = await import('@/lib/db/world-context')
   
-  const worldContext = getCurrentWorldContext()
+  const worldContext = await getCurrentWorldContext()
   
   for (const artifactDef of artifactDefs) {
     // Проверяем владельца
@@ -198,7 +303,7 @@ async function setupArtifacts(
       const artifactData = {
         title: artifactDef.title,
         kind: artifactDef.kind as any,
-        userId: owner.dbId!, // Используем реальный DB ID владельца
+        userId: owner.dbId || '', // Используем реальный DB ID владельца
         summary: `Test artifact: ${artifactDef.title}`,
         createdAt: new Date(),
         // Определяем поле контента в зависимости от типа

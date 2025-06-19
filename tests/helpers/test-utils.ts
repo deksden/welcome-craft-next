@@ -73,7 +73,7 @@ export class TestUtils {
   /**
    * Явный хелпер ожидания для стабилизации UI
    */
-  async waitForStability(ms: number = 500): Promise<void> {
+  async waitForStability(ms = 500): Promise<void> {
     await this.page.waitForTimeout(ms);
   }
 

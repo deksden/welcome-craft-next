@@ -12,7 +12,8 @@
 
 import type { Page } from '@playwright/test'
 import type { WorldId } from './worlds.config'
-import { setupWorld, cleanupWorld, type WorldSetupResult } from './world-setup'
+import { setupWorld, type WorldSetupResult } from './world-setup'
+import { UIHelpers } from './ui-helpers'
 
 /**
  * @description Контекст Use Case теста с автоматической инициализацией мира
@@ -25,7 +26,7 @@ export interface UseCaseContext {
   /** Playwright page объект */
   page: Page
   /** Утилиты для взаимодействия с элементами */
-  ui: UseCaseUIHelpers
+  ui: UseCaseUIHelpers & { uiHelpers: UIHelpers }
 }
 
 /**
@@ -83,8 +84,11 @@ export async function initializeUseCaseTest(
 /**
  * @description Создает UI утилиты для работы с элементами в контексте мира
  */
-function createUIHelpers(page: Page, world: WorldSetupResult): UseCaseUIHelpers {
+function createUIHelpers(page: Page, world: WorldSetupResult): UseCaseUIHelpers & { uiHelpers: UIHelpers } {
+  const uiHelpers = new UIHelpers(page)
+  
   return {
+    uiHelpers,
     async loginAs(userTestId: string) {
       const user = world.users.find(u => u.testId === userTestId)
       if (!user) {

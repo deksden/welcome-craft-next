@@ -137,6 +137,7 @@ export async function POST (request: Request) {
           parts: msg.parts ?? [{ type: 'text', text: msg.content }],
           attachments: msg.experimental_attachments ?? [],
           createdAt: new Date(),
+          world_id: null, // Production сообщения не принадлежат тестовому миру
         }))
       })
       childLogger.info({ newMessagesCount: newMessages.length }, 'Saved new user messages to database')
@@ -178,6 +179,7 @@ export async function POST (request: Request) {
             parts: assistantMessage.parts,
             attachments: assistantMessage.experimental_attachments ?? [],
             createdAt: new Date(),
+            world_id: null, // Production сообщения не принадлежат тестовому миру
           }]
         })
       },

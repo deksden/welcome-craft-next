@@ -136,7 +136,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Базовые контакты HR',
         kind: 'sheet',
         ownerId: 'user-sarah',
-        contentPath: 'base/hr-contacts.csv',
+        contentPath: 'hr-contacts.csv',
         tags: ['hr', 'contacts', 'template']
       },
       {
@@ -144,7 +144,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Полезные ссылки',
         kind: 'text',
         ownerId: 'user-sarah',
-        contentPath: 'base/useful-links.md',
+        contentPath: 'useful-links.md',
         tags: ['links', 'onboarding', 'template']
       }
     ],
@@ -181,7 +181,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Onboarding для разработчика',
         kind: 'site',
         ownerId: 'user-ada',
-        contentPath: 'publication/developer-site-complete.json',
+        contentPath: 'developer-site-complete.json',
         isPublished: false,
         tags: ['site', 'developer', 'onboarding', 'ready']
       },
@@ -190,7 +190,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Welcome от CEO',
         kind: 'text',
         ownerId: 'user-ada',
-        contentPath: 'publication/ceo-welcome.md',
+        contentPath: 'ceo-welcome.md',
         tags: ['welcome', 'ceo', 'text']
       },
       {
@@ -198,7 +198,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Контакты команды разработки',
         kind: 'sheet',
         ownerId: 'user-ada',
-        contentPath: 'publication/dev-team-contacts.csv',
+        contentPath: 'dev-team-contacts.csv',
         tags: ['contacts', 'development', 'team']
       }
     ],
@@ -235,7 +235,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Welcome от CEO',
         kind: 'text',
         ownerId: 'user-maria',
-        contentPath: 'library/ceo-welcome-reusable.md',
+        contentPath: 'ceo-welcome-reusable.md',
         tags: ['welcome', 'ceo', 'reusable', 'template']
       },
       {
@@ -243,7 +243,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Контакты HR',
         kind: 'sheet',
         ownerId: 'user-maria',
-        contentPath: 'library/hr-contacts-standard.csv',
+        contentPath: 'hr-contacts-standard.csv',
         tags: ['hr', 'contacts', 'standard']
       },
       {
@@ -251,7 +251,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Полезные ссылки',
         kind: 'text',
         ownerId: 'user-maria',
-        contentPath: 'library/useful-links-comprehensive.md',
+        contentPath: 'useful-links-comprehensive.md',
         tags: ['links', 'resources', 'comprehensive']
       },
       {
@@ -259,7 +259,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Пустой шаблон сайта',
         kind: 'site',
         ownerId: 'user-maria',
-        contentPath: 'library/empty-site-template.json',
+        contentPath: 'empty-site-template.json',
         tags: ['site', 'template', 'empty']
       }
     ],
@@ -297,6 +297,30 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         ownerId: 'user-david',
         contentPath: 'demo/complete-demo-site.json',
         tags: ['demo', 'complete', 'showcase']
+      },
+      {
+        testId: 'artifact-demo-welcome-message',
+        title: 'Приветствие для нового сотрудника',
+        kind: 'text',
+        ownerId: 'user-david',
+        contentPath: 'demo/demo-welcome-message.md',
+        tags: ['welcome', 'demo', 'onboarding']
+      },
+      {
+        testId: 'artifact-demo-contacts',
+        title: 'Контакты команды',
+        kind: 'sheet',
+        ownerId: 'user-david',
+        contentPath: 'demo/demo-contacts.csv',
+        tags: ['contacts', 'demo', 'team']
+      },
+      {
+        testId: 'artifact-demo-useful-links',
+        title: 'Полезные ссылки для нового сотрудника',
+        kind: 'text',
+        ownerId: 'user-david',
+        contentPath: 'demo/demo-useful-links.md',
+        tags: ['links', 'demo', 'resources']
       }
     ],
     chats: [
@@ -339,7 +363,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Шаблон для Technical Lead',
         kind: 'text',
         ownerId: 'user-elena',
-        contentPath: 'enterprise/tech-lead-template.md',
+        contentPath: 'tech-lead-template.md',
         tags: ['template', 'tech-lead', 'enterprise']
       },
       {
@@ -347,7 +371,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Команда разработки',
         kind: 'sheet',
         ownerId: 'user-elena',
-        contentPath: 'enterprise/dev-team-contacts.csv',
+        contentPath: 'dev-team-contacts.csv',
         tags: ['contacts', 'development', 'enterprise']
       },
       {
@@ -355,7 +379,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Технологический стек',
         kind: 'text',
         ownerId: 'user-elena',
-        contentPath: 'enterprise/tech-stack-docs.md',
+        contentPath: 'tech-stack-docs.md',
         tags: ['documentation', 'tech-stack', 'enterprise']
       }
     ],

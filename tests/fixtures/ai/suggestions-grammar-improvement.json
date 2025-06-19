@@ -1,0 +1,45 @@
+{
+  "description": "AI fixture для grammar improvement suggestions",
+  "trigger": {
+    "toolName": "artifactEnhance",
+    "args": {
+      "recipe": "suggest-grammar-improvements"
+    }
+  },
+  "response": {
+    "result": {
+      "suggestions": [
+        {
+          "id": "grammar-001",
+          "type": "grammar",
+          "severity": "medium",
+          "title": "Fix grammatical inconsistency",
+          "description": "Improve subject-verb agreement in the second paragraph",
+          "originalText": "Мы рады приветствовать вас в нашей команды!",
+          "improvedText": "Мы рады приветствовать вас в нашей команде!",
+          "confidence": 0.95,
+          "category": "grammar-correction"
+        },
+        {
+          "id": "grammar-002", 
+          "type": "clarity",
+          "severity": "low",
+          "title": "Improve sentence clarity",
+          "description": "Simplify complex sentence structure for better readability",
+          "originalText": "В ближайшие дни, которые будут очень важными для вашей адаптации, вас ждет множество интересных мероприятий.",
+          "improvedText": "В ближайшие дни вас ждет множество интересных мероприятий для успешной адаптации.",
+          "confidence": 0.88,
+          "category": "clarity-improvement"
+        }
+      ],
+      "overallScore": 0.85,
+      "improvementAreas": ["grammar", "clarity", "flow"]
+    },
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 150,
+      "completionTokens": 280,
+      "totalTokens": 430
+    }
+  }
+}

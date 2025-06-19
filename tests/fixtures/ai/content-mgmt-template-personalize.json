@@ -1,0 +1,20 @@
+{
+  "description": "AI fixture для персонализации template при создании артефакта",
+  "trigger": {
+    "toolName": "artifactCreate",
+    "args": {
+      "kind": "sheet",
+      "title": "Контакты HR отдела",
+      "prompt": "персонализация.*template.*HR Contact Template"
+    }
+  },
+  "response": {
+    "result": "Name,Position,Email,Phone,Slack,Department,Availability\nМария Иванова,HR Director,maria.ivanova@company.com,+7 (495) 123-45-01,@maria.hr,Human Resources,Mon-Fri 9-18\nАлексей Петров,HR Business Partner,alexey.petrov@company.com,+7 (495) 123-45-02,@alexey.bp,Human Resources,Mon-Fri 10-19\nОльга Сидорова,Talent Acquisition Manager,olga.sidorova@company.com,+7 (495) 123-45-03,@olga.ta,Human Resources,Tue-Sat 9-18\nДмитрий Козлов,HR Analytics Specialist,dmitry.kozlov@company.com,+7 (495) 123-45-04,@dmitry.analytics,Human Resources,Mon-Fri 9-17\nЕлена Новикова,Benefits Coordinator,elena.novikova@company.com,+7 (495) 123-45-05,@elena.benefits,Human Resources,Mon-Thu 10-19\nИван Морозов,Learning & Development Lead,ivan.morozov@company.com,+7 (495) 123-45-06,@ivan.learning,Human Resources,Mon-Fri 9-18\nАнна Волкова,Employee Relations Specialist,anna.volkova@company.com,+7 (495) 123-45-07,@anna.relations,Human Resources,Mon-Fri 10-18",
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 120,
+      "completionTokens": 280,
+      "totalTokens": 400
+    }
+  }
+}

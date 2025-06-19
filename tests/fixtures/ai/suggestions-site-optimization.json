@@ -1,0 +1,85 @@
+{
+  "description": "AI fixture для site-specific optimization suggestions",
+  "trigger": {
+    "toolName": "artifactEnhance",
+    "args": {
+      "recipe": "suggest-site-optimizations"
+    }
+  },
+  "response": {
+    "result": {
+      "suggestions": [
+        {
+          "id": "site-001",
+          "type": "structure",
+          "severity": "high",
+          "title": "Add FAQ section",
+          "description": "Include frequently asked questions to improve user guidance",
+          "implementation": {
+            "blockType": "faq",
+            "position": "after-contacts",
+            "template": "standard-faq"
+          },
+          "expectedImpact": "25% reduction in support requests",
+          "confidence": 0.91,
+          "category": "content-addition"
+        },
+        {
+          "id": "site-002",
+          "type": "layout",
+          "severity": "medium",
+          "title": "Optimize mobile layout",
+          "description": "Improve responsive design for key-contacts block on mobile devices",
+          "implementation": {
+            "targetBlock": "key-contacts",
+            "changes": ["stack-vertically", "increase-font-size", "add-padding"],
+            "breakpoint": "768px"
+          },
+          "expectedImpact": "Better mobile user experience",
+          "confidence": 0.88,
+          "category": "responsive-optimization"
+        },
+        {
+          "id": "site-003",
+          "type": "cta",
+          "severity": "medium",
+          "title": "Add call-to-action",
+          "description": "Include clear next steps in hero section",
+          "implementation": {
+            "blockType": "cta-button",
+            "text": "Начать знакомство",
+            "action": "scroll-to-contacts",
+            "style": "primary-button"
+          },
+          "expectedImpact": "Improved user engagement",
+          "confidence": 0.85,
+          "category": "conversion-optimization"
+        },
+        {
+          "id": "site-004",
+          "type": "navigation",
+          "severity": "low",
+          "title": "Add navigation menu", 
+          "description": "Include quick navigation for long onboarding sites",
+          "implementation": {
+            "type": "sticky-nav",
+            "items": ["welcome", "contacts", "resources", "next-steps"],
+            "position": "top"
+          },
+          "expectedImpact": "Better user navigation",
+          "confidence": 0.82,
+          "category": "usability-improvement"
+        }
+      ],
+      "siteType": "onboarding",
+      "currentBlocks": ["hero", "key-contacts", "useful-links"],
+      "recommendedBlocks": ["faq", "cta", "navigation"]
+    },
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 200,
+      "completionTokens": 380,
+      "totalTokens": 580
+    }
+  }
+}

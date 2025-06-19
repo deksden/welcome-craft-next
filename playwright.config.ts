@@ -81,11 +81,17 @@ export default (async () => {
 
   return defineConfig({
     testDir: './tests',
-    fullyParallel: false,
+    // 🚀 СИСТЕМНАЯ ОПТИМИЗАЦИЯ: Включаем полный параллелизм с изолированными мирами
+    fullyParallel: true, 
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 1 : 0,
-    workers: 1,
-    reporter: 'html',
+    retries: process.env.CI ? 2 : 0, // Увеличиваем retries для стабильности
+    // 🚀 ОПТИМИЗАЦИЯ ПРОИЗВОДИТЕЛЬНОСТИ: Динамическое количество workers
+    workers: process.env.CI 
+      ? '50%' // В CI используем 50% от доступных ядер для экономии ресурсов
+      : undefined, // Локально - автоматическое определение оптимального количества
+    reporter: process.env.CI 
+      ? [['html'], ['github'], ['json', { outputFile: 'test-results.json' }]]
+      : 'html',
     // globalSetup: './tests/global-setup.ts', // Пока отключаем для API тестов
 
     use: {

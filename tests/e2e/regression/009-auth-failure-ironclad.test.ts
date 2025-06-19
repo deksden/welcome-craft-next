@@ -255,7 +255,7 @@ test.describe('BUG-009: Auth Failure - Password Reset Issue (ЖЕЛЕЗОБЕТ�
       const time2 = Date.now() - start2
       console.log(`⚡ Fail-fast missing element: ${time2}ms`)
       expect(time2).toBeLessThan(2500)
-      expect(error.message).toContain('FAIL-FAST')
+      expect(error instanceof Error ? error.message : String(error)).toContain('FAIL-FAST')
     }
     
     console.log('📊 PERFORMANCE SUMMARY для Auth тестирования:')

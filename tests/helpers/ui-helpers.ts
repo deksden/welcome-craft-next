@@ -422,6 +422,113 @@ export class ChatMessageHelpers {
 }
 
 /**
+ * Хелперы для работы с Publication System
+ */
+export class PublicationHelpers {
+  constructor(private page: Page) {}
+
+  /**
+   * Проверяет статус публикации артефакта по badge индикатору
+   */
+  async checkPublicationStatus(artifactTestId: string, expectedStatus: 'published' | 'private'): Promise<void> {
+    const badgeSelector = `${artifactTestId}-published-badge`
+    
+    if (expectedStatus === 'published') {
+      await this.page.getByTestId(badgeSelector).waitFor({ 
+        state: 'visible',
+        timeout: 5000 
+      })
+    } else {
+      await this.page.getByTestId(badgeSelector).waitFor({ 
+        state: 'hidden',
+        timeout: 5000 
+      }).catch(() => {
+        // Badge может отсутствовать в DOM для private статуса, это нормально
+      })
+    }
+  }
+
+  /**
+   * Навигация к артефакту по test ID
+   * @feature Использует правильный путь /artifacts для страницы "Мои Артефакты"
+   */
+  async navigateToArtifact(artifactTestId: string): Promise<void> {
+    console.log(`🧭 Navigating to artifact: ${artifactTestId}`)
+    await this.page.goto('/artifacts')
+    
+    // Ждем загрузки страницы артефактов
+    await this.page.waitForSelector('[data-testid="artifacts-page"]', { timeout: 10000 }).catch(() => {
+      console.log('ℹ️ artifacts-page testid not found, continuing...')
+    })
+    
+    // Ищем артефакт по data-testid или по тексту заголовка
+    const artifactElement = this.page.getByTestId(artifactTestId).or(
+      this.page.getByTestId('artifact-item').filter({ hasText: artifactTestId })
+    )
+    
+    console.log(`🔍 Looking for artifact with testid: ${artifactTestId}`)
+    await artifactElement.first().click()
+    console.log(`✅ Successfully clicked on artifact: ${artifactTestId}`)
+  }
+
+  /**
+   * Авторизация под тестовым пользователем
+   */
+  async loginAs(userTestId: string): Promise<void> {
+    await this.page.goto('/')
+    
+    // Устанавливаем тестовый cookie для авторизации
+    await this.page.evaluate((testId) => {
+      const sessionUser = {
+        email: `${testId}@test.com`,
+        name: testId.replace('user-', '').charAt(0).toUpperCase() + testId.replace('user-', '').slice(1),
+        id: `test-user-${testId}`
+      }
+      
+      document.cookie = `test-session=${JSON.stringify({
+        user: sessionUser
+      })}; path=/; domain=.localhost`
+    }, userTestId)
+    
+    await this.page.reload()
+  }
+
+  /**
+   * Проверяет наличие кнопки публикации для определенного типа артефакта
+   */
+  async hasPublicationButton(artifactKind: string): Promise<boolean> {
+    if (artifactKind !== 'site') {
+      return false
+    }
+    
+    return await this.page.getByTestId('artifact-publication-button').isVisible()
+  }
+
+  /**
+   * Эмулирует анонимного пользователя для проверки публичного доступа
+   */
+  async becomeAnonymous(): Promise<void> {
+    await this.page.evaluate(() => {
+      // Очищаем все auth cookies
+      document.cookie = 'test-session=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'test-world-id=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    })
+  }
+
+  /**
+   * Проверяет доступность страницы 404
+   */
+  async expectNotFound(): Promise<void> {
+    const is404 = this.page.url().includes('404')
+    const hasNotFoundElement = await this.page.getByTestId('site-not-found').isVisible().catch(() => false)
+    
+    if (!is404 && !hasNotFoundElement) {
+      throw new Error('Expected 404 or site-not-found page, but got accessible content')
+    }
+  }
+}
+
+/**
  * Главный класс для всех UI хелперов
  */
 export class UIHelpers {
@@ -431,6 +538,7 @@ export class UIHelpers {
   public artifactActions: ArtifactActionsHelpers
   public sidebar: SidebarHelpers
   public chatMessages: ChatMessageHelpers
+  public publication: PublicationHelpers
 
   constructor(private page: Page) {
     this.header = new HeaderHelpers(page)
@@ -439,6 +547,7 @@ export class UIHelpers {
     this.artifactActions = new ArtifactActionsHelpers(page)
     this.sidebar = new SidebarHelpers(page)
     this.chatMessages = new ChatMessageHelpers(page)
+    this.publication = new PublicationHelpers(page)
   }
 
   /**

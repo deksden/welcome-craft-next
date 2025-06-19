@@ -1,0 +1,20 @@
+{
+  "description": "AI fixture для создания интегрированного сайта онбординга",
+  "trigger": {
+    "toolName": "artifactCreate",
+    "args": {
+      "kind": "site",
+      "title": "Онбординг Technical Lead",
+      "prompt": "сайт.*онбординг.*Technical Lead"
+    }
+  },
+  "response": {
+    "result": "{\n  \"metadata\": {\n    \"title\": \"Онбординг Technical Lead Михаила\",\n    \"description\": \"Персонализированный сайт онбординга для нового Technical Lead\",\n    \"version\": \"1.0.0\",\n    \"role\": \"tech-lead\"\n  },\n  \"blocks\": [\n    {\n      \"type\": \"hero\",\n      \"slots\": {\n        \"welcome_message\": {\n          \"artifactId\": \"auto-link-cto-letter\",\n          \"pinnedVersion\": null\n        }\n      }\n    },\n    {\n      \"type\": \"key-contacts\",\n      \"slots\": {\n        \"contacts_data\": {\n          \"artifactId\": \"auto-link-dev-contacts\",\n          \"pinnedVersion\": null\n        }\n      }\n    },\n    {\n      \"type\": \"useful-links\",\n      \"slots\": {\n        \"links_content\": {\n          \"artifactId\": \"auto-link-tech-docs\",\n          \"pinnedVersion\": null\n        }\n      }\n    }\n  ]\n}",
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 80,
+      "completionTokens": 200,
+      "totalTokens": 280
+    }
+  }
+}

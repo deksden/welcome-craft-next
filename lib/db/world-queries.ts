@@ -14,7 +14,8 @@ import { and, eq, isNull, desc, asc } from 'drizzle-orm'
 import { db } from './index'
 import { user, chat, artifact, message, suggestion } from './schema'
 import { 
-  getCurrentWorldContext, 
+  getCurrentWorldContext,
+  getCurrentWorldContextSync, 
   createWorldFilter, 
   addWorldId,
   type WorldContext 
@@ -27,13 +28,16 @@ import {
  * @param context - Контекст мира (опционально)
  * @returns Пользователи только из текущего мира
  */
-export async function getWorldUsers(context: WorldContext = getCurrentWorldContext()) {
-  const filter = createWorldFilter(context)
+export async function getWorldUsers(context?: WorldContext) {
+  const actualContext = context || await getCurrentWorldContext()
+  const filter = createWorldFilter(actualContext)
   
   return await db
     .select()
     .from(user)
-    .where(eq(user.world_id, filter.world_id))
+    .where(filter.world_id === null 
+      ? isNull(user.world_id) 
+      : eq(user.world_id, filter.world_id))
     .orderBy(asc(user.email))
 }
 
@@ -46,16 +50,19 @@ export async function getWorldUsers(context: WorldContext = getCurrentWorldConte
  */
 export async function getWorldUserById(
   userId: string, 
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const filter = createWorldFilter(context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const filter = createWorldFilter(actualContext)
   
   const users = await db
     .select()
     .from(user)
     .where(and(
       eq(user.id, userId),
-      eq(user.world_id, filter.world_id)
+      filter.world_id === null 
+        ? isNull(user.world_id) 
+        : eq(user.world_id, filter.world_id)
     ))
     .limit(1)
   
@@ -71,9 +78,10 @@ export async function getWorldUserById(
  */
 export async function createWorldUser(
   userData: { email: string; password?: string },
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const dataWithWorld = addWorldId(userData, context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const dataWithWorld = addWorldId(userData, actualContext)
   
   const [newUser] = await db
     .insert(user)
@@ -92,16 +100,19 @@ export async function createWorldUser(
  */
 export async function getWorldUserChats(
   userId: string,
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const filter = createWorldFilter(context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const filter = createWorldFilter(actualContext)
   
   return await db
     .select()
     .from(chat)
     .where(and(
       eq(chat.userId, userId),
-      eq(chat.world_id, filter.world_id),
+      filter.world_id === null 
+        ? isNull(chat.world_id) 
+        : eq(chat.world_id, filter.world_id),
       isNull(chat.deletedAt)
     ))
     .orderBy(desc(chat.createdAt))
@@ -116,16 +127,19 @@ export async function getWorldUserChats(
  */
 export async function getWorldChatById(
   chatId: string,
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const filter = createWorldFilter(context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const filter = createWorldFilter(actualContext)
   
   const chats = await db
     .select()
     .from(chat)
     .where(and(
       eq(chat.id, chatId),
-      eq(chat.world_id, filter.world_id),
+      filter.world_id === null 
+        ? isNull(chat.world_id) 
+        : eq(chat.world_id, filter.world_id),
       isNull(chat.deletedAt)
     ))
     .limit(1)
@@ -147,9 +161,10 @@ export async function createWorldChat(
     createdAt: Date
     published_until?: Date | null
   },
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const dataWithWorld = addWorldId(chatData, context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const dataWithWorld = addWorldId(chatData, actualContext)
   
   const [newChat] = await db
     .insert(chat)
@@ -168,16 +183,19 @@ export async function createWorldChat(
  */
 export async function getWorldUserArtifacts(
   userId: string,
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const filter = createWorldFilter(context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const filter = createWorldFilter(actualContext)
   
   return await db
     .select()
     .from(artifact)
     .where(and(
       eq(artifact.userId, userId),
-      eq(artifact.world_id, filter.world_id),
+      filter.world_id === null 
+        ? isNull(artifact.world_id) 
+        : eq(artifact.world_id, filter.world_id),
       isNull(artifact.deletedAt)
     ))
     .orderBy(desc(artifact.createdAt))
@@ -194,27 +212,29 @@ export async function getWorldUserArtifacts(
 export async function getWorldArtifactById(
   artifactId: string,
   createdAt?: Date,
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const filter = createWorldFilter(context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const filter = createWorldFilter(actualContext)
   
-  let query = db
-    .select()
-    .from(artifact)
-    .where(and(
-      eq(artifact.id, artifactId),
-      eq(artifact.world_id, filter.world_id),
-      isNull(artifact.deletedAt)
-    ))
+  const whereConditions = [
+    eq(artifact.id, artifactId),
+    filter.world_id === null 
+      ? isNull(artifact.world_id) 
+      : eq(artifact.world_id, filter.world_id),
+    isNull(artifact.deletedAt)
+  ]
   
   if (createdAt) {
-    query = query.where(eq(artifact.createdAt, createdAt))
-  } else {
-    // Получаем последнюю версию
-    query = query.orderBy(desc(artifact.createdAt))
+    whereConditions.push(eq(artifact.createdAt, createdAt))
   }
   
-  const artifacts = await query.limit(1)
+  const artifacts = await db
+    .select()
+    .from(artifact)
+    .where(and(...whereConditions))
+    .orderBy(!createdAt ? desc(artifact.createdAt) : asc(artifact.createdAt))
+    .limit(1)
   return artifacts[0] || null
 }
 
@@ -238,9 +258,10 @@ export async function createWorldArtifact(
     summary?: string
     createdAt: Date
   },
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
-  const dataWithWorld = addWorldId(artifactData, context)
+  const actualContext = context || getCurrentWorldContextSync()
+  const dataWithWorld = addWorldId(artifactData, actualContext)
   
   const [newArtifact] = await db
     .insert(artifact)
@@ -259,7 +280,7 @@ export async function createWorldArtifact(
  */
 export async function getWorldChatMessages(
   chatId: string,
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
   const filter = createWorldFilter(context)
   
@@ -268,7 +289,9 @@ export async function getWorldChatMessages(
     .from(message)
     .where(and(
       eq(message.chatId, chatId),
-      eq(message.world_id, filter.world_id)
+      filter.world_id === null 
+        ? isNull(message.world_id) 
+        : eq(message.world_id, filter.world_id)
     ))
     .orderBy(asc(message.createdAt))
 }
@@ -288,7 +311,7 @@ export async function createWorldMessage(
     attachments: any
     createdAt: Date
   },
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ) {
   const dataWithWorld = addWorldId(messageData, context)
   

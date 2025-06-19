@@ -38,7 +38,7 @@ import { generateUUID } from '../utils'
 // import { generateHashedPassword } from './utils'; // TODO: Restore when generateHashedPassword is available
 import { generateAndSaveSummary } from '../ai/summarizer'
 import { db } from '@/lib/db'
-import { getCurrentWorldContext, createWorldFilter, type WorldContext } from './world-context'
+import { getCurrentWorldContextSync, createWorldFilter, type WorldContext } from './world-context'
 
 console.log(`process.env.TRANSPORT1=${process.env.TRANSPORT1}`)
 const logger = createLogger('lib:db:queries')
@@ -140,7 +140,7 @@ export async function getChatsByUserId ({
   worldContext?: WorldContext | null; // Optional parameter for world isolation
 }) {
   // Use current world context if not provided
-  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContext();
+  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContextSync();
   const childLogger = logger.child({ 
     userId: id, 
     limit, 
@@ -162,7 +162,9 @@ export async function getChatsByUserId ({
   // Add world isolation if enabled
   if (actualWorldContext?.worldId) {
     const worldFilter = createWorldFilter(actualWorldContext)
-    baseWhere = and(baseWhere, eq(chat.world_id, worldFilter.world_id))
+    baseWhere = and(baseWhere, worldFilter.world_id === null 
+      ? isNull(chat.world_id) 
+      : eq(chat.world_id, worldFilter.world_id))
     console.log('🌍 Applied world filter:', worldFilter)
   }
 
@@ -360,7 +362,7 @@ export async function getPagedArtifactsByUserId ({
   totalCount: number
 }> {
   // Use current world context if not provided
-  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContext();
+  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContextSync();
   
   console.log('🌍 getPagedArtifactsByUserId with world context:', {
     userId,
@@ -394,7 +396,9 @@ export async function getPagedArtifactsByUserId ({
   // Add world isolation if enabled
   if (actualWorldContext?.worldId) {
     const worldFilter = createWorldFilter(actualWorldContext)
-    baseWhere = and(baseWhere, eq(artifact.world_id, worldFilter.world_id))
+    baseWhere = and(baseWhere, worldFilter.world_id === null 
+      ? isNull(artifact.world_id) 
+      : eq(artifact.world_id, worldFilter.world_id))
     console.log('🌍 Applied artifact world filter:', worldFilter)
   }
   const subquery = db.select({

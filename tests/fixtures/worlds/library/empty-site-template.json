@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "title": "Пустой шаблон сайта",
+    "description": "Базовый шаблон для создания нового онбординг-сайта",
+    "version": "1.0.0"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "slots": {
+        "welcome_message": {
+          "artifactId": "artifact-ceo-welcome",
+          "pinnedVersion": null
+        }
+      }
+    }
+  ]
+}

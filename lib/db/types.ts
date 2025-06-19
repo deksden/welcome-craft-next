@@ -17,6 +17,7 @@ export interface User {
   id: string
   email: string
   password: string | null
+  world_id: string | null // Для изоляции тестовых данных
 }
 
 // Типы чатов с системой публикации
@@ -27,18 +28,10 @@ export interface Chat {
   userId: string
   published_until: Date | null // NULL = private, timestamp = published until this date
   deletedAt: Date | null // Для мягкого удаления
+  world_id: string | null // Для изоляции тестовых данных
 }
 
-// Типы сообщений (deprecated)
-export interface MessageDeprecated {
-  id: string
-  chatId: string
-  role: string
-  content: unknown
-  createdAt: Date
-}
-
-// Современные типы сообщений (v2)
+// Типы сообщений (единственная схема - Message_v2)
 export interface DBMessage {
   id: string
   chatId: string
@@ -46,6 +39,7 @@ export interface DBMessage {
   parts: unknown
   attachments: unknown
   createdAt: Date
+  world_id: string | null // Для изоляции тестовых данных
 }
 
 // Типы артефактов с системой публикации
@@ -67,6 +61,7 @@ export interface Artifact {
   
   // Система публикации - массив объектов с информацией о публикации из разных источников
   publication_state: PublicationInfo[]
+  world_id: string | null // Для изоляции тестовых данных
 }
 
 // Типы предложений
@@ -81,6 +76,7 @@ export interface Suggestion {
   isDismissed: boolean // Для отклоненных предложений
   userId: string
   createdAt: Date
+  world_id: string | null // Для изоляции тестовых данных
 }
 
 // END OF: lib/db/types.ts

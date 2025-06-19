@@ -101,6 +101,7 @@ export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
               documentId: id,
               isResolved: false,
               isDismissed: false,
+              world_id: null, // Production данные
             })
           }
         }

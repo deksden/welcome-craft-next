@@ -1,0 +1,40 @@
+{
+  "blocks": [
+    {
+      "type": "hero",
+      "slots": {
+        "title": {
+          "artifactId": "artifact-welcome-text",
+          "pinnedVersion": null
+        },
+        "subtitle": {
+          "content": "Добро пожаловать в команду разработки! Здесь вы найдете всю необходимую информацию для успешного старта."
+        }
+      }
+    },
+    {
+      "type": "key-contacts",
+      "slots": {
+        "contacts": {
+          "artifactId": "artifact-dev-contacts",
+          "pinnedVersion": null
+        }
+      }
+    },
+    {
+      "type": "useful-links",
+      "slots": {
+        "links": {
+          "content": "# Полезные ссылки\n\n- [Корпоративный портал](https://portal.company.com)\n- [Документация API](https://docs.company.com)\n- [Slack workspace](https://company.slack.com)\n- [Jira проекты](https://company.atlassian.net)"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "title": "Onboarding для разработчика",
+    "description": "Полный onboarding сайт для нового разработчика",
+    "createdAt": "2025-06-19T10:00:00.000Z",
+    "updatedAt": "2025-06-19T10:00:00.000Z",
+    "version": "1.0.0"
+  }
+}

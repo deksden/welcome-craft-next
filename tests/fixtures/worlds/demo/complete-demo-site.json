@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "title": "Полный демонстрационный сайт",
+    "description": "Комплексный пример онбординг-сайта для демонстрации возможностей",
+    "version": "1.0.0"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "slots": {
+        "welcome_message": {
+          "artifactId": "artifact-demo-welcome-message",
+          "pinnedVersion": null
+        }
+      }
+    },
+    {
+      "type": "key-contacts",
+      "slots": {
+        "contacts_data": {
+          "artifactId": "artifact-demo-contacts", 
+          "pinnedVersion": null
+        }
+      }
+    },
+    {
+      "type": "useful-links",
+      "slots": {
+        "links_content": {
+          "artifactId": "artifact-demo-useful-links",
+          "pinnedVersion": null
+        }
+      }
+    }
+  ]
+}

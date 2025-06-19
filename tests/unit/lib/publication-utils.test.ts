@@ -29,7 +29,8 @@ describe('Publication Utils', () => {
     userId: 'test-user',
     authorId: 'test-user',
     deletedAt: null,
-    publication_state: []
+    publication_state: [],
+    world_id: null // Production артефакт
   }
 
   const baseChat: Chat = {
@@ -38,7 +39,8 @@ describe('Publication Utils', () => {
     title: 'Test Chat',
     userId: 'test-user',
     published_until: null,
-    deletedAt: null
+    deletedAt: null,
+    world_id: null // Production чат
   }
 
   describe('isArtifactPublished', () => {

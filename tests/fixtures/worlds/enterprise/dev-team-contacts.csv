@@ -1,0 +1,6 @@
+name,position,email,team,expertise
+Alexander Ivanov,Senior Backend Engineer,alexander.ivanov@company.com,Core Platform,Python/PostgreSQL
+Maria Kozlova,Frontend Lead,maria.kozlova@company.com,UI/UX Team,React/TypeScript
+Nikita Sokolov,DevOps Engineer,nikita.sokolov@company.com,Infrastructure,Kubernetes/AWS
+Elena Popova,QA Engineer,elena.popova@company.com,Quality Assurance,Automation/Testing
+Maxim Fedorov,Mobile Developer,maxim.fedorov@company.com,Mobile Team,React Native/iOS

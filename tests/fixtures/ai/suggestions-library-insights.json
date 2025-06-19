@@ -1,0 +1,115 @@
+{
+  "description": "AI fixture для library-wide insights и bulk suggestions",
+  "trigger": {
+    "toolName": "analyzeContentLibrary",
+    "args": {
+      "scope": "all-artifacts",
+      "analysisType": "consistency-and-quality"
+    }
+  },
+  "response": {
+    "result": {
+      "insights": [
+        {
+          "id": "library-001",
+          "type": "consistency",
+          "severity": "high",
+          "title": "Inconsistent tone across welcome messages",
+          "description": "5 welcome messages have different formality levels",
+          "affectedArtifacts": [
+            "artifact-ceo-welcome",
+            "artifact-hr-welcome", 
+            "artifact-team-welcome",
+            "artifact-department-welcome",
+            "artifact-manager-welcome"
+          ],
+          "recommendation": "Standardize tone to warm-professional",
+          "estimatedEffort": "2 hours",
+          "priority": "high"
+        },
+        {
+          "id": "library-002",
+          "type": "completeness",
+          "severity": "medium",
+          "title": "Missing contact information",
+          "description": "3 onboarding guides lack essential contact details",
+          "affectedArtifacts": [
+            "artifact-developer-guide",
+            "artifact-designer-guide",
+            "artifact-sales-guide"
+          ],
+          "recommendation": "Add standardized contact section",
+          "estimatedEffort": "1 hour",
+          "priority": "medium"
+        },
+        {
+          "id": "library-003",
+          "type": "freshness",
+          "severity": "medium",
+          "title": "Outdated links detected",
+          "description": "2 resource documents contain links that may be outdated",
+          "affectedArtifacts": [
+            "artifact-useful-links",
+            "artifact-tech-resources"
+          ],
+          "recommendation": "Review and update resource links",
+          "estimatedEffort": "30 minutes",
+          "priority": "medium"
+        },
+        {
+          "id": "library-004",
+          "type": "optimization",
+          "severity": "low",
+          "title": "Duplicate content identified",
+          "description": "Similar content found across multiple artifacts",
+          "affectedArtifacts": [
+            "artifact-company-values",
+            "artifact-culture-guide"
+          ],
+          "recommendation": "Consolidate or create shared template",
+          "estimatedEffort": "1.5 hours",
+          "priority": "low"
+        }
+      ],
+      "bulkActions": [
+        {
+          "id": "bulk-001",
+          "title": "Standardize all welcome messages",
+          "description": "Apply consistent tone and structure to all welcome content",
+          "artifactCount": 5,
+          "estimatedTime": "15 minutes",
+          "confidence": 0.92
+        },
+        {
+          "id": "bulk-002", 
+          "title": "Update contact information",
+          "description": "Add missing contact details using standard template",
+          "artifactCount": 3,
+          "estimatedTime": "10 minutes",
+          "confidence": 0.89
+        },
+        {
+          "id": "bulk-003",
+          "title": "Validate all external links",
+          "description": "Check and update outdated resource links",
+          "artifactCount": 2,
+          "estimatedTime": "5 minutes",
+          "confidence": 0.85
+        }
+      ],
+      "libraryStats": {
+        "totalArtifacts": 15,
+        "qualityScore": 0.78,
+        "consistencyScore": 0.65,
+        "freshnessScore": 0.82,
+        "lastAnalyzed": "2025-06-19T10:30:00Z"
+      }
+    },
+    "finishReason": "stop",
+    "usage": {
+      "promptTokens": 300,
+      "completionTokens": 520,
+      "totalTokens": 820
+    }
+  }
+}

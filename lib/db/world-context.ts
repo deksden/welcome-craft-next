@@ -36,19 +36,35 @@ export interface WorldContext {
 }
 
 /**
- * @description Получить контекст текущего мира из cookies
+ * @description Получить контекст текущего мира из cookies (синхронная версия)
+ * 
+ * @feature Fallback для случаев когда cookies недоступны
+ * @feature Безопасная работа в production (null world_id)
+ * @returns Контекст мира для использования в DB запросах
+ */
+export function getCurrentWorldContextSync(): WorldContext {
+  // В синхронном режиме всегда возвращаем production контекст
+  return {
+    worldId: null,
+    isTestMode: false,
+    isolationPrefix: null
+  }
+}
+
+/**
+ * @description Получить контекст текущего мира из cookies (асинхронная версия)
  * 
  * @feature Автоматическое определение активного мира
  * @feature Безопасная работа в production (null world_id)
  * @returns Контекст мира для использования в DB запросах
  */
-export function getCurrentWorldContext(): WorldContext {
+export async function getCurrentWorldContext(): Promise<WorldContext> {
   let worldId: WorldId | null = null
   
   try {
     // Проверяем cookie только в тестовом окружении
     if (process.env.NODE_ENV === 'test' || process.env.PLAYWRIGHT_TEST === 'true') {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
       const worldCookie = cookieStore.get(WORLD_COOKIE_KEY)
       
       if (worldCookie?.value) {
@@ -77,8 +93,8 @@ export function getCurrentWorldContext(): WorldContext {
  * @feature Используется в тестах для активации изоляции
  * @param worldId - ID мира для активации, null для отключения
  */
-export function setWorldContext(worldId: WorldId | null): void {
-  const cookieStore = cookies()
+export async function setWorldContext(worldId: WorldId | null): Promise<void> {
+  const cookieStore = await cookies()
   
   if (worldId) {
     // Устанавливаем cookie с TTL
@@ -102,8 +118,8 @@ export function setWorldContext(worldId: WorldId | null): void {
  * @param context - Контекст мира (получить через getCurrentWorldContext)
  * @returns Объект для использования в Drizzle WHERE условиях
  */
-export function createWorldFilter(context: WorldContext = getCurrentWorldContext()) {
-  if (!context.isTestMode) {
+export function createWorldFilter(context?: WorldContext) {
+  if (!context || !context.isTestMode) {
     // Production mode - показываем только записи без world_id
     return { world_id: null }
   } else {
@@ -122,11 +138,11 @@ export function createWorldFilter(context: WorldContext = getCurrentWorldContext
  */
 export function addWorldId<T extends Record<string, any>>(
   data: T, 
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ): T & { world_id: string | null } {
   return {
     ...data,
-    world_id: context.worldId || null
+    world_id: context?.worldId || null
   }
 }
 
@@ -140,9 +156,9 @@ export function addWorldId<T extends Record<string, any>>(
  */
 export function canAccessRecord(
   recordWorldId: string | null, 
-  context: WorldContext = getCurrentWorldContext()
+  context?: WorldContext
 ): boolean {
-  if (!context.isTestMode) {
+  if (!context || !context.isTestMode) {
     // Production mode - доступ только к production данным
     return recordWorldId === null
   } else {
@@ -183,13 +199,13 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
       console.log('🌍 Available cookies:', Object.keys(cookies))
       
       // Try main world_id cookie first
-      if (cookies['world_id']) {
-        worldId = cookies['world_id'] as WorldId
+      if (cookies.world_id) {
+        worldId = cookies.world_id as WorldId
         console.log('🌍 Found world_id cookie:', worldId)
       } 
       // Try fallback cookie
-      else if (cookies['world_id_fallback']) {
-        worldId = cookies['world_id_fallback'] as WorldId
+      else if (cookies.world_id_fallback) {
+        worldId = cookies.world_id_fallback as WorldId
         console.log('🌍 Found world_id_fallback cookie:', worldId)
       }
       // Try old format for backward compatibility
@@ -215,11 +231,11 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
 /**
  * @description Утилита для отладки текущего контекста мира
  */
-export function debugWorldContext(context: WorldContext = getCurrentWorldContext()): void {
+export function debugWorldContext(context?: WorldContext): void {
   console.log('🌍 World Context Debug:', {
-    worldId: context.worldId,
-    isTestMode: context.isTestMode,
-    isolationPrefix: context.isolationPrefix,
+    worldId: context?.worldId,
+    isTestMode: context?.isTestMode,
+    isolationPrefix: context?.isolationPrefix,
     nodeEnv: process.env.NODE_ENV,
     playwrightTest: process.env.PLAYWRIGHT_TEST
   })

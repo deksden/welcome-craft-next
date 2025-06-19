@@ -62,7 +62,7 @@ const providers = [
           id: 'test-user-id',
           email: 'test@test.com',
           name: 'Test User',
-          type: 'regular'
+          type: 'regular' as UserType
         };
       }
       
@@ -92,7 +92,7 @@ const providers = [
         id: user.id,
         email: user.email,
         name: user.email, // Use email as name
-        type: 'regular'
+        type: 'regular' as UserType
       };
 
       console.log('🔐 AUTH: Returning user object:', authUser);
@@ -118,7 +118,7 @@ if (process.env.NODE_ENV === 'development') {
             id: 'test-user-id',
             email: credentials.email as string,
             name: credentials.email as string,
-            type: 'regular'
+            type: 'regular' as UserType
           };
         }
         return null;

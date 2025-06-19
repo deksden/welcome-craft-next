@@ -3,8 +3,7 @@
 import { z } from 'zod';
 import { createLogger } from '@fab33/fab-logger';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
-import { cookies } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 
 import { createUser, getUser } from '@/lib/db/queries';
 

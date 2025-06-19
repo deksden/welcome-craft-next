@@ -82,7 +82,7 @@ export class EnhancedAuthHelper {
         }
       }
     } catch (error) {
-      console.log('⚠️ Could not determine auth status:', error.message)
+      console.log('⚠️ Could not determine auth status:', error instanceof Error ? error.message : String(error))
       return 'unknown'
     }
   }
@@ -136,7 +136,7 @@ export class EnhancedAuthHelper {
       return
     } catch (error) {
       console.log('❌ All authentication strategies failed')
-      throw new Error(`Authentication failed for ${email}: ${error.message}`)
+      throw new Error(`Authentication failed for ${email}: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -248,7 +248,7 @@ export class EnhancedAuthHelper {
    * 
    * @param timeout - таймаут ожидания в мс
    */
-  async waitForAuthenticatedState(timeout: number = 15000): Promise<void> {
+  async waitForAuthenticatedState(timeout = 15000): Promise<void> {
     console.log('⏳ Waiting for authenticated state...')
     
     const startTime = Date.now()

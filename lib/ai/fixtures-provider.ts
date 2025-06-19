@@ -10,15 +10,17 @@
  * v1.0.0 (2025-06-18): Начальная реализация AI fixtures для трехуровневой системы тестирования
  */
 
-import { readFile, writeFile, mkdir, access } from 'fs/promises'
-import { join, dirname } from 'path'
-import type { LanguageModelV1, LanguageModelV1StreamPart } from '@ai-sdk/provider'
+import { readFile, writeFile, mkdir, } from 'node:fs/promises'
+import { join, dirname } from 'node:path'
+// Optional import for AI SDK provider types - fallback to any if not available
+type LanguageModelV1 = any
+type LanguageModelV1StreamPart = any
 import type { WorldId } from '@/tests/helpers/worlds.config'
 
 /**
  * @description Режимы работы AI Fixtures Provider
  */
-export type FixtureMode = 'record' | 'replay' | 'passthrough'
+export type FixtureMode = 'record' | 'replay' | 'passthrough' | 'record-or-replay'
 
 /**
  * @description Зафиксированное AI взаимодействие
@@ -129,7 +131,7 @@ export class AIFixturesProvider {
       provider: originalModel.provider,
       modelId: originalModel.modelId,
       
-      async doGenerate(options) {
+      async doGenerate(options: any) {
         const startTime = Date.now()
         
         // Генерируем ID фикстуры
@@ -150,6 +152,47 @@ export class AIFixturesProvider {
           // Режим passthrough - используем оригинальную модель
           self.log(`⚡ Passthrough mode: ${fixtureId}`)
           return await originalModel.doGenerate(options)
+        }
+        
+        if (self.config.mode === 'record-or-replay') {
+          // Режим record-or-replay - проверяем фикстуру, replay или record
+          const fixture = await self.loadFixture(fixtureId, context)
+          if (fixture) {
+            // Если фикстура найдена, воспроизводим ее (replay)
+            self.log(`🔁 Replaying fixture: ${fixtureId}`)
+            return self.convertFixtureToResult(fixture)
+          } else {
+            // Если нет - делаем реальный вызов и записываем (record)
+            self.log(`📝 Recording new fixture on-the-fly: ${fixtureId}`)
+            
+            const result = await Promise.race([
+              originalModel.doGenerate(options),
+              new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error('AI request timeout')), self.config.recordTimeout)
+              )
+            ])
+            
+            const duration = Date.now() - startTime
+            
+            // Сохраняем фикстуру
+            await self.saveFixture(fixtureId, {
+              input: {
+                prompt: self.extractPrompt(options),
+                model: originalModel.modelId,
+                settings: self.extractSettings(options),
+                context
+              },
+              output: {
+                content: self.extractContent(result),
+                usage: result.usage,
+                finishReason: result.finishReason,
+                timestamp: new Date().toISOString(),
+                duration
+              }
+            }, context)
+            
+            return result
+          }
         }
         
         if (self.config.mode === 'record') {
@@ -188,7 +231,7 @@ export class AIFixturesProvider {
         throw new Error(`Unknown AI fixtures mode: ${self.config.mode}`)
       },
 
-      async doStream(options) {
+      async doStream(options: any) {
         // Для streaming пока используем простую реализацию
         // В будущем можно добавить streaming fixtures
         if (self.config.mode === 'replay') {
@@ -197,6 +240,20 @@ export class AIFixturesProvider {
           if (fixture) {
             // Эмулируем stream из фикстуры
             return self.convertFixtureToStream(fixture)
+          }
+        }
+        
+        if (self.config.mode === 'record-or-replay') {
+          const fixtureId = self.generateFixtureId(options, context)
+          const fixture = await self.loadFixture(fixtureId, context)
+          if (fixture) {
+            // Воспроизводим stream из фикстуры
+            self.log(`🔁 Replaying stream fixture: ${fixtureId}`)
+            return self.convertFixtureToStream(fixture)
+          } else {
+            // Записываем новый stream (упрощенная реализация - пока passthrough)
+            self.log(`📝 Recording stream fixture not yet implemented, using passthrough: ${fixtureId}`)
+            return await originalModel.doStream(options)
           }
         }
         
@@ -266,7 +323,7 @@ export class AIFixturesProvider {
   private extractContent(result: any): string {
     if (result.text) return result.text
     if (result.content) return result.content
-    if (result.choices && result.choices[0]?.message?.content) {
+    if (result.choices?.[0]?.message?.content) {
       return result.choices[0].message.content
     }
     return JSON.stringify(result)
@@ -281,7 +338,8 @@ export class AIFixturesProvider {
   ): Promise<AIFixture | null> {
     // Проверяем кеш
     if (this.fixturesCache.has(fixtureId)) {
-      return this.fixturesCache.get(fixtureId)!
+      const cached = this.fixturesCache.get(fixtureId)
+      return cached || null
     }
     
     try {

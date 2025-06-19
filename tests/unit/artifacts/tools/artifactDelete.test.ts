@@ -43,6 +43,7 @@ describe('AI Tool - artifactDelete', () => {
       deletedAt: null,
       summary: '...',
       publication_state: [],
+      world_id: null, // Production артефакт
     },
     totalVersions: 1,
   }

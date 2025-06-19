@@ -104,6 +104,26 @@
     }
 }
 
+/* Custom animations for site blocks */
+@layer utilities {
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+    
+    .animation-delay-4000 {
+        animation-delay: 4s;
+    }
+    
+    /* Grid background pattern */
+    .bg-grid-gray-200\/60 {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(156 163 175 / 0.6)'%3e%3cpath d='m0 .5h32v32h-32z'/%3e%3c/svg%3e");
+    }
+    
+    .bg-grid-gray-700\/30 {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(55 65 81 / 0.3)'%3e%3cpath d='m0 .5h32v32h-32z'/%3e%3c/svg%3e");
+    }
+}
+
 .skeleton {
     * {
         pointer-events: none !important;

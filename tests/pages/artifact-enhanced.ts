@@ -94,7 +94,7 @@ export class EnhancedArtifactPage {
       console.log('✅ Artifact panel is ready')
       return true
     } catch (error) {
-      console.log('⚠️ Artifact panel is not ready:', error.message)
+      console.log('⚠️ Artifact panel is not ready:', error instanceof Error ? error.message : String(error))
       return false
     }
   }
@@ -143,7 +143,7 @@ export class EnhancedArtifactPage {
    * @param timeout - таймаут ожидания в мс
    * @feature Ключевая проверка для BUG-005 - диалог должен появиться
    */
-  async waitForPublicationDialog(timeout: number = 5000): Promise<void> {
+  async waitForPublicationDialog(timeout = 5000): Promise<void> {
     console.log('⏳ Waiting for publication dialog to appear...')
     
     try {
@@ -162,7 +162,7 @@ export class EnhancedArtifactPage {
    * @param timeout - время ожидания отсутствия диалога
    * @feature Специфичный метод для воспроизведения BUG-005
    */
-  async verifyPublicationDialogNotAppeared(timeout: number = 3000): Promise<void> {
+  async verifyPublicationDialogNotAppeared(timeout = 3000): Promise<void> {
     console.log('🔍 Verifying publication dialog does NOT appear (bug reproduction)...')
     
     try {
@@ -173,7 +173,7 @@ export class EnhancedArtifactPage {
       console.log('🎉 UNEXPECTED: Publication dialog appeared! Bug may be fixed.')
       throw new Error('Publication dialog appeared - bug appears to be fixed')
     } catch (error) {
-      if (error.message.includes('FAIL-FAST')) {
+      if (error instanceof Error && error.message.includes('FAIL-FAST')) {
         // Это ожидаемое поведение - диалог не появился (баг воспроизведен)
         console.log('✅ BUG REPRODUCED: Publication dialog did not appear as expected')
       } else {

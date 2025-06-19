@@ -1,19 +1,20 @@
 /**
  * @file app/(site)/(hosting)/s/[siteId]/page.tsx
  * @description Страница для отображения опубликованного сайта с проверкой публикации на сервере.
- * @version 2.0.0
- * @date 2025-06-17
- * @updated Added publication system support with server-side validation.
+ * @version 2.1.0
+ * @date 2025-06-19
+ * @updated Fixed critical bug: orderBy now gets LATEST version instead of FIRST + added diagnostic logging.
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-06-19): Fixed critical bug: orderBy(desc()) for latest version + diagnostic logging for BUG-013.
  * v2.0.0 (2025-06-17): Added publication system support with server-side validation.
  * v1.1.0 (2025-06-12): Load site artifact via SiteRenderer.
  * v1.0.0 (2025-06-12): Начальная версия.
  */
 
 import { notFound } from 'next/navigation'
-import { eq } from 'drizzle-orm'
+import { eq, desc, } from 'drizzle-orm'
 import { artifact } from '@/lib/db/schema'
 import { db } from '@/lib/db'
 import { isSitePublished } from '@/lib/publication-utils'
@@ -40,22 +41,43 @@ interface SiteDefinition {
 export default async function HostedSitePage (props: SitePageProps) {
   const { siteId } = await props.params
 
-  // Server-side validation for published sites
+  console.log('🌐 PUBLIC SITE REQUEST:', { siteId })
+
+  // Server-side validation for published sites - get LATEST version
+  // IMPORTANT: Public sites can be from ANY world (production or test)
+  // We search across all worlds to find published sites
   const siteResult = await db
     .select()
     .from(artifact)
     .where(eq(artifact.id, siteId))
-    .orderBy(artifact.createdAt)
+    .orderBy(desc(artifact.createdAt))
     .limit(1)
 
+  console.log('🌐 SITE QUERY RESULT:', { 
+    found: siteResult.length > 0,
+    siteId,
+    artifactKind: siteResult[0]?.kind,
+    hasPublicationState: !!siteResult[0]?.publication_state,
+    publicationCount: siteResult[0]?.publication_state?.length || 0
+  })
+
   if (siteResult.length === 0) {
+    console.log('🌐 SITE NOT FOUND:', { siteId })
     notFound()
   }
 
   const siteArtifact = siteResult[0] as Artifact
 
   // Check if site is published
-  if (!isSitePublished(siteArtifact)) {
+  const isPublished = isSitePublished(siteArtifact)
+  console.log('🌐 PUBLICATION CHECK:', { 
+    siteId,
+    isPublished,
+    publicationState: siteArtifact.publication_state 
+  })
+  
+  if (!isPublished) {
+    console.log('🌐 SITE NOT PUBLISHED:', { siteId })
     notFound()
   }
 

@@ -1,18 +1,19 @@
 /**
  * @file components/site-publication-dialog.tsx
  * @description Диалог публикации сайта с поддержкой TTL.
- * @version 1.0.0
- * @date 2025-06-17
- * @updated Создание диалога публикации специально для сайтов.
+ * @version 1.1.0
+ * @date 2025-06-19
+ * @updated Исправлен баг с пустым полем ссылки - заменен useState на useEffect для установки URL.
  */
 
 /** HISTORY:
+ * v1.1.0 (2025-06-19): Исправлен BUG-012 - заменен неправильный useState(() => {...}) на useEffect для установки shareUrl.
  * v1.0.0 (2025-06-17): Создание диалога публикации сайтов с TTL поддержкой и визуальными индикаторами.
  */
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -80,11 +81,19 @@ export function SitePublicationDialog({
     : null
 
   // Устанавливаем URL сайта при открытии диалога
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined' && open) {
-      setShareUrl(`${window.location.origin}/s/${siteArtifact.id}`)
+      // Определяем правильный домен для публичного хостинга сайтов
+      const currentOrigin = window.location.origin
+      
+      // Если мы на app.localhost, то сайты хостятся на localhost (apex домен)
+      const publicDomain = currentOrigin.includes('app.localhost') 
+        ? currentOrigin.replace('app.localhost', 'localhost')
+        : currentOrigin
+      
+      setShareUrl(`${publicDomain}/s/${siteArtifact.id}`)
     }
-  })
+  }, [open, siteArtifact.id])
 
   const handlePublish = async () => {
     setIsPublishing(true)
