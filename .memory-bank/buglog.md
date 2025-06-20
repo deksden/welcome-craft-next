@@ -26,6 +26,41 @@
 
 ## ✅ Done (Архив выполненных задач)
 
+-   [x] **#BUG-024: SiteEditor runtime error после UC-09 трансформации - Cannot read properties of undefined (reading 'length')**
+    -   **Priority:** Critical
+    -   **Type:** Bug (Critical - Runtime Error + Architecture Compatibility)
+    -   **Status:** ✅ **ПОЛНОСТЬЮ ИСПРАВЛЕНО**
+    -   **Created:** 2025-06-20
+    -   **Completed:** 2025-06-20
+    -   **Description:** После внедрения UC-09 Holistic Site Generation приложение падает с runtime ошибкой "Cannot read properties of undefined (reading 'length')" в SiteEditor компоненте на строке 179. Ошибка возникает при попытке доступа к `siteDefinition.blocks.length`, когда UC-09 генерирует новый формат данных.
+    -   **User Report:** "приложение упало с ошибкой времени выполнения: вот логи: Call Stack 7 SiteEditor artifacts/kinds/site/client.tsx (179:29)... Error: Cannot read properties of undefined (reading 'length')"
+    -   **Root Cause Analysis:** UC-09 Holistic Site Generation изменил формат слотов с `Record<string, BlockSlotData>` на `Record<string, { artifactId: string }>`, а также мог генерировать данные с undefined/malformed структурой, не совместимой с клиентским SiteEditor компонентом
+    -   **✅ Implemented Solutions:**
+        1. [x] **✅ Enhanced type compatibility:** Обновлены интерфейсы SiteBlock для поддержки обоих форматов UC-08 и UC-09
+        2. [x] **✅ Safe JSON parsing:** Добавлены защитные проверки в инициализации useState с fallback на `{ theme: 'default', blocks: [] }`
+        3. [x] **✅ Safe content updates:** Улучшен useEffect для безопасного парсинга изменений content с валидацией структуры
+        4. [x] **✅ Safe access patterns:** Заменены все прямые обращения к `siteDefinition.blocks.length` на защищенные `siteDefinition?.blocks?.length`
+        5. [x] **✅ Slot normalization:** Добавлена функция `normalizeSlot()` в BlockCard для конвертации UC-09 формата в UC-08
+        6. [x] **✅ Backward compatibility:** Система автоматически распознает и корректно обрабатывает старые и новые форматы слотов
+    -   **✅ Key Technical Improvements:**
+        - **Type Safety:** Поддержка `BlockSlotData | SiteSlotUC09` union типов для совместимости
+        - **Defensive Programming:** Добавлены fallback значения и safe access паттерны во всех критических местах
+        - **Format Normalization:** Автоматическая конвертация UC-09 → UC-08 для обратной совместимости
+        - **JSON Validation:** Проверка структуры данных с автоматическим исправлением malformed объектов
+        - **Optional Fields:** Поддержка нового поля `reasoning` из UC-09 без нарушения существующей логики
+    -   **✅ Result:** Runtime ошибка полностью устранена, SiteEditor работает с обоими форматами данных UC-08 и UC-09
+    -   **Files Updated:**
+        - `artifacts/kinds/site/client.tsx` v0.4.0 - добавлена UC-09 совместимость и защитные проверки
+        - `artifacts/kinds/site/components/block-card.tsx` v0.2.0 - добавлена нормализация слотов и поддержка UC-09
+    -   **Quality Assurance:**
+        - ✅ **TypeScript:** `pnpm typecheck` ✅ (0 ошибок)
+        - ✅ **ESLint:** `pnpm lint` ✅ (No warnings or errors)
+        - ✅ **Architecture:** Полная обратная совместимость с UC-08 при поддержке UC-09
+    -   **Technical Impact:**
+        - ✅ SiteEditor теперь стабильно работает с site артефактами после UC-09 трансформации
+        - ✅ Система автоматически обрабатывает различные форматы данных без user intervention
+        - ✅ Архитектура подготовлена к будущим изменениям в форматах данных
+
 -   [x] **#BUG-023: API groupByVersions=true все еще возвращает дубликаты версий**
     -   **Priority:** High
     -   **Type:** Bug (Data Logic + SQL)

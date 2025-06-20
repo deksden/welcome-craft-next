@@ -1,12 +1,14 @@
 /**
  * @file lib/db/schema.ts
  * @description Определения таблиц базы данных с использованием Drizzle ORM.
- * @version 2.3.0
- * @date 2025-06-18
- * @updated Добавлены поля world_id для поддержки трехуровневой системы тестирования (Phase 2).
+ * @version 2.5.0
+ * @date 2025-06-20
+ * @updated PHASE1 UC-08 CLEANUP - Удалены поля интеллектуального поиска.
  */
 
 /** HISTORY:
+ * v2.5.0 (2025-06-20): PHASE1 UC-08 CLEANUP - Удалены поля интеллектуального поиска: metadata, quality_score, last_analyzed_at, search_vector.
+ * v2.4.0 (2025-06-20): Добавлены поля для интеллектуального поиска артефактов (UC-08 Intelligent Artifact Search).
  * v2.3.0 (2025-06-18): Добавлены поля world_id во все основные таблицы для изоляции тестовых миров (Phase 2).
  * v2.2.0 (2025-06-17): Добавлены поля publication_state (Artifact) и published_until (Chat) для системы публикации с TTL.
  * v2.1.0 (2025-06-12): Поле content переведено на JSON и добавлен тип 'site'.
@@ -18,6 +20,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import { boolean, foreignKey, json, jsonb, pgTable, primaryKey, text, timestamp, uuid, varchar, } from 'drizzle-orm/pg-core'
 import type { PublicationInfo } from '@/lib/types'
+// REMOVED UC-08 import: import type { ArtifactMetadata } from '@/lib/types/intelligent-search'
 
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -94,6 +97,8 @@ export const artifact = pgTable(
     
     // Система публикации - массив объектов с информацией о публикации из разных источников
     publication_state: jsonb('publication_state').$type<PublicationInfo[]>().default([]).notNull(),
+    
+    // REMOVED UC-08 fields: metadata, quality_score, last_analyzed_at, search_vector
     
     // Phase 2: Поле для изоляции тестовых миров
     // NULL = production artifact, 'WORLD_ID' = test artifact в конкретном мире

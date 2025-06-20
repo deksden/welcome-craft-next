@@ -1,12 +1,14 @@
 /**
  * @file lib/ai/tools/constants.ts
  * @description Defines standardized names for AI tools to ensure consistency across the application.
- * @version 1.1.0
- * @date 2025-06-12
- * @updated Added SITE_GENERATE tool name.
+ * @version 1.3.0
+ * @date 2025-06-20
+ * @updated PHASE1 UC-08 CLEANUP - Removed ARTIFACT_SEARCH tool name.
  */
 
 /** HISTORY:
+ * v1.3.0 (2025-06-20): PHASE1 UC-08 CLEANUP - Removed ARTIFACT_SEARCH tool name.
+ * v1.2.0 (2025-06-20): Added ARTIFACT_SEARCH tool name for intelligent search functionality.
  * v1.1.0 (2025-06-12): Added SITE_GENERATE tool name.
  * v1.0.0 (2025-06-10): Initial version with all artifact-related tool names.
  */

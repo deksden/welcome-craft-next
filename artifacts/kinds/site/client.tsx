@@ -1,12 +1,13 @@
 /**
  * @file artifacts/kinds/site/client.tsx
  * @description Визуальный редактор артефакта типа "Сайт".
- * @version 0.3.0
+ * @version 0.4.0
  * @date 2025-06-20
- * @updated Added version control support - diff mode, read-only versions, and version indicators.
+ * @updated Fixed UC-09 compatibility - added safe parsing and fallback protection for site definition structure.
  */
 
 /** HISTORY:
+ * v0.4.0 (2025-06-20): Fixed UC-09 compatibility - enhanced SiteDefinition parsing with safe fallbacks, added support for both UC-08 and UC-09 slot formats, fixed runtime error "Cannot read properties of undefined (reading 'length')".
  * v0.3.0 (2025-06-20): Added version control support - diff mode, read-only versions, and version indicators.
  * v0.2.0 (2025-06-16): Complete refactor to visual editor with BlockCard components.
  * v0.1.0 (2025-06-12): Initial version of site artifact editor.
@@ -22,14 +23,21 @@ import { GlobeIcon } from '@/components/icons'
 import { DiffView } from '@/components/diffview'
 import type { BlockSlotData } from '@/site-blocks/types'
 
+// ✅ Updated interfaces to support both UC-08 and UC-09 formats
+interface SiteSlotUC09 {
+  artifactId: string
+}
+
 interface SiteBlock {
   type: string
-  slots: Record<string, BlockSlotData>
+  // Support both UC-08 (BlockSlotData) and UC-09 (SiteSlotUC09) formats
+  slots: Record<string, BlockSlotData | SiteSlotUC09>
 }
 
 interface SiteDefinition {
   theme: string
   blocks: Array<SiteBlock>
+  reasoning?: string // UC-09 optional field
 }
 
 type Metadata = undefined
@@ -62,10 +70,25 @@ function SiteEditor({
   isLoading?: boolean
   isReadonly?: boolean
 }) {
+  // ✅ Enhanced initialization with UC-09 compatibility and safe fallbacks
   const [siteDefinition, setSiteDefinition] = React.useState<SiteDefinition>(() => {
     try {
-      return content ? JSON.parse(content) : { theme: 'default', blocks: [] }
-    } catch {
+      if (!content) {
+        return { theme: 'default', blocks: [] }
+      }
+      
+      const parsed = JSON.parse(content)
+      
+      // ✅ Ensure the parsed object has the required structure
+      const safeParsed: SiteDefinition = {
+        theme: parsed?.theme || 'default',
+        blocks: Array.isArray(parsed?.blocks) ? parsed.blocks : [],
+        reasoning: parsed?.reasoning // UC-09 optional field
+      }
+      
+      return safeParsed
+    } catch (error) {
+      console.warn('Failed to parse site content, using default structure:', error)
       return { theme: 'default', blocks: [] }
     }
   })
@@ -74,7 +97,15 @@ function SiteEditor({
   React.useEffect(() => {
     if (content) {
       try {
-        const newDefinition = JSON.parse(content)
+        const parsed = JSON.parse(content)
+        
+        // ✅ Apply the same safe parsing logic as in useState
+        const newDefinition: SiteDefinition = {
+          theme: parsed?.theme || 'default',
+          blocks: Array.isArray(parsed?.blocks) ? parsed.blocks : [],
+          reasoning: parsed?.reasoning // UC-09 optional field
+        }
+        
         // Only update if content actually changed to prevent unnecessary re-renders
         setSiteDefinition(current => {
           const currentString = JSON.stringify(current)
@@ -82,7 +113,7 @@ function SiteEditor({
           return currentString !== newString ? newDefinition : current
         })
       } catch (error) {
-        console.warn('Failed to parse site content:', error)
+        console.warn('Failed to parse site content during update:', error)
       }
     }
   }, [content])
@@ -153,8 +184,8 @@ function SiteEditor({
     })
   }, [onSaveContent, getStructuralFingerprint, lastStructuralFingerprint, isReadonly])
 
-  // Show loading skeleton while content is being loaded
-  if (isLoading || (!content && !siteDefinition.blocks.length)) {
+  // ✅ Enhanced loading check with safe access to siteDefinition.blocks
+  if (isLoading || (!content && !(siteDefinition?.blocks?.length))) {
     return (
       <div className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -176,7 +207,8 @@ function SiteEditor({
     )
   }
 
-  if (siteDefinition.blocks.length === 0) {
+  // ✅ Safe check for empty blocks with fallback protection
+  if (!(siteDefinition?.blocks?.length)) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         <h3 className="text-lg font-medium mb-2">Сайт пустой</h3>
@@ -197,7 +229,7 @@ function SiteEditor({
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {siteDefinition.blocks.map((block, index) => {
+        {(siteDefinition?.blocks || []).map((block, index) => {
           const blockDefinition = blockDefinitions[block.type]
           
           if (!blockDefinition) {

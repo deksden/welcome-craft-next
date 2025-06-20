@@ -1,12 +1,14 @@
 /**
  * @file lib/ai/prompts.ts
  * @description Управление системными промптами для AI-моделей.
- * @version 2.0.0
- * @date 2025-06-17
- * @updated Enhanced artifactsPrompt with two-phase architecture explanation and artifactContent guidance.
+ * @version 2.2.0
+ * @date 2025-06-20
+ * @updated Cleaned up legacy artifactSearch references from UC-08 cleanup.
  */
 
 /** HISTORY:
+ * v2.2.0 (2025-06-20): PHASE1 UC-08 CLEANUP - Removed legacy artifactSearch tool documentation.
+ * v2.1.0 (2025-06-20): Added artifactSearch tool documentation for intelligent artifact search functionality.
  * v2.0.0 (2025-06-17): Enhanced artifactsPrompt with two-phase architecture explanation and artifactContent guidance.
  * v1.9.0 (2025-06-10): Импорт ArtifactKind из lib/types.
  * v1.8.0 (2025-06-10): Updated tool names to artifactCreate/artifactUpdate.
@@ -109,6 +111,7 @@ export const artifactsPrompt = `
 *   **Создание нового:** Пользователь: "напиши эссе" → ты: \`artifactCreate\` → готово
 *   **Обсуждение существующего:** Пользователь прикрепляет документ → ты: \`artifactContent\` → анализируешь → отвечаешь
 *   **Изменение существующего:** Пользователь: "измени этот текст" → ты: \`artifactContent\` (если еще не получал) → \`artifactUpdate\` → готово
+
 
 Твоя задача — точно следовать этим инструкциям, чтобы обеспечить плавное взаимодействие с пользователем.
 `

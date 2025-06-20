@@ -17,6 +17,7 @@ import { artifactContent } from '@/artifacts/tools/artifactContent'
 import { getArtifactById } from '@/lib/db/queries'
 import type { Artifact } from '@/lib/db/schema'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
+// Simple mock artifact helper instead of UC-08 artifact-factory
 
 vi.mock('@/lib/db/queries', () => ({
   getArtifactById: vi.fn(),
@@ -32,12 +33,12 @@ describe('AI Tool - artifactContent', () => {
       content_url: null,
       content_site_definition: null,
       userId: 'test-user-123',
-      createdAt: new Date(),
       authorId: 'test-user-123',
-      deletedAt: null,
       summary: 'Тест',
+      createdAt: new Date(),
+      deletedAt: null,
       publication_state: [],
-      world_id: null, // Production артефакт
+      world_id: null,
     },
     totalVersions: 1,
   }

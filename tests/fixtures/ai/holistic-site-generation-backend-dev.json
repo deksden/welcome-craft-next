@@ -1,0 +1,40 @@
+{
+  "model": "gemini-1.5-flash",
+  "prompt": "Create an onboarding site based on: \"Создай онбординг-сайт для нового Backend разработчика\"\n\nAvailable candidates by block and slot:\n{\n  \"blocks\": [\n    {\n      \"blockType\": \"hero\",\n      \"slots\": [\n        {\n          \"slotName\": \"content\",\n          \"slotDefinition\": {\n            \"kind\": \"text\",\n            \"tags\": [\"welcome\", \"greeting\"],\n            \"description\": \"Main welcome message for the hero section\"\n          },\n          \"candidates\": [\n            {\n              \"artifactId\": \"ceo-welcome-backend\",\n              \"title\": \"CEO Welcome - Tech Team\",\n              \"summary\": \"Professional welcome message from CEO specifically for technical team members\",\n              \"kind\": \"text\"\n            },\n            {\n              \"artifactId\": \"hr-general-welcome\",\n              \"title\": \"General HR Welcome\",\n              \"summary\": \"Generic welcome message from HR department\",\n              \"kind\": \"text\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"blockType\": \"key-contacts\",\n      \"slots\": [\n        {\n          \"slotName\": \"contacts\",\n          \"slotDefinition\": {\n            \"kind\": \"sheet\",\n            \"tags\": [\"contacts\", \"team\"],\n            \"description\": \"Important contact information\"\n          },\n          \"candidates\": [\n            {\n              \"artifactId\": \"dev-team-contacts\",\n              \"title\": \"Development Team Contacts\",\n              \"summary\": \"Contact details for backend developers, team leads, and technical managers\",\n              \"kind\": \"sheet\"\n            },\n            {\n              \"artifactId\": \"hr-contacts-general\",\n              \"title\": \"HR Department Contacts\",\n              \"summary\": \"General HR contact information\",\n              \"kind\": \"sheet\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"blockType\": \"useful-links\",\n      \"slots\": [\n        {\n          \"slotName\": \"links\",\n          \"slotDefinition\": {\n            \"kind\": \"text\",\n            \"tags\": [\"resources\", \"links\"],\n            \"description\": \"Useful resources and documentation links\"\n          },\n          \"candidates\": [\n            {\n              \"artifactId\": \"tech-resources-backend\",\n              \"title\": \"Backend Development Resources\",\n              \"summary\": \"Technical documentation, API docs, coding standards for backend developers\",\n              \"kind\": \"text\"\n            },\n            {\n              \"artifactId\": \"company-general-links\",\n              \"title\": \"General Company Resources\",\n              \"summary\": \"General company information and basic resources\",\n              \"kind\": \"text\"\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"totalArtifacts\": 6,\n  \"userPrompt\": \"Создай онбординг-сайт для нового Backend разработчика\"\n}\n\nSelect the BEST artifact for each slot, considering:\n- Overall theme and coherence\n- User role and context  \n- Content quality and professionalism\n- Logical relationships between selected content",
+  "response": {
+    "theme": "technical",
+    "blocks": [
+      {
+        "type": "hero",
+        "slots": {
+          "content": {
+            "artifactId": "ceo-welcome-backend"
+          }
+        }
+      },
+      {
+        "type": "key-contacts",
+        "slots": {
+          "contacts": {
+            "artifactId": "dev-team-contacts"
+          }
+        }
+      },
+      {
+        "type": "useful-links",
+        "slots": {
+          "links": {
+            "artifactId": "tech-resources-backend"
+          }
+        }
+      }
+    ],
+    "reasoning": "Selected technical-focused artifacts for backend developer onboarding: CEO welcome specifically for tech team (more relevant than generic HR), development team contacts (directly relevant for backend dev), and technical resources (essential for backend work). This creates a coherent, role-specific onboarding experience."
+  },
+  "timestamp": "2025-06-20T22:06:30.000Z",
+  "usage": {
+    "promptTokens": 892,
+    "completionTokens": 156,
+    "totalTokens": 1048
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "model": "gemini-1.5-flash",
+  "prompt": "Create an onboarding site based on: \"Create site for new employee with mixed content quality\"\n\nAvailable candidates by block and slot:\n{\n  \"blocks\": [\n    {\n      \"blockType\": \"hero\",\n      \"slots\": [\n        {\n          \"slotName\": \"content\",\n          \"slotDefinition\": {\n            \"kind\": \"text\",\n            \"tags\": [\"welcome\", \"greeting\"],\n            \"description\": \"Main welcome message for the hero section\"\n          },\n          \"candidates\": [\n            {\n              \"artifactId\": \"placeholder-welcome\",\n              \"title\": \"Placeholder Welcome\",\n              \"summary\": \"Contains localhost URLs and placeholder text - low quality\",\n              \"kind\": \"text\"\n            },\n            {\n              \"artifactId\": \"professional-welcome\",\n              \"title\": \"Professional CEO Welcome\",\n              \"summary\": \"High-quality, professional welcome message from leadership\",\n              \"kind\": \"text\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"blockType\": \"key-contacts\",\n      \"slots\": [\n        {\n          \"slotName\": \"contacts\",\n          \"slotDefinition\": {\n            \"kind\": \"sheet\",\n            \"tags\": [\"contacts\", \"team\"],\n            \"description\": \"Important contact information\"\n          },\n          \"candidates\": [\n            {\n              \"artifactId\": \"test-contacts-localhost\",\n              \"title\": \"Test Contacts with localhost\",\n              \"summary\": \"Contains test data with localhost URLs - should be filtered\",\n              \"kind\": \"sheet\"\n            },\n            {\n              \"artifactId\": \"real-company-contacts\",\n              \"title\": \"Company Contact Directory\",\n              \"summary\": \"Real company contacts with proper email addresses and phone numbers\",\n              \"kind\": \"sheet\"\n            }\n          ]\n        }\n      ]\n    }\n  ],\n  \"totalArtifacts\": 4,\n  \"userPrompt\": \"Create site for new employee with mixed content quality\"\n}\n\nSelect the BEST artifact for each slot, considering:\n- Overall theme and coherence\n- User role and context  \n- Content quality and professionalism\n- Logical relationships between selected content",
+  "response": {
+    "theme": "professional",
+    "blocks": [
+      {
+        "type": "hero",
+        "slots": {
+          "content": {
+            "artifactId": "professional-welcome"
+          }
+        }
+      },
+      {
+        "type": "key-contacts",
+        "slots": {
+          "contacts": {
+            "artifactId": "real-company-contacts"
+          }
+        }
+      }
+    ],
+    "reasoning": "Automatically filtered out low-quality content: avoided placeholder welcome with localhost URLs in favor of professional CEO message, and selected real company contacts over test data with localhost. This demonstrates UC-09's quality-aware selection capabilities."
+  },
+  "timestamp": "2025-06-20T22:06:45.000Z",
+  "usage": {
+    "promptTokens": 756,
+    "completionTokens": 142,
+    "totalTokens": 898
+  }
+}
