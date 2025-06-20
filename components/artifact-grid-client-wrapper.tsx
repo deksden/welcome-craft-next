@@ -1,12 +1,13 @@
 /**
  * @file components/artifact-grid-client-wrapper.tsx
  * @description Клиентский компонент-обертка для сетки артефактов.
- * @version 2.1.1
- * @date 2025-06-11
- * @updated Wrapped handleCardClick in useCallback and added to useEffect dependencies.
+ * @version 2.2.0
+ * @date 2025-06-20
+ * @updated Added type filtering UI with Select component for filtering artifacts by kind (BUG-022).
  */
 
 /** HISTORY:
+ * v2.2.0 (2025-06-20): Added type filtering UI with Select component - user can filter by text, code, sheet, site, image (BUG-022).
  * v2.1.1 (2025-06-11): Fixed exhaustive-deps linting rule by wrapping handleCardClick in useCallback.
  * v2.1.0 (2025-06-10): Импорт ArtifactKind теперь из общего файла lib/types.
  */
@@ -17,6 +18,7 @@ import useSWR from 'swr'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PlusIcon } from '@/components/icons'
 import { type ArtifactDocument, ArtifactGridDisplay } from './artifact-grid-display'
 import { useDebounceCallback } from 'usehooks-ts'
@@ -43,6 +45,9 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
 
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1)
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
+  const [kindFilter, setKindFilter] = useState<ArtifactKind | 'all'>(
+    (searchParams.get('kind') as ArtifactKind) || 'all'
+  )
   const debouncedSearchTerm = useDebounceCallback(setSearchTerm, 500)
 
   const createQueryString = useCallback(
@@ -64,13 +69,14 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
     const newQuery = createQueryString({
       page: currentPage === 1 ? undefined : currentPage,
       search: searchTerm === '' ? undefined : searchTerm,
+      kind: kindFilter === 'all' ? undefined : kindFilter,
     })
     const finalQuery = newQuery.toString() ? `?${newQuery}` : ''
     router.push(`${pathname}${finalQuery}`, { scroll: false })
-  }, [currentPage, searchTerm, router, pathname, createQueryString])
+  }, [currentPage, searchTerm, kindFilter, router, pathname, createQueryString])
 
   const { data, error, isLoading, mutate } = useSWR<ArtifactListApiResponse>(
-    `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}&searchQuery=${encodeURIComponent(searchTerm)}`,
+    `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}&searchQuery=${encodeURIComponent(searchTerm)}${kindFilter !== 'all' ? `&kind=${kindFilter}` : ''}&groupByVersions=true`,
     fetcher,
     {
       keepPreviousData: true,
@@ -123,12 +129,33 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <Input
-          placeholder="Поиск по заголовкам..."
-          defaultValue={searchTerm}
-          onChange={(e) => debouncedSearchTerm(e.target.value)}
-          className="max-w-sm bg-background"
-        />
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <Input
+            placeholder="Поиск по заголовкам..."
+            defaultValue={searchTerm}
+            onChange={(e) => debouncedSearchTerm(e.target.value)}
+            className="max-w-sm bg-background"
+          />
+          <Select
+            value={kindFilter}
+            onValueChange={(value: ArtifactKind | 'all') => {
+              setKindFilter(value)
+              setCurrentPage(1) // Reset to first page when filter changes
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Тип артефакта" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все типы</SelectItem>
+              <SelectItem value="text">📝 Текст</SelectItem>
+              <SelectItem value="code">💻 Код</SelectItem>
+              <SelectItem value="sheet">📊 Таблица</SelectItem>
+              <SelectItem value="site">🌐 Сайт</SelectItem>
+              <SelectItem value="image">🖼️ Изображение</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button onClick={() => router.push('/')} className="w-full sm:w-auto">
           <PlusIcon className="mr-2 size-4"/> Создать новый
         </Button>

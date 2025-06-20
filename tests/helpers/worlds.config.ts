@@ -295,7 +295,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Демо-сайт онбординга',
         kind: 'site',
         ownerId: 'user-david',
-        contentPath: 'demo/complete-demo-site.json',
+        contentPath: 'complete-demo-site.json',
         tags: ['demo', 'complete', 'showcase']
       },
       {
@@ -303,7 +303,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Приветствие для нового сотрудника',
         kind: 'text',
         ownerId: 'user-david',
-        contentPath: 'demo/demo-welcome-message.md',
+        contentPath: 'demo-welcome-message.md',
         tags: ['welcome', 'demo', 'onboarding']
       },
       {
@@ -311,7 +311,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Контакты команды',
         kind: 'sheet',
         ownerId: 'user-david',
-        contentPath: 'demo/demo-contacts.csv',
+        contentPath: 'demo-contacts.csv',
         tags: ['contacts', 'demo', 'team']
       },
       {
@@ -319,7 +319,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Полезные ссылки для нового сотрудника',
         kind: 'text',
         ownerId: 'user-david',
-        contentPath: 'demo/demo-useful-links.md',
+        contentPath: 'demo-useful-links.md',
         tags: ['links', 'demo', 'resources']
       }
     ],
@@ -329,7 +329,7 @@ export const WORLDS: Record<WorldId, WorldDefinition> = {
         title: 'Создание сайта через AI',
         ownerId: 'user-david',
         isPublished: false,
-        messagesPath: 'demo/ai-site-creation-chat.json'
+        messagesPath: 'ai-site-creation-chat.json'
       }
     ],
     settings: {

@@ -3,12 +3,13 @@
 /**
  * @file components/artifact-actions.tsx
  * @description Компонент с действиями для артефакта.
- * @version 2.3.0
- * @date 2025-06-11
- * @updated Added 'use client' directive to resolve React hook errors.
+ * @version 2.4.0
+ * @date 2025-06-20
+ * @updated Added version navigation controls (Previous/Next Version buttons) to toolbar - BUG-022 fix.
  */
 
 /** HISTORY:
+ * v2.4.0 (2025-06-20): Added version navigation controls - Previous/Next Version buttons with chevron icons, display only when totalVersions > 1 (BUG-022 fix).
  * v2.3.0 (2025-06-11): Added 'use client' directive.
  * v2.2.1 (2025-06-10): Corrected property access to 'artifactId' on UIArtifact type (TS2339).
  * v2.2.0 (2025-06-06): `handleDiscuss` теперь использует API-маршрут `/api/chat/discuss-artifact`.
@@ -21,7 +22,7 @@ import { type Dispatch, memo, type SetStateAction, useState } from 'react'
 import type { ArtifactActionContext } from './create-artifact'
 import { cn } from '@/lib/utils'
 import { toast } from '@/components/toast'
-import { CheckCircleFillIcon, LoaderIcon, MessageCircleIcon, VercelIcon } from './icons'
+import { CheckCircleFillIcon, LoaderIcon, MessageCircleIcon, VercelIcon, ChevronLeftIcon, ChevronRightIcon } from './icons'
 import { useArtifact } from '@/hooks/use-artifact'
 import { copyArtifactToClipboard } from '@/app/app/(main)/artifacts/actions'
 
@@ -33,6 +34,7 @@ interface ArtifactActionsProps {
   mode: 'edit' | 'diff';
   metadata: any;
   setMetadata: Dispatch<SetStateAction<any>>;
+  totalVersions?: number; // Add total versions count
 }
 
 function SaveStatusIndicator ({ status }: { status: UIArtifact['saveStatus'] }) {
@@ -56,6 +58,7 @@ function PureArtifactActions ({
   mode,
   metadata,
   setMetadata,
+  totalVersions = 1,
 }: ArtifactActionsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { setArtifact } = useArtifact()
@@ -114,8 +117,46 @@ function PureArtifactActions ({
     setMetadata,
   }
 
+  const hasPreviousVersion = currentVersionIndex > 0
+  const hasNextVersion = currentVersionIndex < totalVersions - 1
+
   return (
     <div className="flex flex-row gap-1 items-center">
+      
+      {/* Version navigation controls - показываем только если есть несколько версий */}
+      {totalVersions > 1 && (
+        <>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                data-testid="artifact-actions-prev-version-button"
+                variant="outline"
+                className="h-fit p-2 dark:hover:bg-zinc-700"
+                onClick={() => handleVersionChange('prev')}
+                disabled={!hasPreviousVersion || isLoading || artifact.status === 'streaming'}
+              >
+                <ChevronLeftIcon size={18}/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Предыдущая версия ({currentVersionIndex}/{totalVersions})</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                data-testid="artifact-actions-next-version-button"
+                variant="outline"
+                className="h-fit p-2 dark:hover:bg-zinc-700"
+                onClick={() => handleVersionChange('next')}
+                disabled={!hasNextVersion || isLoading || artifact.status === 'streaming'}
+              >
+                <ChevronRightIcon size={18}/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Следующая версия ({currentVersionIndex + 2}/{totalVersions})</TooltipContent>
+          </Tooltip>
+        </>
+      )}
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -190,6 +231,7 @@ export const ArtifactActions = memo(
     if (prevProps.currentVersionIndex !== nextProps.currentVersionIndex) return false
     if (prevProps.isCurrentVersion !== nextProps.isCurrentVersion) return false
     if (prevProps.artifact.content !== nextProps.artifact.content) return false
+    if (prevProps.totalVersions !== nextProps.totalVersions) return false
     return true
   },
 )

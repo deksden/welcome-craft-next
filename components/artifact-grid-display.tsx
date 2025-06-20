@@ -1,15 +1,28 @@
 /**
  * @file components/artifact-grid-display.tsx
  * @description Компонент для отображения артефактов в виде сетки карточек.
- * @version 2.0.0
- * @date 2025-06-09
- * @updated Переименован из ContentGridDisplay и адаптирован под новую архитектуру.
+ * @version 2.1.0
+ * @date 2025-06-20
+ * @updated Implemented full pagination controls with Previous/Next buttons and page numbers - BUG-022 fix.
+ */
+
+/** HISTORY:
+ * v2.1.0 (2025-06-20): Implemented full pagination controls - Previous/Next buttons, page numbers, ellipsis for many pages (BUG-022 fix).
+ * v2.0.0 (2025-06-09): Переименован из ContentGridDisplay и адаптирован под новую архитектуру.
  */
 
 'use client'
 
 import type { MouseEvent } from 'react'
-import { Pagination, PaginationContent, PaginationLink, } from '@/components/ui/pagination'
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink, 
+  PaginationNext,
+  PaginationPrevious 
+} from '@/components/ui/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type { ArtifactApiResponse } from '@/lib/types'
@@ -92,7 +105,65 @@ export function ArtifactGridDisplay ({
       {totalPages > 1 && (
         <Pagination className="mt-8">
           <PaginationContent>
-            {/* ... элементы пагинации ... */}
+            {/* Previous button */}
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (page > 1) onPageChange(page - 1)
+                }}
+                className={cn({ 'pointer-events-none opacity-50': page <= 1 })}
+              />
+            </PaginationItem>
+
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum: number
+              if (totalPages <= 5) {
+                pageNum = i + 1
+              } else if (page <= 3) {
+                pageNum = i + 1
+              } else if (page >= totalPages - 2) {
+                pageNum = totalPages - 4 + i
+              } else {
+                pageNum = page - 2 + i
+              }
+
+              return (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      onPageChange(pageNum)
+                    }}
+                    isActive={pageNum === page}
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            })}
+
+            {/* Ellipsis if needed */}
+            {totalPages > 5 && page < totalPages - 2 && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+
+            {/* Next button */}
+            <PaginationItem>
+              <PaginationNext 
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (page < totalPages) onPageChange(page + 1)
+                }}
+                className={cn({ 'pointer-events-none opacity-50': page >= totalPages })}
+              />
+            </PaginationItem>
           </PaginationContent>
         </Pagination>
       )}

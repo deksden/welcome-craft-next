@@ -235,8 +235,8 @@ describe('Artifact Content Utils', () => {
       const content = '{ invalid json: }'
       const kind: ArtifactKind = 'site'
 
+      // ✅ Исправлено: функция обрабатывает ошибку и возвращает null для content_site_definition
       const result = prepareContentForSave(content, kind)
-
       expect(result).toEqual({
         content_text: null,
         content_url: null,

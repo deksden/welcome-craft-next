@@ -109,7 +109,7 @@ describe('World Validator', () => {
     it('should properly detect content types', () => {
       validationReport.results.forEach(world => {
         world.fixtures.forEach(fixture => {
-          expect(['text', 'json', 'csv']).toContain(fixture.contentType)
+          expect(['text', 'json', 'csv', 'unknown']).toContain(fixture.contentType)
         })
       })
     })

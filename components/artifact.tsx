@@ -356,6 +356,7 @@ function PureArtifact ({
               mode={mode}
               metadata={metadata}
               setMetadata={setMetadata}
+              totalVersions={artifacts?.length || 1}
             />
           )}
         </div>

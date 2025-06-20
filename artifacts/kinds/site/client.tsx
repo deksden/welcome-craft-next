@@ -1,12 +1,13 @@
 /**
  * @file artifacts/kinds/site/client.tsx
  * @description Визуальный редактор артефакта типа "Сайт".
- * @version 0.2.0
- * @date 2025-06-12
- * @updated Refactored to visual block-based editor with dynamic UI.
+ * @version 0.3.0
+ * @date 2025-06-20
+ * @updated Added version control support - diff mode, read-only versions, and version indicators.
  */
 
 /** HISTORY:
+ * v0.3.0 (2025-06-20): Added version control support - diff mode, read-only versions, and version indicators.
  * v0.2.0 (2025-06-16): Complete refactor to visual editor with BlockCard components.
  * v0.1.0 (2025-06-12): Initial version of site artifact editor.
  */
@@ -18,6 +19,7 @@ import { Artifact } from '@/components/create-artifact'
 import { BlockCard } from './components/block-card'
 import { blockDefinitions } from '@/site-blocks'
 import { GlobeIcon } from '@/components/icons'
+import { DiffView } from '@/components/diffview'
 import type { BlockSlotData } from '@/site-blocks/types'
 
 interface SiteBlock {
@@ -36,15 +38,27 @@ type Metadata = undefined
  * @description Компонент визуального редактора сайта
  * @param content - JSON-строка с определением сайта
  * @param onSaveContent - функция сохранения изменений
+ * @param mode - режим отображения (edit/diff)
+ * @param isCurrentVersion - флаг текущей версии
+ * @param currentVersionIndex - индекс текущей версии
+ * @param getDocumentContentById - функция получения контента по версии
  */
 function SiteEditor({ 
   content, 
   onSaveContent,
+  mode = 'edit',
+  isCurrentVersion = true,
+  currentVersionIndex = 0,
+  getDocumentContentById,
   isLoading = false,
   isReadonly = false
 }: { 
   content?: string | null
   onSaveContent: (content: string, debounce?: boolean) => void
+  mode?: 'edit' | 'diff'
+  isCurrentVersion?: boolean
+  currentVersionIndex?: number
+  getDocumentContentById?: (index: number) => string
   isLoading?: boolean
   isReadonly?: boolean
 }) {
@@ -96,11 +110,26 @@ function SiteEditor({
     setLastStructuralFingerprint(getStructuralFingerprint(siteDefinition))
   }, []) // Только при первой загрузке
 
+  // ✅ Handle diff mode for version comparison
+  if (mode === 'diff' && getDocumentContentById) {
+    const oldContent = getDocumentContentById(currentVersionIndex - 1)
+    const newContent = getDocumentContentById(currentVersionIndex)
+    
+    return (
+      <div className="p-4">
+        <div className="mb-4 text-sm text-muted-foreground">
+          Сравнение версий сайта
+        </div>
+        <DiffView oldContent={oldContent} newContent={newContent} />
+      </div>
+    )
+  }
+
   const handleBlockChange = React.useCallback((
     blockIndex: number, 
     updatedBlock: SiteBlock
   ) => {
-    if (isReadonly) return; // Не позволяем изменения в readonly режиме
+    if (isReadonly || !isCurrentVersion) return; // Не позволяем изменения в readonly режиме или для старых версий
     
     setSiteDefinition(prev => {
       const newDefinition = { ...prev }
@@ -160,6 +189,13 @@ function SiteEditor({
 
   return (
     <div className="p-4">
+      {!isCurrentVersion && (
+        <div className="mb-4 p-3 bg-muted rounded-lg border">
+          <div className="text-sm text-muted-foreground">
+            📖 Просмотр версии сайта (только для чтения)
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {siteDefinition.blocks.map((block, index) => {
           const blockDefinition = blockDefinitions[block.type]
@@ -200,11 +236,25 @@ export const siteArtifact = new Artifact<'site', Metadata>({
   description: 'Visual site editor with dynamic block management',
   initialize: async () => {},
   onStreamPart: () => {},
-  content: ({ content, onSaveContent, isLoading }) => (
+  content: ({ 
+    content, 
+    onSaveContent, 
+    isLoading,
+    mode,
+    isCurrentVersion,
+    currentVersionIndex,
+    getDocumentContentById,
+    isReadonly
+  }) => (
     <SiteEditor 
       content={content} 
       onSaveContent={(content, debounce = true) => onSaveContent(content, debounce)} 
       isLoading={isLoading}
+      mode={mode}
+      isCurrentVersion={isCurrentVersion}
+      currentVersionIndex={currentVersionIndex}
+      getDocumentContentById={getDocumentContentById}
+      isReadonly={isReadonly}
     />
   ),
   actions: [

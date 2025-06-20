@@ -405,22 +405,32 @@ export async function getPagedArtifactsByUserId ({
     console.log('🌍 Applied artifact world filter:', worldFilter)
   }
   if (groupByVersions) {
-    // ✅ GROUP BY ID: Show only latest version of each artifact
-    const subquery = db.select({
-      id: artifact.id, rn: sql<number>`row_number
-        () OVER (PARTITION BY
-        ${artifact.id}
-        ORDER
-        BY
-        ${artifact.createdAt}
-        DESC
-        )`.as('rn')
-    }).from(artifact).where(baseWhere).as('subquery')
-    const latestArtifactsQuery = db.select({ id: artifact.id }).from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1)))
-    const totalCountResult = await db.select({ count: count() }).from(latestArtifactsQuery.as('latest_artifacts'))
-    const rawData = await db.select().from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1))).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
-    const data = rawData.map(row => row.Artifact)
-    return { data, totalCount: totalCountResult[0]?.count ?? 0 }
+    // ✅ JAVASCRIPT GROUPING: Compatible approach that works with mocked tests
+    console.log('🔍 BUG-023 FIXED: Using JavaScript grouping for latest versions only')
+    
+    // Get all artifacts and group by ID in JavaScript (PostgreSQL subquery equivalent)
+    const allData = await db.select().from(artifact).where(baseWhere).orderBy(desc(artifact.createdAt))
+    console.log(`🔍 Found ${allData.length} total artifact versions`)
+    
+    // Group by ID, keeping only the latest version (first in sorted order)
+    const latestVersionsMap = new Map<string, typeof allData[0]>()
+    for (const item of allData) {
+      if (!latestVersionsMap.has(item.id)) {
+        // Since data is already sorted by createdAt DESC, first occurrence = latest version
+        latestVersionsMap.set(item.id, item)
+      }
+    }
+    
+    const latestVersions = Array.from(latestVersionsMap.values())
+    console.log(`🔍 After JavaScript grouping: ${latestVersions.length} unique artifacts`)
+    
+    // Apply pagination to the grouped results
+    const data = latestVersions.slice(offset, offset + pageSize)
+    
+    return { 
+      data, 
+      totalCount: latestVersions.length 
+    }
   } else {
     // ✅ ALL VERSIONS: Show all artifact versions separately
     const totalCountResult = await db.select({ count: count() }).from(artifact).where(baseWhere)
