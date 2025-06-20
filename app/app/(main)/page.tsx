@@ -1,12 +1,13 @@
 /**
  * @file app/(main)/page.tsx
  * @description Страница для создания нового чата.
- * @version 1.5.1
- * @date 2025-06-06
- * @updated Удален неиспользуемый проп `initialVisibilityType`.
+ * @version 1.6.0
+ * @date 2025-06-20
+ * @updated Исправлен критический баг - заменен несуществующий '/api/auth/guest' на '/login'.
  */
 
 /** HISTORY:
+ * v1.6.0 (2025-06-20): Исправлен критический баг BUG-016 - заменен несуществующий '/api/auth/guest' на '/login'.
  * v1.5.1 (2025-06-06): Удален проп `initialVisibilityType`.
  * v1.5.0 (2025-06-06): Удалена логика discussArtifact, чтобы избежать ошибок с searchParams.
  * v1.4.0 (2025-06-06): Добавлен `export const dynamic` для решения проблемы с `searchParams`.
@@ -25,7 +26,7 @@ export default async function Page() {
   const session = await getAuthSession();
 
   if (!session) {
-    redirect('/api/auth/guest');
+    redirect('/login');
   }
 
   const id = generateUUID();

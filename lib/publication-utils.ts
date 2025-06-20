@@ -1,12 +1,13 @@
 /**
  * @file lib/publication-utils.ts
  * @description Утилиты для работы с системой публикации артефактов и чатов (server-only).
- * @version 1.1.0
- * @date 2025-06-18
- * @updated Добавлен server-only импорт для изоляции от клиентских компонентов.
+ * @version 1.2.0
+ * @date 2025-06-20
+ * @updated Fixed BUG-017: Added public access logic for artifacts used in published sites.
  */
 
 /** HISTORY:
+ * v1.2.0 (2025-06-20): Fixed BUG-017: Added isArtifactUsedInPublishedSites и isArtifactPubliclyAccessible functions.
  * v1.1.0 (2025-06-18): Добавлен server-only импорт для исправления client component ошибки.
  * v1.0.0 (2025-06-17): Создание helper utilities для проверки статуса публикации и загрузки данных.
  */
@@ -226,6 +227,68 @@ export function isArtifactPublishedFromSource(
     
     return true
   })
+}
+
+/**
+ * @description Проверяет, используется ли артефакт в каком-либо опубликованном сайте
+ * @param artifactId ID артефакта для проверки
+ * @returns Promise<boolean> true если артефакт используется в опубликованном сайте
+ * @feature Публичный доступ через опубликованные сайты
+ */
+export async function isArtifactUsedInPublishedSites(artifactId: string): Promise<boolean> {
+  // Находим все опубликованные сайты
+  const publishedSites = await db
+    .select()
+    .from(artifact)
+    .where(eq(artifact.kind, 'site'))
+
+  const now = new Date()
+  
+  for (const siteArtifact of publishedSites) {
+    // Проверяем что сайт опубликован
+    if (!isSitePublished(siteArtifact as Artifact)) {
+      continue
+    }
+
+    // Проверяем использует ли этот сайт наш артефакт
+    if (siteArtifact.content_site_definition && typeof siteArtifact.content_site_definition === 'object') {
+      const siteDefinition = siteArtifact.content_site_definition as any
+      
+      if (siteDefinition.blocks && Array.isArray(siteDefinition.blocks)) {
+        for (const block of siteDefinition.blocks) {
+          if (block.slots && typeof block.slots === 'object') {
+            for (const slot of Object.values(block.slots)) {
+              if (slot && typeof slot === 'object' && 'artifactId' in slot) {
+                const slotArtifactId = (slot as any).artifactId
+                if (slotArtifactId === artifactId) {
+                  console.log(`🔍 Artifact ${artifactId} found in published site ${siteArtifact.id}`)
+                  return true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return false
+}
+
+/**
+ * @description Расширенная проверка доступности артефакта для публичного доступа
+ * @param artifact Артефакт для проверки
+ * @returns Promise<boolean> true если артефакт доступен публично
+ * @feature Комбинированная проверка: прямая публикация ИЛИ использование в опубликованном сайте
+ */
+export async function isArtifactPubliclyAccessible(artifact: Artifact): Promise<boolean> {
+  // 1. Прямая публикация артефакта
+  if (isArtifactPublished(artifact)) {
+    return true
+  }
+
+  // 2. Использование в опубликованном сайте
+  return await isArtifactUsedInPublishedSites(artifact.id)
 }
 
 // END OF: lib/publication-utils.ts

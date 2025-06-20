@@ -3,12 +3,13 @@
 /**
  * @file app/(main)/chat/[id]/page.tsx
  * @description Страница отображения конкретного чата.
- * @version 1.3.0
- * @date 2025-06-17
- * @updated Fixed artifact references display - extract content from parts[] for legacy compatibility.
+ * @version 1.4.0
+ * @date 2025-06-20
+ * @updated Исправлен критический баг - заменен несуществующий '/api/auth/guest' на '/login'.
  */
 
 /** HISTORY:
+ * v1.4.0 (2025-06-20): Исправлен критический баг BUG-016 - заменен несуществующий '/api/auth/guest' на '/login'.
  * v1.3.0 (2025-06-17): Fixed artifact references display - extract content from parts[] for legacy compatibility.
  * v1.2.0 (2025-06-11): Добавлено логирование.
  * v1.1.0 (2025-06-09): Удален компонент DataStreamHandler.
@@ -76,7 +77,7 @@ export default async function Page (props: { params: Promise<{ id: string }> }) 
   const session = await getAuthSession()
 
   if (!session) {
-    redirect('/api/auth/guest')
+    redirect('/login')
   }
 
   const chat = await getChatById({ id })

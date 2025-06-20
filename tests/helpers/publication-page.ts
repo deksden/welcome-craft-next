@@ -237,10 +237,12 @@ export class PublicationPage {
     if (linkValue.startsWith('/s/')) {
       const origin = await this.page.evaluate(() => {
         const currentOrigin = window.location.origin
-        // Если мы на app.localhost, то сайты хостятся на localhost (apex домен)
+        // Определяем apex домен для публичного хостинга сайтов
         return currentOrigin.includes('app.localhost') 
           ? currentOrigin.replace('app.localhost', 'localhost')
-          : currentOrigin
+          : currentOrigin.includes('app.welcome-onboard.ru')
+            ? currentOrigin.replace('app.welcome-onboard.ru', 'welcome-onboard.ru')
+            : currentOrigin.replace(/^(https?:\/\/)app\./, '$1') // Универсальный fallback для app.* → apex
       })
       return `${origin}${linkValue}`
     }

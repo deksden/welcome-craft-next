@@ -1,12 +1,13 @@
 /**
  * @file app/api/artifact/route.ts
  * @description API маршрут для работы с артефактами с поддержкой публичного доступа.
- * @version 2.0.0
- * @date 2025-06-17
- * @updated Added publication system support for public access.
+ * @version 2.1.0
+ * @date 2025-06-20
+ * @updated Fixed BUG-017: Added support for artifacts used in published sites - PUBLIC ACCESS FIX.
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-06-20): Fixed BUG-017: Enhanced public access logic - artifacts accessible if used in published sites.
  * v2.0.0 (2025-06-17): Added publication system support for public access.
  * v1.3.0 (2025-06-12): GET endpoint accepts versionTimestamp.
  * v1.2.0 (2025-06-10): Импорт ArtifactKind из lib/types.
@@ -18,7 +19,7 @@ import { getAuthSession } from '@/lib/test-auth'
 import { deleteArtifactVersionsAfterTimestamp, getArtifactsById, getArtifactById, saveArtifact, } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
-import { isArtifactPublished } from '@/lib/publication-utils'
+import { isArtifactPublished, isArtifactPubliclyAccessible } from '@/lib/publication-utils'
 
 export async function GET (request: Request) {
   const { searchParams } = new URL(request.url)
@@ -43,11 +44,22 @@ export async function GET (request: Request) {
       return new ChatSDKError('not_found:artifact').toResponse()
     }
     
-    // Permission logic: owner + any status / non-owner + published only
+    // Permission logic: owner + any status / non-owner + publicly accessible only
     const isOwner = isAuthenticated && result.doc.userId === session.user.id
-    const isPublished = isArtifactPublished(result.doc)
+    const isPubliclyAccessible = await isArtifactPubliclyAccessible(result.doc)
     
-    if (!isOwner && !isPublished) {
+    console.log('🔍 [DEBUG] Artifact access check:', {
+      id,
+      isAuthenticated,
+      isOwner,
+      isPublished: isArtifactPublished(result.doc),
+      isPubliclyAccessible,
+      userId: result.doc.userId,
+      sessionUserId: session?.user?.id
+    })
+    
+    if (!isOwner && !isPubliclyAccessible) {
+      console.log('❌ [DEBUG] Access denied for artifact:', id)
       return new ChatSDKError('forbidden:artifact').toResponse()
     }
     
@@ -69,11 +81,22 @@ export async function GET (request: Request) {
     return new ChatSDKError('not_found:artifact').toResponse()
   }
 
-  // Permission logic: owner + any status / non-owner + published only
+  // Permission logic: owner + any status / non-owner + publicly accessible only
   const isOwner = isAuthenticated && artifact.userId === session.user.id
-  const isPublished = isArtifactPublished(artifact)
+  const isPubliclyAccessible = await isArtifactPubliclyAccessible(artifact)
   
-  if (!isOwner && !isPublished) {
+  console.log('🔍 [DEBUG] Artifact access check (no version):', {
+    id,
+    isAuthenticated,
+    isOwner,
+    isPublished: isArtifactPublished(artifact),
+    isPubliclyAccessible,
+    userId: artifact.userId,
+    sessionUserId: session?.user?.id
+  })
+  
+  if (!isOwner && !isPubliclyAccessible) {
+    console.log('❌ [DEBUG] Access denied for artifact (no version):', id)
     return new ChatSDKError('forbidden:artifact').toResponse()
   }
 
