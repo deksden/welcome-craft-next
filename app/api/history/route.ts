@@ -1,3 +1,14 @@
+/**
+ * @file app/api/history/route.ts
+ * @description API маршрут для получения истории чатов пользователя.
+ * @version 1.0.0
+ * @date 2025-06-20
+ * @updated Добавлена ссылка на документацию API.
+ * 
+ * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#get-apihistory`
+ * ⚠️ **ВАЖНО:** При изменении параметров или логики - обновить документацию И Use Cases!
+ */
+
 import { auth } from '@/app/app/(auth)/auth';
 import { getTestSession } from '@/lib/test-auth';
 import type { NextRequest } from 'next/server';

@@ -36,8 +36,8 @@ function ArtifactsPageContent () {
   }
 
   return (
-    <div className="flex h-full">
-      <div className="container mx-auto py-10 px-4 md:px-6 lg:px-8 flex-1">
+    <div className="flex h-full overflow-hidden">
+      <div className="container mx-auto py-10 px-4 md:px-6 lg:px-8 flex-1 overflow-y-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Мои Артефакты

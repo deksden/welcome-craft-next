@@ -39,7 +39,7 @@ export const sheetArtifact = new Artifact<'sheet', Metadata>({
         content={content}
         currentVersionIndex={currentVersionIndex}
         isCurrentVersion={isCurrentVersion}
-        saveContent={onSaveContent}
+        onSaveContent={onSaveContent}
         status={status}
         isReadonly={isReadonly}
       />

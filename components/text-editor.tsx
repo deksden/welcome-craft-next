@@ -2,7 +2,7 @@
 
 import { exampleSetup } from 'prosemirror-example-setup';
 import { inputRules } from 'prosemirror-inputrules';
-import { EditorState } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import React, { memo, useEffect, useRef } from 'react';
 
@@ -115,6 +115,10 @@ function PureEditor({
       }
 
       if (currentContent !== content) {
+        // ✅ Save cursor position before content update
+        const currentSelection = editorRef.current.state.selection;
+        const currentPos = currentSelection.anchor;
+        
         const newDocument = buildDocumentFromContent(content);
 
         const transaction = editorRef.current.state.tr.replaceWith(
@@ -122,6 +126,11 @@ function PureEditor({
           editorRef.current.state.doc.content.size,
           newDocument.content,
         );
+
+        // ✅ Restore cursor position after content update (with bounds checking)
+        const newDocSize = newDocument.content.size;
+        const safePos = Math.min(currentPos, newDocSize);
+        transaction.setSelection(TextSelection.near(transaction.doc.resolve(safePos)));
 
         transaction.setMeta('no-save', true);
         editorRef.current.dispatch(transaction);

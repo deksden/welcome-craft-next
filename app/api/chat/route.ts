@@ -4,6 +4,9 @@
  * @version 5.6.0
  * @date 2025-06-17
  * @updated Fixed artifact references persistence - save all new messages including role: 'data' to database.
+ * 
+ * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#post-apichat`
+ * ⚠️ **ВАЖНО:** При изменении AI инструментов или логики чата - обновить документацию И Use Cases!
  *
  * ## HISTORY:
  *

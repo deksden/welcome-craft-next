@@ -88,6 +88,10 @@ function PureCodeEditor({ content, onSaveContent, status, isReadonly = false }: 
       const currentContent = editorRef.current.state.doc.toString();
 
       if (status === 'streaming' || currentContent !== content) {
+        // ✅ Save cursor position before content update
+        const currentSelection = editorRef.current.state.selection;
+        const currentPos = currentSelection.main.head;
+        
         const transaction = editorRef.current.state.update({
           changes: {
             from: 0,
@@ -95,6 +99,8 @@ function PureCodeEditor({ content, onSaveContent, status, isReadonly = false }: 
             insert: content,
           },
           annotations: [Transaction.remote.of(true)],
+          // ✅ Restore cursor position after content update (with bounds checking)
+          selection: { anchor: Math.min(currentPos, content.length) },
         });
 
         editorRef.current.dispatch(transaction);

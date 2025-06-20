@@ -1,9 +1,12 @@
 /**
  * @file app/api/artifacts/recent/route.ts
  * @description API маршрут для получения списка недавних артефактов пользователя.
- * @version 1.2.0
- * @date 2025-06-10
- * @updated Импорт ArtifactKind теперь из общего файла lib/types.
+ * @version 1.3.0
+ * @date 2025-06-20
+ * @updated Добавлена ссылка на документацию API.
+ * 
+ * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#get-apiartifactsrecent`
+ * ⚠️ **ВАЖНО:** При изменении параметров или логики - обновить документацию И Use Cases!
  */
 
 import { type NextRequest, NextResponse } from 'next/server'

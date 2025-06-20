@@ -3,12 +3,13 @@
 /**
  * @file components/artifact.tsx
  * @description Основной компонент-контейнер для артефакта.
- * @version 2.7.0
+ * @version 2.8.0
  * @date 2025-06-20
- * @updated Fixed BUG-018: Corrected API endpoint from /api/artifacts/ to /api/artifact for site publication dialog.
+ * @updated Улучшена логика проверки изменений для sheet и text артефактов - предотвращение создания идентичных версий.
  */
 
 /** HISTORY:
+ * v2.8.0 (2025-06-20): Улучшена логика проверки изменений для sheet (CSV нормализация) и text (whitespace нормализация) артефактов.
  * v2.7.0 (2025-06-20): Fixed BUG-018: Corrected API endpoint from /api/artifacts/ to /api/artifact for site publication dialog.
  * v2.6.0 (2025-06-18): Fixed site publication button - improved SWR retry logic and dialog rendering conditions.
  * v2.5.0 (2025-06-18): Fixed runtime error - added safety check for undefined latest object in SWR refreshInterval.
@@ -19,7 +20,7 @@
  */
 import type { Attachment, UIMessage } from 'ai'
 import { formatDistance } from 'date-fns'
-import { type Dispatch, memo, type SetStateAction, useCallback, useEffect, useState, } from 'react'
+import { type Dispatch, memo, type SetStateAction, useCallback, useEffect, useState, useRef } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts'
 import { fetcher } from '@/lib/utils'
@@ -202,15 +203,58 @@ function PureArtifact ({
     })
   }, [artifact, mutate, setArtifact])
 
-  const debouncedHandleContentChange = useDebounceCallback(handleContentChange, 2000)
+  const debouncedHandleContentChange = useDebounceCallback(handleContentChange, 10000) // ✅ Increased from 2s to 10s for less frequent autosave
 
   const saveContent = useCallback((updatedContent: string, debounce: boolean) => {
-    if (currentArtifact && updatedContent !== currentArtifact.content) {
-      setArtifact(draft => ({ ...draft, saveStatus: 'idle' }))
-      if (debounce) debouncedHandleContentChange(updatedContent)
-      else handleContentChange(updatedContent)
+    if (currentArtifact) {
+      // ✅ Enhanced change detection - also handle JSON content normalization
+      let hasChanges = false
+      const currentContent = currentArtifact.content || ''
+      
+      if (artifact.kind === 'site') {
+        // For site artifacts, compare JSON structures to avoid whitespace/formatting differences
+        try {
+          const currentObj = JSON.parse(currentContent || '{}')
+          const updatedObj = JSON.parse(updatedContent)
+          hasChanges = JSON.stringify(currentObj) !== JSON.stringify(updatedObj)
+        } catch {
+          // Fallback to string comparison if JSON parsing fails
+          hasChanges = updatedContent !== currentContent
+        }
+      } else if (artifact.kind === 'sheet') {
+        // ✅ For sheet artifacts, normalize CSV content to avoid whitespace/order differences
+        try {
+          const normalizeCSV = (csvContent: string) => {
+            // Remove empty lines and trim whitespace
+            return csvContent
+              .split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0)
+              .join('\n')
+              .trim()
+          }
+          
+          const normalizedCurrent = normalizeCSV(currentContent)
+          const normalizedUpdated = normalizeCSV(updatedContent)
+          hasChanges = normalizedCurrent !== normalizedUpdated
+        } catch {
+          // Fallback to string comparison if normalization fails
+          hasChanges = updatedContent !== currentContent
+        }
+      } else {
+        // For text/code/other artifacts, direct string comparison with whitespace normalization
+        const normalizedCurrent = currentContent.trim()
+        const normalizedUpdated = updatedContent.trim()
+        hasChanges = normalizedCurrent !== normalizedUpdated
+      }
+      
+      if (hasChanges) {
+        setArtifact(draft => ({ ...draft, saveStatus: 'idle' }))
+        if (debounce) debouncedHandleContentChange(updatedContent)
+        else handleContentChange(updatedContent)
+      }
     }
-  }, [currentArtifact, debouncedHandleContentChange, handleContentChange, setArtifact])
+  }, [currentArtifact, debouncedHandleContentChange, handleContentChange, setArtifact, artifact.kind])
 
   const getArtifactContentByIdx = (index: number) => artifacts?.[index]?.content ?? ''
 
@@ -242,6 +286,19 @@ function PureArtifact ({
     }
   }, [artifact.artifactId, artifactDefinition, setMetadata])
 
+  // ✅ Сохранение при смене артефакта
+  const previousArtifactIdRef = useRef<string | null>(artifact.artifactId)
+  useEffect(() => {
+    // Если происходит смена артефакта и есть несохраненные изменения
+    if (previousArtifactIdRef.current && 
+        previousArtifactIdRef.current !== artifact.artifactId && 
+        artifact.saveStatus === 'saving') {
+      // Сохраняем текущий контент перед сменой
+      handleContentChange(artifact.content)
+    }
+    previousArtifactIdRef.current = artifact.artifactId
+  }, [artifact.artifactId, artifact.saveStatus, artifact.content, handleContentChange])
+
   // Обработка события открытия диалога публикации сайта
   useEffect(() => {
     const handleOpenSitePublicationDialog = () => {
@@ -264,7 +321,12 @@ function PureArtifact ({
     <div data-testid="artifact" className="flex flex-col size-full bg-background border-l dark:border-zinc-700">
       <div className="p-2 flex flex-row justify-between items-start border-b dark:border-zinc-700">
         <div className="flex flex-row gap-4 items-start">
-          <ArtifactCloseButton/>
+          <ArtifactCloseButton onClose={() => {
+            // ✅ Save before closing if there are pending changes
+            if (artifact.saveStatus === 'saving') {
+              handleContentChange(artifact.content)
+            }
+          }}/>
           <div className="flex flex-col">
             <div className="font-medium">{artifact.title}</div>
             {currentArtifact ? (
@@ -346,12 +408,13 @@ function PureArtifact ({
           siteArtifact={fullArtifact || {
             id: artifact.artifactId,
             title: artifact.title,
-            kind: 'site',
+            kind: 'site' as const,
             createdAt: new Date(),
             userId: '',
             authorId: null,
             deletedAt: null,
             summary: '',
+            content: '', // ✅ Add missing content field for ArtifactApiResponse compatibility
             content_site_definition: null,
             content_text: null,
             content_url: null,

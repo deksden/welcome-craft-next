@@ -1,9 +1,19 @@
 /**
  * @file app/api/artifacts/route.ts
  * @description API маршрут для получения артефактов пользователя с пагинацией и поиском.
- * @version 1.1.0
- * @date 2025-06-10
- * @updated Импорт ArtifactKind теперь из общего файла lib/types.
+ * @version 1.2.0
+ * @date 2025-06-20
+ * @updated Добавлена опция groupByVersions для контроля группировки версий артефактов.
+ * 
+ * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#get-apiartifacts`
+ * ⚠️ **ВАЖНО:** При изменении параметров или логики - обновить документацию И Use Cases!
+ * 
+ * URL Parameters:
+ * - page: номер страницы (по умолчанию 1)
+ * - pageSize: размер страницы (по умолчанию 20, максимум 50)
+ * - search/searchQuery: поисковый запрос по заголовку, summary и содержимому
+ * - kind: фильтр по типу артефакта (text, code, image, sheet, site)
+ * - groupByVersions: группировка по версиям (true по умолчанию - только последние версии, false - все версии)
  */
 
 import { type NextRequest, NextResponse } from 'next/server'
@@ -33,6 +43,7 @@ export async function GET (request: NextRequest) {
     const kind = searchParams.get('kind') as ArtifactKind | undefined
     const tagsParam = searchParams.get('tags')
     const cursor = searchParams.get('cursor')
+    const groupByVersions = searchParams.get('groupByVersions') !== 'false' // ✅ Default to true for backward compatibility
 
     const page = pageParam ? Number.parseInt(pageParam, 10) : 1
     const pageSize = pageSizeParam ? Number.parseInt(pageSizeParam, 10) : 20 // ✅ Default 20 for better UX
@@ -47,7 +58,7 @@ export async function GET (request: NextRequest) {
     // TODO: Add tags filtering support to getPagedArtifactsByUserId
     // const tags = tagsParam ? tagsParam.split(',').map(t => t.trim()) : undefined
 
-    const queryParams = { userId: session.user.id, page, pageSize, searchQuery, kind }
+    const queryParams = { userId: session.user.id, page, pageSize, searchQuery, kind, groupByVersions }
 
     const result = await getPagedArtifactsByUserId(queryParams)
 

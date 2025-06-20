@@ -1,7 +1,20 @@
 'use client';
 
-import React, { memo, useEffect, useMemo, useState } from 'react';
-import DataGrid, { textEditor } from 'react-data-grid';
+/**
+ * @file components/sheet-editor.tsx
+ * @description Редактор таблиц с поддержкой сохранения позиции курсора при SWR обновлениях.
+ * @version 2.0.0
+ * @date 2025-06-20
+ * @updated Добавлено сохранение позиции курсора и ячейки при обновлениях контента.
+ */
+
+/** HISTORY:
+ * v2.0.0 (2025-06-20): Добавлено сохранение позиции курсора/выбранной ячейки при SWR обновлениях.
+ * v1.0.0: Первоначальная версия с базовой функциональностью редактирования таблиц.
+ */
+
+import React, { memo, useEffect, useMemo, useState, useRef } from 'react';
+import DataGrid, { textEditor, type CalculatedColumn, type Position } from 'react-data-grid';
 import { parse, unparse } from 'papaparse';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -10,7 +23,7 @@ import 'react-data-grid/lib/styles.css';
 
 type SheetEditorProps = {
   content: string;
-  saveContent: (content: string, isCurrentVersion: boolean) => void;
+  onSaveContent: (content: string, debounce: boolean) => void; // ✅ Изменено для совместимости с artifact.tsx
   status: string;
   isCurrentVersion: boolean;
   currentVersionIndex: number;
@@ -22,12 +35,16 @@ const MIN_COLS = 26;
 
 const PureSpreadsheetEditor = ({
   content,
-  saveContent,
+  onSaveContent,
   status,
   isCurrentVersion,
   isReadonly = false,
 }: SheetEditorProps) => {
   const { theme } = useTheme();
+  
+  // ✅ State для сохранения позиции курсора/выбранной ячейки
+  const [selectedCell, setSelectedCell] = useState<Position | null>(null);
+  const lastContentRef = useRef<string>('');
 
   const parseData = useMemo(() => {
     if (!content) return Array(MIN_ROWS).fill(Array(MIN_COLS).fill(''));
@@ -92,9 +109,15 @@ const PureSpreadsheetEditor = ({
 
   const [localRows, setLocalRows] = useState(initialRows);
 
+  // ✅ Обновляем данные при изменении содержимого, сохраняя позицию курсора
   useEffect(() => {
-    setLocalRows(initialRows);
-  }, [initialRows]);
+    // Проверяем, изменился ли контент (это может быть SWR обновление)
+    if (content !== lastContentRef.current) {
+      lastContentRef.current = content;
+      setLocalRows(initialRows);
+      // Позиция курсора (selectedCell) сохраняется автоматически в state
+    }
+  }, [initialRows, content]);
 
   const generateCsv = (data: any[][]) => {
     return unparse(data);
@@ -110,7 +133,9 @@ const PureSpreadsheetEditor = ({
     });
 
     const newCsvContent = generateCsv(updatedData);
-    saveContent(newCsvContent, true);
+    
+    // ✅ Используем debounced сохранение (второй параметр true = использовать debounce)
+    onSaveContent(newCsvContent, true);
   };
 
   return (
@@ -120,8 +145,12 @@ const PureSpreadsheetEditor = ({
       rows={localRows}
       enableVirtualization
       onRowsChange={isReadonly ? undefined : handleRowsChange}
+      selectedCells={selectedCell ? new Set([selectedCell]) : undefined}
+      onSelectedCellChange={setSelectedCell}
       onCellClick={(args) => {
         if (!isReadonly && args.column.key !== 'rowNumber') {
+          // ✅ Сохраняем позицию выбранной ячейки
+          setSelectedCell({ rowIdx: args.rowIdx, idx: args.column.idx });
           args.selectCell(true);
         }
       }}
@@ -140,7 +169,7 @@ function areEqual(prevProps: SheetEditorProps, nextProps: SheetEditorProps) {
     prevProps.isCurrentVersion === nextProps.isCurrentVersion &&
     !(prevProps.status === 'streaming' && nextProps.status === 'streaming') &&
     prevProps.content === nextProps.content &&
-    prevProps.saveContent === nextProps.saveContent
+    prevProps.onSaveContent === nextProps.onSaveContent
   );
 }
 

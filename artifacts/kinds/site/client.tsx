@@ -56,6 +56,23 @@ function SiteEditor({
     }
   })
 
+  // ✅ Update siteDefinition when content changes from SWR without losing local state
+  React.useEffect(() => {
+    if (content) {
+      try {
+        const newDefinition = JSON.parse(content)
+        // Only update if content actually changed to prevent unnecessary re-renders
+        setSiteDefinition(current => {
+          const currentString = JSON.stringify(current)
+          const newString = JSON.stringify(newDefinition)
+          return currentString !== newString ? newDefinition : current
+        })
+      } catch (error) {
+        console.warn('Failed to parse site content:', error)
+      }
+    }
+  }, [content])
+
   // АВТОСОХРАНЕНИЕ ОТКЛЮЧЕНО - сохраняем только при замене слотов
   // React.useEffect отключен - сохранение происходит только в handleBlockChange
 

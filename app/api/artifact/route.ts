@@ -4,6 +4,9 @@
  * @version 2.1.0
  * @date 2025-06-20
  * @updated Fixed BUG-017: Added support for artifacts used in published sites - PUBLIC ACCESS FIX.
+ * 
+ * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#get-apiartifact`
+ * ⚠️ **ВАЖНО:** При изменении параметров или логики - обновить документацию И спецификации Use Cases!
  */
 
 /** HISTORY:

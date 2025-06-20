@@ -349,7 +349,8 @@ export async function getPagedArtifactsByUserId ({
   pageSize = 10, 
   searchQuery, 
   kind,
-  worldContext
+  worldContext,
+  groupByVersions = true
 }: {
   userId: string;
   page?: number;
@@ -357,6 +358,7 @@ export async function getPagedArtifactsByUserId ({
   searchQuery?: string;
   kind?: ArtifactKind;
   worldContext?: WorldContext | null; // Optional parameter for world isolation
+  groupByVersions?: boolean; // ✅ New parameter to control version grouping
 }): Promise<{
   data: Artifact[],
   totalCount: number
@@ -371,7 +373,8 @@ export async function getPagedArtifactsByUserId ({
     page,
     pageSize,
     searchQuery,
-    kind
+    kind,
+    groupByVersions
   });
   const offset = (page - 1) * pageSize
   
@@ -401,21 +404,29 @@ export async function getPagedArtifactsByUserId ({
       : eq(artifact.world_id, worldFilter.world_id))
     console.log('🌍 Applied artifact world filter:', worldFilter)
   }
-  const subquery = db.select({
-    id: artifact.id, rn: sql<number>`row_number
-      () OVER (PARTITION BY
-      ${artifact.id}
-      ORDER
-      BY
-      ${artifact.createdAt}
-      DESC
-      )`.as('rn')
-  }).from(artifact).where(baseWhere).as('subquery')
-  const latestArtifactsQuery = db.select({ id: artifact.id }).from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1)))
-  const totalCountResult = await db.select({ count: count() }).from(latestArtifactsQuery.as('latest_artifacts'))
-  const rawData = await db.select().from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1))).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
-  const data = rawData.map(row => row.Artifact)
-  return { data, totalCount: totalCountResult[0]?.count ?? 0 }
+  if (groupByVersions) {
+    // ✅ GROUP BY ID: Show only latest version of each artifact
+    const subquery = db.select({
+      id: artifact.id, rn: sql<number>`row_number
+        () OVER (PARTITION BY
+        ${artifact.id}
+        ORDER
+        BY
+        ${artifact.createdAt}
+        DESC
+        )`.as('rn')
+    }).from(artifact).where(baseWhere).as('subquery')
+    const latestArtifactsQuery = db.select({ id: artifact.id }).from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1)))
+    const totalCountResult = await db.select({ count: count() }).from(latestArtifactsQuery.as('latest_artifacts'))
+    const rawData = await db.select().from(artifact).innerJoin(subquery, and(eq(artifact.id, subquery.id), eq(subquery.rn, 1))).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
+    const data = rawData.map(row => row.Artifact)
+    return { data, totalCount: totalCountResult[0]?.count ?? 0 }
+  } else {
+    // ✅ ALL VERSIONS: Show all artifact versions separately
+    const totalCountResult = await db.select({ count: count() }).from(artifact).where(baseWhere)
+    const data = await db.select().from(artifact).where(baseWhere).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
+    return { data, totalCount: totalCountResult[0]?.count ?? 0 }
+  }
 }
 
 export async function getRecentArtifactsByUserId ({ 
@@ -434,7 +445,8 @@ export async function getRecentArtifactsByUserId ({
     page: 1, 
     pageSize: limit, 
     kind,
-    worldContext
+    worldContext,
+    groupByVersions: true // ✅ Always group for recent artifacts 
   })
   return result.data
 }
