@@ -44,7 +44,7 @@ import type { Session } from 'next-auth'
 import { toast } from './toast'
 import { createClientLogger } from '@/lib/client-logger'
 import type { ArtifactKind, ArtifactApiResponse } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
-import type { Artifact as ArtifactData } from '@/lib/db/types'
+import { normalizeArtifactForAPI } from '@/lib/artifact-content-utils'
 
 const logger = createClientLogger('Artifact')
 
@@ -405,7 +405,21 @@ function PureArtifact ({
       {/* Диалог публикации сайта */}
       {artifact.kind === 'site' && artifact.artifactId && (
         <SitePublicationDialog
-          siteArtifact={fullArtifact || {
+          siteArtifact={fullArtifact ? {
+            id: fullArtifact.id,
+            title: fullArtifact.title,
+            kind: fullArtifact.kind,
+            createdAt: fullArtifact.createdAt,
+            userId: fullArtifact.userId,
+            authorId: fullArtifact.authorId,
+            deletedAt: fullArtifact.deletedAt,
+            summary: fullArtifact.summary,
+            content_text: fullArtifact.content,
+            content_url: null,
+            content_site_definition: fullArtifact.content,
+            publication_state: [],
+            world_id: null
+          } : {
             id: artifact.artifactId,
             title: artifact.title,
             kind: 'site' as const,
@@ -414,10 +428,9 @@ function PureArtifact ({
             authorId: null,
             deletedAt: null,
             summary: '',
-            content: '', // ✅ Add missing content field for ArtifactApiResponse compatibility
-            content_site_definition: null,
             content_text: null,
             content_url: null,
+            content_site_definition: null,
             publication_state: [],
             world_id: null
           }}
@@ -425,10 +438,10 @@ function PureArtifact ({
             // Обновляем кеш с полной информацией об артефакте
             // Для API /api/artifact нужно обновить массив артефактов
             mutate(`/api/artifact?id=${artifact.artifactId}`, (currentData: Array<ArtifactApiResponse> | undefined) => {
-              if (!currentData) return [updatedArtifact]
+              if (!currentData) return [normalizeArtifactForAPI(updatedArtifact)]
               // Заменяем последний элемент обновленным артефактом
               const newData = [...currentData]
-              newData[newData.length - 1] = updatedArtifact
+              newData[newData.length - 1] = normalizeArtifactForAPI(updatedArtifact)
               return newData
             }, { revalidate: false })
           }}

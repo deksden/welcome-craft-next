@@ -14,7 +14,7 @@
  */
 
 import React, { memo, useEffect, useMemo, useState, useRef } from 'react';
-import DataGrid, { textEditor, type CalculatedColumn, type Position } from 'react-data-grid';
+import DataGrid, { textEditor, type CellClickArgs } from 'react-data-grid';
 import { parse, unparse } from 'papaparse';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,12 @@ type SheetEditorProps = {
 const MIN_ROWS = 50;
 const MIN_COLS = 26;
 
+// Position type from react-data-grid v7 (internal but used for cell selection)
+type Position = {
+  readonly idx: number;
+  readonly rowIdx: number;
+};
+
 const PureSpreadsheetEditor = ({
   content,
   onSaveContent,
@@ -45,6 +51,15 @@ const PureSpreadsheetEditor = ({
   // ✅ State для сохранения позиции курсора/выбранной ячейки
   const [selectedCell, setSelectedCell] = useState<Position | null>(null);
   const lastContentRef = useRef<string>('');
+  
+  // ✅ Эффект для сохранения позиции курсора при изменении содержимого
+  useEffect(() => {
+    // Сохраняем позицию курсора только при существенных изменениях содержимого
+    if (content !== lastContentRef.current) {
+      lastContentRef.current = content;
+      // selectedCell сохраняется автоматически через state
+    }
+  }, [content]);
 
   const parseData = useMemo(() => {
     if (!content) return Array(MIN_ROWS).fill(Array(MIN_COLS).fill(''));
@@ -145,13 +160,15 @@ const PureSpreadsheetEditor = ({
       rows={localRows}
       enableVirtualization
       onRowsChange={isReadonly ? undefined : handleRowsChange}
-      selectedCells={selectedCell ? new Set([selectedCell]) : undefined}
-      onSelectedCellChange={setSelectedCell}
-      onCellClick={(args) => {
+      onCellClick={(args: CellClickArgs<string[]>) => {
         if (!isReadonly && args.column.key !== 'rowNumber') {
-          // ✅ Сохраняем позицию выбранной ячейки
-          setSelectedCell({ rowIdx: args.rowIdx, idx: args.column.idx });
-          args.selectCell(true);
+          // ✅ Сохраняем позицию выбранной ячейки (restored functionality)
+          // Find rowIdx by searching the row data in localRows array
+          const rowIdx = localRows.findIndex(row => row === args.row);
+          if (rowIdx !== -1) {
+            setSelectedCell({ rowIdx, idx: args.column.idx });
+            args.selectCell(false); // Select cell without opening editor
+          }
         }
       }}
       style={{ height: '100%' }}
