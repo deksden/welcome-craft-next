@@ -13,7 +13,7 @@
  * v1.0.0 (2025-06-19): Начальная реализация с интеграцией AI suggestions system
  */
 
-import { test, } from '@playwright/test'
+import { test, type Locator } from '@playwright/test'
 import { SidebarPage } from '../../helpers/sidebar-page'
 
 /**
@@ -250,7 +250,7 @@ test.describe('UC-07: AI Suggestions', () => {
     ]
     
     for (const featureType of aiFeatureTypes) {
-      let elements
+      let elements: Locator[]
       if (featureType.filter) {
         elements = await page.locator(featureType.selector).filter({ hasText: featureType.filter }).all()
       } else {
@@ -324,7 +324,7 @@ test.describe('UC-07: AI Suggestions', () => {
     ]
     
     for (const performanceType of aiPerformanceTypes) {
-      let elements
+      let elements: Locator[]
       if (performanceType.filter) {
         elements = await page.locator(performanceType.selector).filter({ hasText: performanceType.filter }).all()
       } else {

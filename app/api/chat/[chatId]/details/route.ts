@@ -19,7 +19,7 @@ import { isChatPublished } from '@/lib/publication-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await auth()

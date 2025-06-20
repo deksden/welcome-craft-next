@@ -76,7 +76,8 @@
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
       "Bash(pnpm db:migrate:*)",
-      "Bash(AI_FIXTURES_MODE=record-or-replay pnpm test:unit summarizer.test.ts)"
+      "Bash(AI_FIXTURES_MODE=record-or-replay pnpm test:unit summarizer.test.ts)",
+      "Bash(pnpm build:*)"
     ],
     "deny": []
   }

@@ -30,7 +30,7 @@ import { WorldIndicator } from './world-indicator'
 import { useChatPublication } from '@/hooks/use-chat-publication'
 import { isChatPublished } from '@/lib/publication-client-utils'
 import { generateUUID } from '@/lib/utils'
-import * as Package from '../package.json'
+import Package from '../package.json'
 import type { VisibilityType } from '@/lib/types'
 
 interface ActiveChatContext {

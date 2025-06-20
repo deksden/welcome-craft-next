@@ -2,6 +2,7 @@
 
 ## HISTORY:
 
+* v4.0.0 (2025-06-19): Добавлена архитектура Modern Site Design System (Tilda-style) и apex domain URL patterns.
 * v3.2.0 (2025-06-18): Добавлен архитектурный паттерн SWR Dialog Rendering и исправления publication button.
 * v3.1.0 (2025-06-17): Добавлена архитектура Publication System с TTL и UI паттернами.
 * v3.0.0 (2025-06-15): Добавлена мультидоменная архитектура и тестирование.
@@ -242,3 +243,124 @@ const { data: fullArtifact } = useSWR(
 - Модальных окон с асинхронной загрузкой контента  
 - Компонентов с custom event коммуникацией
 - Critical UI элементов где UX failure недопустим
+
+## 9. Архитектурный паттерн: Modern Site Design System (2025-06-19)
+
+**ДОБАВЛЕНО:** 2025-06-19 - Система современного дизайна для опубликованных сайтов в стиле Tilda
+
+### Философия дизайна
+Переход от примитивных HTML-блоков к профессиональным компонентам уровня современных конструкторов сайтов:
+
+**Принципы:**
+1. **Visual Hierarchy** — градиенты, размеры шрифтов, spacing для четкой иерархии
+2. **Interactive Elements** — hover-эффекты, плавные переходы, анимации
+3. **Card-Based Design** — карточный интерфейс для структурирования контента
+4. **Responsive First** — мобильная адаптивность на всех уровнях
+5. **Animation Delights** — тонкие анимации для повышения engagement
+
+### Архитектура Site Blocks v1.0.0
+
+#### Hero Block Pattern
+```typescript
+// Градиентный фон с blob-анимациями
+<section className="relative py-16 px-4 md:py-24 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+  {/* Animated background blobs */}
+  <div className="absolute top-4 left-4 w-72 h-72 bg-purple-300/30 rounded-full animate-blob" />
+  
+  {/* Gradient text with large typography */}
+  <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold bg-gradient-to-r from-gray-900 via-purple-900 to-blue-900 bg-clip-text text-transparent">
+    {headingContent}
+  </h1>
+</section>
+```
+
+#### Contact Cards Pattern  
+```typescript
+// Grid of contact cards with avatars and hover effects
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {contacts.map(contact => (
+    <div className="group relative p-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300">
+      {/* Avatar with gradient */}
+      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full">
+        <span className="text-white font-bold text-xl">{contact.name[0]}</span>
+      </div>
+      
+      {/* Interactive contact info */}
+      <a href={`mailto:${contact.email}`} className="hover:text-purple-600 transition-colors" />
+    </div>
+  ))}
+</div>
+```
+
+#### Interactive Links Pattern
+```typescript
+// Button-style links with icons and animations
+<a className="group relative p-6 bg-white rounded-xl hover:shadow-lg transition-all duration-300">
+  {/* Slide animation background */}
+  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+  
+  {/* Icon with scale animation */}
+  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg group-hover:scale-110 transition-transform duration-300">
+    <ExternalLinkIcon />
+  </div>
+</a>
+```
+
+### Technical Implementation
+
+#### Tailwind Configuration
+```typescript
+// tailwind.config.ts
+theme: {
+  extend: {
+    animation: {
+      blob: 'blob 7s infinite',
+    },
+    keyframes: {
+      blob: {
+        '0%': { transform: 'translate(0px, 0px) scale(1)' },
+        '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+        '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+        '100%': { transform: 'translate(0px, 0px) scale(1)' },
+      },
+    },
+  },
+}
+```
+
+#### CSS Custom Utilities
+```css
+/* app/globals.css */
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+.bg-grid-gray-200\/60 {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg'...");
+}
+```
+
+### Responsive Design Strategy
+
+**Breakpoint System:**
+- **Mobile:** `base` - Single column, compact spacing
+- **Tablet:** `md:` - Two columns, medium spacing  
+- **Desktop:** `lg:` - Three columns, comfortable spacing
+
+**Typography Scale:**
+- **Mobile:** `text-2xl` hero, `text-base` body
+- **Tablet:** `text-4xl` hero, `text-lg` body
+- **Desktop:** `text-6xl` hero, `text-xl` body
+
+### Design System Benefits
+
+1. **Professional Appeal** — визуальное качество соответствует Tilda/Webflow
+2. **User Engagement** — интерактивные элементы повышают взаимодействие
+3. **Brand Consistency** — единый visual language across all published sites
+4. **Mobile Experience** — отличная производительность на мобильных устройствах
+5. **Accessibility** — proper contrast ratios, keyboard navigation, screen readers
+
+### Future Extensions
+- **Dark Mode Support** — automatic theme switching
+- **Custom Brand Colors** — user-configurable color palettes  
+- **Advanced Animations** — scroll-triggered animations, parallax effects
+- **Additional Blocks** — gallery, testimonials, FAQ, pricing tables

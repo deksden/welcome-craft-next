@@ -13,7 +13,7 @@
  * v1.0.0 (2025-06-19): Начальная реализация с интеграцией advanced content management features
  */
 
-import { test, } from '@playwright/test'
+import { test, type Locator } from '@playwright/test'
 import { SidebarPage } from '../../helpers/sidebar-page'
 
 /**
@@ -269,7 +269,7 @@ test.describe('UC-06: Content Management with AI Fixtures', () => {
     ]
     
     for (const feature of managementFeatures) {
-      let elements
+      let elements: Locator[]
       if (feature.filter) {
         elements = await page.locator(feature.selector).filter({ hasText: feature.filter }).all()
       } else {
@@ -343,7 +343,7 @@ test.describe('UC-06: Content Management with AI Fixtures', () => {
     ]
     
     for (const featureType of advancedFeatureTypes) {
-      let elements
+      let elements: Locator[]
       if (featureType.filter) {
         elements = await page.locator(featureType.selector).filter({ hasText: featureType.filter }).all()
       } else {
