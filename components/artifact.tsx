@@ -3,12 +3,13 @@
 /**
  * @file components/artifact.tsx
  * @description Основной компонент-контейнер для артефакта.
- * @version 2.6.0
- * @date 2025-06-18
- * @updated Fixed site publication button - improved SWR retry logic and dialog rendering conditions.
+ * @version 2.7.0
+ * @date 2025-06-20
+ * @updated Fixed BUG-018: Corrected API endpoint from /api/artifacts/ to /api/artifact for site publication dialog.
  */
 
 /** HISTORY:
+ * v2.7.0 (2025-06-20): Fixed BUG-018: Corrected API endpoint from /api/artifacts/ to /api/artifact for site publication dialog.
  * v2.6.0 (2025-06-18): Fixed site publication button - improved SWR retry logic and dialog rendering conditions.
  * v2.5.0 (2025-06-18): Fixed runtime error - added safety check for undefined latest object in SWR refreshInterval.
  * v2.4.0 (2025-06-10): Определения artifactKinds и ArtifactKind теперь импортируются из lib/types.
@@ -103,8 +104,8 @@ function PureArtifact ({
   const [isSitePublicationDialogOpen, setIsSitePublicationDialogOpen] = useState(false)
   
   // Отдельный запрос для получения полной информации артефакта (включая publication_state)
-  const { data: fullArtifact, error: fullArtifactError } = useSWR<ArtifactData>(
-    artifact.kind === 'site' && artifact.artifactId ? `/api/artifacts/${artifact.artifactId}` : null,
+  const { data: fullArtifactArray, error: fullArtifactError } = useSWR<Array<ArtifactApiResponse>>(
+    artifact.kind === 'site' && artifact.artifactId ? `/api/artifact?id=${artifact.artifactId}` : null,
     fetcher,
     { 
       refreshInterval: (data) => {
@@ -119,6 +120,9 @@ function PureArtifact ({
       }
     }
   )
+  
+  // Получаем последнюю версию из массива
+  const fullArtifact = fullArtifactArray?.[fullArtifactArray.length - 1]
 
   const {
     data: artifacts,
@@ -356,7 +360,14 @@ function PureArtifact ({
           }}
           onSiteUpdate={(updatedArtifact) => {
             // Обновляем кеш с полной информацией об артефакте
-            mutate(`/api/artifacts/${artifact.artifactId}`, updatedArtifact, { revalidate: false })
+            // Для API /api/artifact нужно обновить массив артефактов
+            mutate(`/api/artifact?id=${artifact.artifactId}`, (currentData: Array<ArtifactApiResponse> | undefined) => {
+              if (!currentData) return [updatedArtifact]
+              // Заменяем последний элемент обновленным артефактом
+              const newData = [...currentData]
+              newData[newData.length - 1] = updatedArtifact
+              return newData
+            }, { revalidate: false })
           }}
           open={isSitePublicationDialogOpen}
           onOpenChange={setIsSitePublicationDialogOpen}

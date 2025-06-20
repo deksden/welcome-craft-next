@@ -47,6 +47,7 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
       refreshInterval: (data) => {
         if (!data || data.length === 0) return 3000;
         const latest = data[data.length - 1];
+        if (!latest) return 3000; // Safety check for undefined latest
         // Keep polling if content is null or summary is missing
         const needsContent = !latest.content || latest.content === '';
         const needsSummary = !latest.summary;
