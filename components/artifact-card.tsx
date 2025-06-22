@@ -29,7 +29,13 @@ import {
   ImageIcon,
   MoreHorizontalIcon,
   PencilEditIcon,
-  TrashIcon
+  TrashIcon,
+  UserIcon,
+  FileIcon as MapPinIcon,
+  FileIcon as HelpCircleIcon,
+  LinkIcon,
+  FileIcon as SettingsIcon,
+  BoxIcon as PackageIcon
 } from '@/components/icons'
 import { deleteArtifact } from '@/app/app/(main)/artifacts/actions'
 import { toast } from '@/components/toast'
@@ -51,6 +57,12 @@ const kindIcons = {
   image: ImageIcon,
   sheet: BoxIcon,
   site: FileIcon,
+  person: UserIcon,
+  address: MapPinIcon,
+  'faq-item': HelpCircleIcon,
+  link: LinkIcon,
+  'set-definition': SettingsIcon,
+  set: PackageIcon,
 }
 
 export function ArtifactCard ({ artifact, onRefresh, onCardClick }: ArtifactCardProps) {

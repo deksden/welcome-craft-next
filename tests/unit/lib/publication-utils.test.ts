@@ -21,9 +21,7 @@ describe('Publication Utils', () => {
     id: 'test-artifact',
     createdAt: new Date(),
     title: 'Test Artifact',
-    content_text: 'Test content',
-    content_url: null,
-    content_site_definition: null,
+    // UC-10: Sparse columns удалены из основной таблицы Artifact
     summary: 'Test summary',
     kind: 'text',
     userId: 'test-user',

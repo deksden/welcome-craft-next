@@ -124,13 +124,13 @@ export function SitePublicationDialog({
           expiresAt: expiresAt ? expiresAt.toISOString() : null
         }
 
-        const filteredPublications = (siteArtifact.publication_state || []).filter(
+        const filteredPublications = (siteArtifact.publicationState || []).filter(
           pub => !(pub.source === 'site' && pub.sourceId === siteArtifact.id)
         )
 
         const updatedArtifact: Artifact = {
           ...siteArtifact,
-          publication_state: [...filteredPublications, newPublication]
+          publicationState: [...filteredPublications, newPublication]
         }
         
         onSiteUpdate(updatedArtifact)
@@ -168,13 +168,13 @@ export function SitePublicationDialog({
 
       if (result.success) {
         // Обновляем локальное состояние артефакта
-        const filteredPublications = (siteArtifact.publication_state || []).filter(
+        const filteredPublications = (siteArtifact.publicationState || []).filter(
           pub => !(pub.source === 'site' && pub.sourceId === siteArtifact.id)
         )
 
         const updatedArtifact: Artifact = {
           ...siteArtifact,
-          publication_state: filteredPublications
+          publicationState: filteredPublications
         }
         
         onSiteUpdate(updatedArtifact)

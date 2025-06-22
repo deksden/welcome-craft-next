@@ -156,10 +156,13 @@ export class SidebarPage {
 
   /**
    * @description Перейти на страницу всех артефактов
-   * @feature Проверка навигации
+   * @feature Проверка навигации с автоматическим разворачиванием секции
    */
   async navigateToAllArtifacts(): Promise<void> {
     try {
+      // Сначала убеждаемся что секция артефактов развернута
+      await this.ensureArtifactsSectionExpanded()
+      
       const allArtifactsButton = await this.getAllArtifactsButton()
       await allArtifactsButton.click()
       
@@ -168,6 +171,36 @@ export class SidebarPage {
       console.log('✅ Navigated to all artifacts page')
     } catch (error) {
       console.log('❌ Failed to navigate to all artifacts page:', error)
+      throw error
+    }
+  }
+
+  /**
+   * @description Убедиться что секция артефактов развернута
+   * @feature Автоматическое разворачивание если свернута
+   */
+  async ensureArtifactsSectionExpanded(): Promise<void> {
+    try {
+      // Проверяем видимость кнопки "Все артефакты"
+      const allArtifactsButton = await this.testUtils.fastLocator('sidebar-all-artifacts-button', { timeout: 1000 })
+      if (await allArtifactsButton.isVisible()) {
+        console.log('✅ Artifacts section already expanded')
+        return
+      }
+    } catch {
+      // Кнопка не видна, нужно развернуть секцию
+    }
+
+    try {
+      console.log('📍 Expanding artifacts section...')
+      const artifactsButton = await this.getArtifactsButton()
+      await artifactsButton.click()
+      
+      // Ждем появления кнопки "Все артефакты"
+      await this.testUtils.fastLocator('sidebar-all-artifacts-button', { timeout: 3000 })
+      console.log('✅ Artifacts section expanded successfully')
+    } catch (error) {
+      console.log('❌ Failed to expand artifacts section:', error)
       throw error
     }
   }

@@ -15,6 +15,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { artifactEnhance } from '@/artifacts/tools/artifactEnhance'
 import { getArtifactById, saveArtifact, saveSuggestions } from '@/lib/db/queries'
+import { getDisplayContent } from '@/lib/artifact-content-utils'
 import { streamObject } from 'ai'
 import type { Session } from 'next-auth'
 import type { Artifact } from '@/lib/db/schema'
@@ -24,6 +25,10 @@ vi.mock('@/lib/db/queries', () => ({
   getArtifactById: vi.fn(),
   saveArtifact: vi.fn(),
   saveSuggestions: vi.fn(),
+}))
+
+vi.mock('@/lib/artifact-content-utils', () => ({
+  getDisplayContent: vi.fn(),
 }))
 
 vi.mock('ai', async (importOriginal) => {
@@ -41,9 +46,7 @@ describe('AI Tool - artifactEnhance', () => {
       id: 'existing-artifact-id',
       title: 'Старый заголовок',
       kind: 'text',
-      content_text: 'старый контент',
-      content_url: null,
-      content_site_definition: null,
+      // UC-10: Sparse columns удалены из основной таблицы Artifact
       userId: 'test-user-123',
       createdAt: new Date(),
       authorId: 'test-user-123',
@@ -69,6 +72,7 @@ describe('AI Tool - artifactEnhance', () => {
   it('should successfully enhance an artifact', async () => {
     const args = { id: 'existing-artifact-id', recipe: 'suggest' as const }
     vi.mocked(getArtifactById).mockResolvedValue(mockExistingArtifact)
+    vi.mocked(getDisplayContent).mockReturnValue('Это тестовый контент для улучшения.')
 
     const enhanceTool = artifactEnhance({ session: mockSession })
     const result = await enhanceTool.execute(args, {

@@ -11,7 +11,7 @@
  * v1.1.0 (2025-06-06): Добавлена логика показа уведомления о загрузке при клике.
  */
 
-import type { Chat } from '@/lib/db/schema'
+import type { Chat } from '@/lib/db/types'
 import { SidebarMenuButton, SidebarMenuItem, } from './ui/sidebar'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -53,7 +53,7 @@ const PureChatItem = ({
   onRename: (chatId: string, currentTitle: string) => void;
   setOpenMobile: (open: boolean) => void;
 }) => {
-  const isPublished = chat.published_until && chat.published_until > new Date()
+  const isPublished = chat.publishedUntil && chat.publishedUntil > new Date()
   const { visibilityType, setVisibilityType } = useChatVisibility({
     chatId: chat.id,
     initialVisibilityType: isPublished ? 'public' : 'private',

@@ -70,7 +70,7 @@ export async function GET (request: Request) {
     const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
     const normalizedResult = {
       ...result,
-      doc: normalizeArtifactForAPI(result.doc)
+      doc: await normalizeArtifactForAPI(result.doc)
     }
     
     return Response.json(normalizedResult, { status: 200 })
@@ -105,7 +105,7 @@ export async function GET (request: Request) {
 
   // Normalize artifacts for API response (add unified content field)
   const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
-  const normalizedArtifacts = artifacts.map(normalizeArtifactForAPI)
+  const normalizedArtifacts = await Promise.all(artifacts.map(normalizeArtifactForAPI))
   
   return Response.json(normalizedArtifacts, { status: 200 })
 }
@@ -126,15 +126,15 @@ export async function POST (request: Request) {
 
   const { content, title, kind, }: { content: string; title: string; kind: ArtifactKind } = await request.json()
 
-  const artifacts = await getArtifactsById({ id })
-  if (artifacts.length > 0) {
-    const [artifact] = artifacts
+  const existingArtifacts = await getArtifactsById({ id })
+  if (existingArtifacts.length > 0) {
+    const [artifact] = existingArtifacts
     if (artifact.userId !== session.user.id) {
       return new ChatSDKError('forbidden:artifact').toResponse()
     }
   }
 
-  const artifact = await saveArtifact({
+  const artifacts = await saveArtifact({
     id,
     content,
     title,
@@ -143,7 +143,11 @@ export async function POST (request: Request) {
     authorId: session.user.id,
   })
 
-  return Response.json(artifact, { status: 200 })
+  // Normalize artifact for API response (add unified content field)
+  const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
+  const normalizedArtifact = await normalizeArtifactForAPI(artifacts[0])
+
+  return Response.json(normalizedArtifact, { status: 200 })
 }
 
 export async function DELETE (request: Request) {

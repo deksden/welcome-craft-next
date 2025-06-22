@@ -1,82 +1,84 @@
 /**
  * @file lib/artifact-content-utils.ts
- * @description Утилиты для работы с типизированным контентом артефактов
- * @version 1.0.0
- * @date 2025-06-16
- * @created Utilities for handling sparse content columns
+ * @description UC-10 COMPATIBILITY LAYER - Временные утилиты для совместимости со старым API во время переходного периода
+ * @version 2.0.0
+ * @date 2025-06-20
+ * @updated UC-10 SCHEMA-DRIVEN CMS - Переведено на новую архитектуру специализированных таблиц, но сохранена совместимость с существующим кодом
  */
 
-import type { Artifact } from '@/lib/db/schema'
-import type { ArtifactKind } from '@/lib/types'
+import type { Artifact as ArtifactSchema } from '@/lib/db/schema'
+import type { Artifact as ArtifactClient } from '@/lib/db/types'
+import type { ArtifactKind, ArtifactApiResponse } from '@/lib/types'
 
 /**
- * Получает отображаемый контент из типизированных колонок артефакта
+ * BACKWARD COMPATIBILITY: Эмуляция getDisplayContent для старых sparse columns
+ * TODO: После завершения UC-10 удалить этот файл и заменить на artifact-tools.ts
  */
-export function getDisplayContent(artifact: Artifact): string {
-  switch (artifact.kind) {
-    case 'text':
-    case 'code':
-    case 'sheet':
-      return artifact.content_text || ''
-    
-    case 'image':
-      return artifact.content_url || ''
-    
-    case 'site':
-      return artifact.content_site_definition 
-        ? JSON.stringify(artifact.content_site_definition, null, 2)
-        : ''
-    
-    default:
-      return ''
-  }
+export function getDisplayContent(artifact: ArtifactSchema): string {
+  // В UC-10 контент хранится в специализированных таблицах, но для совместимости
+  // возвращаем пустую строку, так как actual content загружается через artifact-tools
+  return ''
 }
 
 /**
- * Подготавливает данные для сохранения в соответствующую колонку
+ * BACKWARD COMPATIBILITY: Преобразует артефакт из БД в унифицированный формат для API
+ * В UC-10 архитектуре content загружается отдельно через artifact-tools
  */
-export function prepareContentForSave(content: string, kind: ArtifactKind) {
-  const result = {
-    content_text: null as string | null,
-    content_url: null as string | null,
-    content_site_definition: null as any
-  }
-
-  switch (kind) {
-    case 'text':
-    case 'code':
-    case 'sheet':
-      result.content_text = content
-      break
+export async function normalizeArtifactForAPI(dbArtifact: ArtifactSchema | ArtifactClient): Promise<ArtifactApiResponse> {
+  let content = ''
+  
+  try {
+    // UC-10: Загружаем контент из специализированной таблицы
+    const { loadArtifact } = await import('@/artifacts/kinds/artifact-tools')
+    const loadedContent = await loadArtifact(dbArtifact.kind, dbArtifact.id, dbArtifact.createdAt)
     
-    case 'image':
-      result.content_url = content
-      break
-    
-    case 'site':
-      try {
-        result.content_site_definition = typeof content === 'string' 
-          ? JSON.parse(content) 
-          : content
-      } catch (error) {
-        console.error('Failed to parse site content as JSON:', error)
-        result.content_site_definition = null
+    if (loadedContent) {
+      // Для разных типов артефактов content может быть в разных полях
+      switch (dbArtifact.kind) {
+        case 'text':
+          // textTool.load возвращает объект с полем content
+          content = loadedContent.content || ''
+          break
+        case 'code':
+          // codeTool.load возвращает строку напрямую
+          content = typeof loadedContent === 'string' ? loadedContent : ''
+          break
+        case 'image':
+          content = loadedContent.url || ''
+          break
+        case 'site':
+          content = JSON.stringify(loadedContent.siteDefinition || {})
+          break
+        case 'sheet':
+          content = loadedContent.content || ''
+          break
+        default:
+          // Для новых типов артефактов пока возвращаем JSON
+          content = typeof loadedContent === 'string' ? loadedContent : JSON.stringify(loadedContent)
       }
-      break
+    }
+  } catch (error) {
+    console.error('Error loading artifact content:', error)
+    // Fallback: возвращаем пустую строку если не удалось загрузить
+    content = ''
   }
-
-  return result
-}
-
-/**
- * Преобразует артефакт из БД в унифицированный формат для API
- */
-export function normalizeArtifactForAPI(dbArtifact: Artifact): Omit<Artifact, 'content_text' | 'content_url' | 'content_site_definition'> & { content: string } {
-  const { content_text, content_url, content_site_definition, ...baseArtifact } = dbArtifact
+  
+  // Handle both schema (snake_case) and client (camelCase) types
+  const worldId = 'worldId' in dbArtifact ? dbArtifact.worldId : (dbArtifact as any).world_id
+  const publicationState = 'publicationState' in dbArtifact ? dbArtifact.publicationState : (dbArtifact as any).publication_state || []
   
   return {
-    ...baseArtifact,
-    content: getDisplayContent(dbArtifact)
+    id: dbArtifact.id,
+    createdAt: dbArtifact.createdAt,
+    title: dbArtifact.title,
+    summary: dbArtifact.summary,
+    kind: dbArtifact.kind,
+    userId: dbArtifact.userId,
+    authorId: dbArtifact.authorId,
+    deletedAt: dbArtifact.deletedAt,
+    worldId,
+    publicationState,
+    content
   }
 }
 

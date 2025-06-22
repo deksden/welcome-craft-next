@@ -56,7 +56,10 @@ test.describe.serial('/api/history', () => {
   });
 
   test('Ada can paginate through history with starting_after', async ({ adaContext }) => {
-    const response = await adaContext.request.get('/api/history?starting_after=some-id');
+    // Test pagination with valid timestamp format (what the API actually expects)
+    // Using a future timestamp should return empty results
+    const futureTimestamp = new Date('2099-01-01').toISOString();
+    const response = await adaContext.request.get(`/api/history?starting_after=${futureTimestamp}`);
     expect(response.status()).toBe(200);
 
     const { chats } = await response.json();
@@ -64,7 +67,10 @@ test.describe.serial('/api/history', () => {
   });
 
   test('Ada can paginate through history with ending_before', async ({ adaContext }) => {
-    const response = await adaContext.request.get('/api/history?ending_before=some-id');
+    // Test pagination with valid timestamp format (what the API actually expects)
+    // Using a past timestamp should return empty results
+    const pastTimestamp = new Date('2020-01-01').toISOString();
+    const response = await adaContext.request.get(`/api/history?ending_before=${pastTimestamp}`);
     expect(response.status()).toBe(200);
 
     const { chats } = await response.json();

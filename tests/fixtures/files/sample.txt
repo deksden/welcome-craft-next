@@ -1,0 +1,4 @@
+Hello from plain text file!
+
+This is a simple text document for testing file import functionality.
+It contains multiple lines and should be imported as a text artifact.

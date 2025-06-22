@@ -1,13 +1,14 @@
 /**
  * @file tests/unit/artifacts/tools/artifactCreate.test.ts
- * @description Юнит-тесты для AI-инструмента artifactCreate.
+ * @description UC-10 SCHEMA-DRIVEN CMS - Юнит-тесты для AI-инструмента artifactCreate под новой архитектурой.
  * @author Claude Code
  * @created 13.06.2025
- * @purpose ПОСТОЯННЫЙ - для тестирования логики создания артефактов.
- * @version 0.3.0
+ * @purpose ПОСТОЯННЫЙ - для тестирования логики создания артефактов с диспетчером artifact-tools.
+ * @version 2.0.0
  */
 
 /** HISTORY:
+ * v2.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Переписано под новую архитектуру с artifact-tools диспетчером. Мокирование saveArtifact функции вместо старых separate tools.
  * v0.3.0 (2025-06-13): Исправлена ошибка TS2551. Заменен test.fail на throw new Error.
  * v0.2.0 (2025-06-13): Исправлены ошибки типизации (TS2339) через type narrowing.
  * v0.1.0 (2025-06-13): Начальные тесты для успешного создания и обработки ошибок.
@@ -15,8 +16,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { artifactCreate } from '@/artifacts/tools/artifactCreate'
-import { saveArtifact } from '@/lib/db/queries'
-import { artifactTools } from '@/artifacts/kinds/artifact-tools'
+import { saveArtifact as dbSaveArtifact } from '@/lib/db/queries'
+import { saveArtifact as artifactSaverDispatcher } from '@/artifacts/kinds/artifact-tools'
 import { generateAndSaveSummary } from '@/lib/ai/summarizer'
 import { generateUUID } from '@/lib/utils'
 import { createLogger } from '@fab33/fab-logger'
@@ -25,10 +26,28 @@ import type { Session } from 'next-auth'
 
 const logger = createLogger('test:artifactCreate')
 
-// --- Мокирование зависимостей ---
+// --- UC-10 SCHEMA-DRIVEN CMS: Мокирование зависимостей под новую архитектуру ---
 
+// Мокируем старую функцию сохранения (в lib/db/queries)
 vi.mock('@/lib/db/queries', () => ({
   saveArtifact: vi.fn(),
+}))
+
+// Мокируем новый диспетчер artifact-tools
+vi.mock('@/artifacts/kinds/artifact-tools', () => ({
+  saveArtifact: vi.fn().mockResolvedValue(undefined),
+  artifactTools: [
+    { 
+      kind: 'text', 
+      create: vi.fn().mockResolvedValue('Generated text content'),
+      save: vi.fn()
+    },
+    { 
+      kind: 'code', 
+      create: vi.fn().mockResolvedValue('Generated code content'),
+      save: vi.fn()
+    }
+  ]
 }))
 
 vi.mock('@/lib/ai/summarizer', () => ({
@@ -43,14 +62,11 @@ vi.mock('@/lib/utils', async (importOriginal) => {
   }
 })
 
-// Мокируем только реестр инструментов, а не весь модуль
-vi.mock('@/artifacts/kinds/artifact-tools', () => ({
-  artifactTools: [
-    {
-      kind: 'text',
-      create: vi.fn().mockResolvedValue('Сгенерированный AI контент'),
-    },
-  ],
+// UC-10: Мокируем AI генераторы (заменяем старые artifact-tools)
+vi.mock('@/lib/ai/content-generators', () => ({
+  generateTextContent: vi.fn().mockResolvedValue('Сгенерированный AI текст'),
+  generateCodeContent: vi.fn().mockResolvedValue('console.log("Hello, World!");'),
+  generateImageContent: vi.fn().mockResolvedValue('https://example.com/generated-image.jpg'),
 }))
 
 // --- Тесты ---
@@ -72,6 +88,22 @@ describe('AI Tool - artifactCreate', () => {
       kind: 'text' as const,
       prompt: 'Напиши тестовый текст',
     }
+    
+    // UC-10: Настраиваем мок для dbSaveArtifact чтобы возвращал массив артефактов
+    const mockSavedArtifact = {
+      id: 'mock-uuid-12345',
+      title: args.title,
+      kind: args.kind,
+      userId: mockSession.user?.id,
+      authorId: null,
+      createdAt: new Date(),
+      summary: null as any, // Allow null for testing
+      deletedAt: null,
+      publication_state: [],
+      world_id: null
+    }
+    vi.mocked(dbSaveArtifact).mockResolvedValue([mockSavedArtifact])
+    
     logger.trace({ test: 'artifactCreate-happy-path', session: mockSession, args }, 'Preparing test data')
 
     const createTool = artifactCreate({ session: mockSession })
@@ -87,21 +119,27 @@ describe('AI Tool - artifactCreate', () => {
       throw new Error(`Expected success, but got error: ${result.error}`)
     }
 
-    // 1. Проверяем вызовы моков
-    const textToolHandler = (artifactTools as any[]).find(t => t.kind === 'text')
-    expect(textToolHandler.create).toHaveBeenCalledTimes(1)
-    expect(saveArtifact).toHaveBeenCalledTimes(1)
+    // 1. UC-10: Проверяем вызовы новых моков
+    expect(dbSaveArtifact).toHaveBeenCalledTimes(1) // Сохранение в основную таблицу Artifact
+    expect(artifactSaverDispatcher).toHaveBeenCalledTimes(1) // Сохранение через диспетчер
     expect(generateAndSaveSummary).toHaveBeenCalledTimes(1)
 
-    // 2. Проверяем аргументы вызова saveArtifact
-    const saveArtifactArgs = vi.mocked(saveArtifact).mock.calls[0][0]
-    expect(saveArtifactArgs.id).toBe('mock-uuid-12345')
-    expect(saveArtifactArgs.title).toBe(args.title)
-    expect(saveArtifactArgs.kind).toBe(args.kind)
-    expect(saveArtifactArgs.userId).toBe(mockSession.user?.id)
-    expect(saveArtifactArgs.content).toBe('Сгенерированный AI контент')
+    // 2. UC-10: Проверяем аргументы вызова основного сохранения
+    const dbSaveArgs = vi.mocked(dbSaveArtifact).mock.calls[0][0]
+    expect(dbSaveArgs.id).toBe('mock-uuid-12345')
+    expect(dbSaveArgs.title).toBe(args.title)
+    expect(dbSaveArgs.kind).toBe(args.kind)
+    expect(dbSaveArgs.userId).toBe(mockSession.user?.id)
+    
+    // 3. UC-10: Проверяем аргументы вызова диспетчера
+    const saverArgs = vi.mocked(artifactSaverDispatcher).mock.calls[0]
+    const saverArtifact = saverArgs[0]
+    expect(saverArtifact.id).toBe('mock-uuid-12345') // ID артефакта совпадает
+    expect(saverArtifact.title).toBe(args.title) // Заголовок артефакта совпадает
+    expect(saverArtifact.kind).toBe(args.kind) // Тип артефакта совпадает
+    expect(saverArgs[1]).toBe('Generated text content') // Контент для специализированной таблицы
 
-    // 3. Проверяем структуру возвращаемого объекта
+    // 4. UC-10: Проверяем структуру возвращаемого объекта (остается той же)
     expect(result.toolName).toBe(AI_TOOL_NAMES.ARTIFACT_CREATE)
     expect(result.artifactId).toBe('mock-uuid-12345')
     expect(result.artifactKind).toBe('text')
@@ -134,8 +172,9 @@ describe('AI Tool - artifactCreate', () => {
     }
     expect(result.error).toContain('Create operation for artifact of kind \'video\' is not supported.')
 
-    // 2. Убедимся, что никакие важные операции не были вызваны
-    expect(saveArtifact).not.toHaveBeenCalled()
+    // 2. UC-10: Убедимся, что никакие важные операции не были вызваны
+    expect(dbSaveArtifact).not.toHaveBeenCalled() // Основное сохранение
+    expect(artifactSaverDispatcher).not.toHaveBeenCalled() // Диспетчер
     expect(generateAndSaveSummary).not.toHaveBeenCalled()
   })
 })

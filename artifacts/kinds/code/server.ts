@@ -129,6 +129,74 @@ export const codeTool: ArtifactTool = {
       throw error
     }
   },
+  // UC-10 Schema-Driven операции
+  save: saveCodeArtifact,
+  load: loadCodeArtifact,
+  delete: deleteCodeArtifact,
+}
+
+// =============================================================================
+// UC-10 SCHEMA-DRIVEN CMS: Новые функции для работы с A_Text таблицей
+// =============================================================================
+
+import { db } from '@/lib/db'
+import { artifactText } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
+import type { Artifact } from '@/lib/db/schema'
+
+/**
+ * @description Сохраняет code артефакт в специализированную таблицу A_Text
+ * @param artifact Мета-информация артефакта
+ * @param content Код для сохранения
+ * @param metadata Дополнительные данные (язык программирования)
+ */
+export async function saveCodeArtifact(
+  artifact: Artifact, 
+  content: string, 
+  metadata?: { language?: string }
+): Promise<void> {
+  await db.insert(artifactText).values({
+    artifactId: artifact.id,
+    createdAt: artifact.createdAt,
+    content,
+    language: metadata?.language || 'javascript', // Default language for code
+    wordCount: null, // Not applicable for code
+    charCount: content.length,
+  })
+}
+
+/**
+ * @description Загружает code артефакт из специализированной таблицы A_Text
+ */
+export async function loadCodeArtifact(
+  artifactId: string, 
+  createdAt: Date
+): Promise<string | null> {
+  const result = await db
+    .select({ content: artifactText.content })
+    .from(artifactText)
+    .where(and(
+      eq(artifactText.artifactId, artifactId),
+      eq(artifactText.createdAt, createdAt)
+    ))
+    .limit(1)
+
+  return result[0]?.content || null
+}
+
+/**
+ * @description Удаляет code артефакт из специализированной таблицы A_Text
+ */
+export async function deleteCodeArtifact(
+  artifactId: string, 
+  createdAt: Date
+): Promise<void> {
+  await db
+    .delete(artifactText)
+    .where(and(
+      eq(artifactText.artifactId, artifactId),
+      eq(artifactText.createdAt, createdAt)
+    ))
 }
 
 // END OF: artifacts/code/server.ts

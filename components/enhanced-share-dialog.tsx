@@ -73,8 +73,8 @@ export function EnhancedShareDialog({
   const isPublished = isChatPublished(chat)
   
   // Определяем оставшееся время публикации
-  const remainingTime = chat.published_until 
-    ? Math.max(0, Math.floor((new Date(chat.published_until).getTime() - Date.now()) / (1000 * 60)))
+  const remainingTime = chat.publishedUntil 
+    ? Math.max(0, Math.floor((new Date(chat.publishedUntil).getTime() - Date.now()) / (1000 * 60)))
     : null
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export function EnhancedShareDialog({
       // Обновляем локальное состояние чата
       const updatedChat: Chat = {
         ...chat,
-        published_until: expiresAt
+        publishedUntil: expiresAt
       }
       
       onChatUpdate(updatedChat)
@@ -137,7 +137,7 @@ export function EnhancedShareDialog({
       // Обновляем локальное состояние чата
       const updatedChat: Chat = {
         ...chat,
-        published_until: null
+        publishedUntil: null
       }
       
       onChatUpdate(updatedChat)

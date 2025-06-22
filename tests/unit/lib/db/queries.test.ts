@@ -1,13 +1,14 @@
 /**
  * @file tests/unit/lib/db/queries.test.ts
- * @description Юнит-тесты для функций запросов к базе данных.
+ * @description UC-10 SCHEMA-DRIVEN CMS - Юнит-тесты для функций запросов к базе данных под новой архитектурой.
  * @author Claude Code
  * @created 13.06.2025
- * @purpose ПОСТОЯННЫЙ - для тестирования логики `lib/db/queries.ts`.
- * @version 1.0.0
+ * @purpose ПОСТОЯННЫЙ - для тестирования логики `lib/db/queries.ts` с учетом специализированных таблиц артефактов.
+ * @version 2.0.0
  */
 
 /** HISTORY:
+ * v2.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Переписано под новую схему БД со специализированными таблицами артефактов. Обновлены тесты getArtifactById для работы с диспетчером artifact-tools.
  * v1.0.0 (2025-06-18): TASK-03 ЭТАП 3 ЗАВЕРШЕН - добавлены полные тесты для getUser, getChatById, getArtifactById, saveMessages.
  * v0.3.0 (2025-06-13): Исправлена проверка вызова where на более надежную.
  * v0.2.0 (2025-06-13): Исправлен подход к мокированию через vi.mock('@/lib/db').
@@ -269,9 +270,7 @@ describe('Database Queries - getArtifactById', () => {
         id: 'artifact-123',
         title: 'Test Artifact v1',
         kind: 'text',
-        content_text: 'Version 1 content',
-        content_url: null,
-        content_site_definition: null,
+        // UC-10: Sparse columns удалены из основной таблицы Artifact
         createdAt: new Date('2025-06-14'),
         userId: 'user-123',
         authorId: 'user-123',
@@ -341,9 +340,7 @@ describe('Database Queries - getArtifactById', () => {
         id: 'artifact-123',
         title: 'Test Artifact v1',
         kind: 'text',
-        content_text: 'Version 1 content',
-        content_url: null,
-        content_site_definition: null,
+        // UC-10: Sparse columns удалены из основной таблицы Artifact
         createdAt: v1Date,
         userId: 'user-123',
         authorId: 'user-123',
@@ -393,9 +390,7 @@ describe('Database Queries - getArtifactById', () => {
         id: 'artifact-123',
         title: 'Test Artifact v1',
         kind: 'text',
-        content_text: 'Version 1 content',
-        content_url: null,
-        content_site_definition: null,
+        // UC-10: Sparse columns удалены из основной таблицы Artifact
         createdAt: new Date('2025-06-14'),
         userId: 'user-123',
         authorId: 'user-123',

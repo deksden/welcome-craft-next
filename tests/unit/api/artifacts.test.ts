@@ -133,7 +133,7 @@ describe('🧪 API Route: /api/artifacts', () => {
       })
     })
 
-    it('🚨 CRITICAL: should process groupByVersions parameter correctly', async () => {
+    it('should process groupByVersions parameter correctly', async () => {
       // Test default (true)
       const requestDefault = new NextRequest('http://localhost:3000/api/artifacts')
       await GET(requestDefault)
@@ -291,13 +291,12 @@ describe('🧪 API Route: /api/artifacts', () => {
     })
   })
 
-  describe('🐛 BUG-023 Diagnosis: GroupByVersions Logic', () => {
+  describe('Data Consistency', () => {
     beforeEach(() => {
       setAuthenticatedUser({ id: 'user-1', email: 'ada@test.com' })
     })
 
-    it('should pass groupByVersions=true by default to detect version duplication', async () => {
-      // ✅ ИСПРАВЛЕНО: После BUG-023 fix должны возвращаться только уникальные артефакты
+    it('should return unique artifacts when groupByVersions=true', async () => {
       const mockUniqueArtifacts = [
         { 
           id: 'art-1', 
@@ -333,37 +332,22 @@ describe('🧪 API Route: /api/artifacts', () => {
 
       mockGetPagedArtifacts.mockResolvedValue({
         data: mockUniqueArtifacts,
-        totalCount: 2 // ✅ Правильно: 2 уникальных артефакта
+        totalCount: 2
       })
 
       const request = new NextRequest('http://localhost:3000/api/artifacts')
       const response = await GET(request)
 
-      // Проверяем что передается правильный параметр
       expect(mockGetPagedArtifacts).toHaveBeenCalledWith(
         expect.objectContaining({ groupByVersions: true })
       )
 
       const body = await response.json()
-
-      // 🚨 ДИАГНОСТИКА: Если здесь есть дубликаты ID, значит проблема в БД запросе
       const ids = body.data.map((artifact: any) => artifact.id)
       const uniqueIds = [...new Set(ids)]
       
-      console.log('🔍 BUG-023 Diagnosis:', {
-        totalArtifacts: body.data.length,
-        uniqueIdsCount: uniqueIds.length,
-        duplicateFound: ids.length !== uniqueIds.length,
-        ids,
-        uniqueIds
-      })
-
-      // ✅ После BUG-023 fix: проверяем что дубликатов больше нет
-      if (ids.length === uniqueIds.length) {
-        console.log('✅ BUG-023 FIXED: No duplicate artifact IDs found with groupByVersions=true')
-      } else {
-        console.error('🚨 BUG PERSISTS: Duplicate artifact IDs found despite groupByVersions=true')
-      }
+      expect(ids.length).toBe(uniqueIds.length) // No duplicate IDs
+      expect(body.data).toHaveLength(2)
     })
   })
 })

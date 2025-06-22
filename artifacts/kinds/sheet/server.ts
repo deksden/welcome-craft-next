@@ -1,12 +1,13 @@
 /**
  * @file artifacts/sheet/server.ts
  * @description Серверный обработчик для артефактов типа "таблица".
- * @version 2.0.0
- * @date 2025-06-10
- * @updated Refactored to export a standalone `sheetTool` object, removing the factory function.
+ * @version 3.0.0
+ * @date 2025-06-20
+ * @updated UC-10 SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции для работы с A_Text таблицей (sheet использует ту же таблицу что и text).
  */
 
 /** HISTORY:
+ * v3.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveSheetArtifact, loadSheetArtifact, deleteSheetArtifact алиасы для работы с A_Text таблицей.
  * v2.0.0 (2025-06-10): Refactored to export a standalone tool object.
  * v1.4.1 (2025-06-10): Ensured 'object' promise from streamObject is awaited before property access (TS2339).
  */
@@ -20,7 +21,7 @@ import { createLogger } from '@fab33/fab-logger'
 
 const logger = createLogger('artifacts:kinds:sheet:server')
 
-export const sheetTool: ArtifactTool = {
+const sheetLegacyTool: ArtifactTool = {
   kind: 'sheet',
   create: async ({ id, title, prompt, session }) => {
     const childLogger = logger.child({ artifactId: id, userId: session?.user?.id })
@@ -178,6 +179,40 @@ export const sheetTool: ArtifactTool = {
       
       throw error
     }
+  },
+}
+
+// =============================================================================
+// UC-10 SCHEMA-DRIVEN CMS: Алиасы для работы с A_Text таблицей
+// =============================================================================
+
+// Sheet артефакты используют ту же A_Text таблицу что и text/code артефакты
+// Импортируем функции из text/server и создаем алиасы
+export { saveTextArtifact as saveSheetArtifact } from '../text/server'
+export { loadTextArtifact as loadSheetArtifact } from '../text/server'
+export { deleteTextArtifact as deleteSheetArtifact } from '../text/server'
+
+/**
+ * @description Sheet artifact tool с поддержкой UC-10 schema-driven операций
+ * @feature Поддержка как legacy AI операций, так и новых save/load/delete
+ */
+export const sheetTool = {
+  kind: 'sheet' as const,
+  // Legacy AI operations (для совместимости)
+  create: sheetLegacyTool.create,
+  update: sheetLegacyTool.update,
+  // UC-10 Schema-Driven операции (используют A_Text таблицу)
+  save: async (artifact: any, content: string, metadata?: Record<string, any>) => {
+    const { saveTextArtifact } = await import('../text/server')
+    return saveTextArtifact(artifact, content, metadata?.language)
+  },
+  load: async (artifactId: string, createdAt: Date) => {
+    const { loadTextArtifact } = await import('../text/server')
+    return loadTextArtifact(artifactId, createdAt)
+  },
+  delete: async (artifactId: string, createdAt: Date) => {
+    const { deleteTextArtifact } = await import('../text/server')
+    return deleteTextArtifact(artifactId, createdAt)
   },
 }
 

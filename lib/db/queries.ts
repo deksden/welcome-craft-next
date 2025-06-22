@@ -253,35 +253,20 @@ export async function saveArtifact ({ id, title, kind, content, userId, authorId
   childLogger.trace({ title, authorId, contentLength: content?.length }, 'Entering saveArtifact')
   
   try {
-    // Import here to avoid circular dependency
-    const { prepareContentForSave } = await import('@/lib/artifact-content-utils')
-    
-    childLogger.debug('Preparing content data for database storage')
-    const contentData = prepareContentForSave(content, kind)
-    
-    // Log which column will receive the content
-    const targetColumn = kind === 'image' ? 'content_url' : 
-                        kind === 'site' ? 'content_site_definition' : 'content_text'
-    childLogger.debug({ 
-      targetColumn,
-      hasContent: !!contentData[targetColumn as keyof typeof contentData],
-      contentData: {
-        content_text: contentData.content_text ? `${contentData.content_text.length} chars` : null,
-        content_url: contentData.content_url ? 'present' : null,
-        content_site_definition: contentData.content_site_definition ? 'present' : null
-      }
-    }, 'Content data prepared for sparse columns')
-    
-    childLogger.debug('Inserting artifact into database')
+    childLogger.debug('Creating artifact record in main table')
     const [savedArtifact] = await db.insert(artifact).values({
       id,
       title,
       kind,
-      ...contentData, // Spread the content into appropriate columns
       userId,
       authorId,
       createdAt: createdAt ?? new Date()
     }).returning()
+    
+    // UC-10 SCHEMA-DRIVEN CMS: Use artifact-tools unified dispatcher for specialized tables
+    childLogger.debug('Saving content using UC-10 artifact-tools unified dispatcher')
+    const { saveArtifact: saveArtifactContent } = await import('@/artifacts/kinds/artifact-tools')
+    await saveArtifactContent(savedArtifact, content)
     
     childLogger.info({ 
       savedArtifactId: savedArtifact.id,
@@ -378,14 +363,14 @@ export async function getPagedArtifactsByUserId ({
   });
   const offset = (page - 1) * pageSize
   
-  // ✅ Enhanced search: поиск по title, summary, и content_text для полнотекстового поиска
+  // UC-10 SCHEMA-DRIVEN CMS: Basic search by title and summary only 
+  // TODO: Implement content search across specialized tables
   let searchConditions: SQL<unknown> | undefined
   if (searchQuery) {
     const searchPattern = `%${searchQuery}%`
     searchConditions = sql`(
       ${artifact.title} ILIKE ${searchPattern} OR 
-      ${artifact.summary} ILIKE ${searchPattern} OR 
-      ${artifact.content_text} ILIKE ${searchPattern}
+      ${artifact.summary} ILIKE ${searchPattern}
     )`
   }
   

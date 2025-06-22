@@ -1,82 +1,154 @@
 /**
  * @file lib/db/types.ts
- * @description Типы данных БД для использования в клиентских компонентах (без server-only).
+ * @description Client-safe database types - types only, no server-only imports
  * @version 1.0.0
- * @date 2025-06-18
- * @updated Перенесены типы из schema.ts для решения server-only проблемы
+ * @date 2025-06-22
+ * @updated Initial separation of types from server-only schema.ts
  */
 
 /** HISTORY:
- * v1.0.0 (2025-06-18): Создан файл с типами User, Chat, Artifact, Suggestion без server-only импортов.
+ * v1.0.0 (2025-06-22): Initial separation - extracted types from schema.ts for client-side usage
  */
 
 import type { ArtifactKind, PublicationInfo } from '@/lib/types'
 
-// Базовые типы пользователей
+// Basic database entity types (client-safe)
 export interface User {
   id: string
   email: string
   password: string | null
-  world_id: string | null // Для изоляции тестовых данных
+  name: string | null
+  createdAt: Date
+  updatedAt: Date
+  worldId: string | null
 }
 
-// Типы чатов с системой публикации
 export interface Chat {
   id: string
   createdAt: Date
   title: string
   userId: string
-  published_until: Date | null // NULL = private, timestamp = published until this date
-  deletedAt: Date | null // Для мягкого удаления
-  world_id: string | null // Для изоляции тестовых данных
+  path: string
+  worldId: string | null
+  publishedUntil: Date | null
 }
 
-// Типы сообщений (единственная схема - Message_v2)
 export interface DBMessage {
   id: string
   chatId: string
-  role: string
-  parts: unknown
-  attachments: unknown
+  role: 'user' | 'assistant'
+  content: any // JSON
   createdAt: Date
-  world_id: string | null // Для изоляции тестовых данных
+  worldId: string | null
 }
 
-// Типы артефактов с системой публикации
 export interface Artifact {
   id: string
   createdAt: Date
   title: string
-  
-  // Типизированные колонки контента (Sparse Columns approach)
-  content_text: string | null // Для kind: 'text', 'code', 'sheet'
-  content_url: string | null // Для kind: 'image' 
-  content_site_definition: unknown | null // Для kind: 'site'
-  
   summary: string
   kind: ArtifactKind
   userId: string
   authorId: string | null
-  deletedAt: Date | null // Для мягкого удаления
-  
-  // Система публикации - массив объектов с информацией о публикации из разных источников
-  publication_state: PublicationInfo[]
-  world_id: string | null // Для изоляции тестовых данных
+  deletedAt: Date | null
+  worldId: string | null
+  publicationState: PublicationInfo[]
 }
 
-// Типы предложений
 export interface Suggestion {
   id: string
-  documentId: string // Имя поля сохранено для обратной совместимости миграций
+  documentId: string // actual DB field name
   documentCreatedAt: Date
   originalText: string
   suggestedText: string
   description: string | null
   isResolved: boolean
-  isDismissed: boolean // Для отклоненных предложений
+  isDismissed: boolean
   userId: string
   createdAt: Date
-  world_id: string | null // Для изоляции тестовых данных
+  worldId: string | null
+}
+
+// UC-10 Schema-Driven CMS types (client-safe)
+export interface ArtifactText {
+  artifactId: string
+  createdAt: Date
+  content: string
+}
+
+export interface ArtifactImage {
+  artifactId: string
+  createdAt: Date
+  originalFilename: string
+  mimeType: string
+  size: number
+  url: string
+  altText: string | null
+}
+
+export interface ArtifactPerson {
+  artifactId: string
+  createdAt: Date
+  fullName: string
+  position: string | null
+  department: string | null
+  email: string | null
+  phone: string | null
+  bio: string | null
+  profileImageUrl: string | null
+}
+
+export interface ArtifactAddress {
+  artifactId: string
+  createdAt: Date
+  name: string
+  street: string | null
+  city: string | null
+  state: string | null
+  zipCode: string | null
+  country: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+export interface ArtifactFaqItem {
+  artifactId: string
+  createdAt: Date
+  question: string
+  answer: string
+  category: string | null
+  orderIndex: number | null
+}
+
+export interface ArtifactLink {
+  artifactId: string
+  createdAt: Date
+  url: string
+  title: string | null
+  description: string | null
+  category: string | null
+  isInternal: boolean
+}
+
+export interface ArtifactSetDefinition {
+  artifactId: string
+  createdAt: Date
+  name: string
+  description: string | null
+  itemSchema: any // JSON
+}
+
+export interface ArtifactSetItems {
+  artifactId: string
+  createdAt: Date
+  setDefinitionId: string
+  items: any // JSON array
+}
+
+export interface ArtifactSite {
+  artifactId: string
+  createdAt: Date
+  definition: any // JSON - SiteDefinition
 }
 
 // END OF: lib/db/types.ts

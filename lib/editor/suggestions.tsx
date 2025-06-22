@@ -4,7 +4,7 @@ import { type Decoration, DecorationSet, type EditorView, } from 'prosemirror-vi
 import { createRoot } from 'react-dom/client'
 
 import { Suggestion as PreviewSuggestion } from '@/components/suggestion'
-import type { Suggestion } from '@/lib/db/schema'
+import type { Suggestion } from '@/lib/db/types'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 
 export interface UISuggestion extends Suggestion {

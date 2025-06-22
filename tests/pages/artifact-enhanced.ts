@@ -42,12 +42,10 @@ export class EnhancedArtifactPage {
     try {
       return await this.testUtils.fastLocator('artifact-panel')
     } catch (error) {
-      console.log('⚠️ artifact-panel not found, trying alternative testids')
-      // Пробуем существующий testid из codebase
+      // Try alternative testids from codebase
       try {
         return await this.testUtils.fastLocator('artifact')
       } catch (fallbackError) {
-        console.log('⚠️ Using CSS fallback for artifact panel')
         return this.page.locator('.artifact-panel, [role="dialog"][aria-label*="artifact"], .side-panel, [data-testid="artifact"]')
       }
     }
@@ -63,7 +61,6 @@ export class EnhancedArtifactPage {
     try {
       return await this.testUtils.fastLocator('artifact-publish-button')
     } catch (error) {
-      console.log('⚠️ artifact-publish-button not found, using CSS fallback')
       return this.page.locator('button:has-text("Публикация"), button:has-text("Publish"), .publish-button')
     }
   }
@@ -77,7 +74,6 @@ export class EnhancedArtifactPage {
     try {
       return await this.testUtils.fastLocator('site-publication-dialog')
     } catch (error) {
-      console.log('⚠️ site-publication-dialog not found, using CSS fallback')
       return this.page.locator('[role="dialog"]:has-text("Публикация"), .publication-dialog, .site-publish-modal')
     }
   }

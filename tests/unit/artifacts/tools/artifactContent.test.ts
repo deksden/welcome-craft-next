@@ -15,6 +15,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { artifactContent } from '@/artifacts/tools/artifactContent'
 import { getArtifactById } from '@/lib/db/queries'
+import { getDisplayContent } from '@/lib/artifact-content-utils'
 import type { Artifact } from '@/lib/db/schema'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
 // Simple mock artifact helper instead of UC-08 artifact-factory
@@ -23,15 +24,17 @@ vi.mock('@/lib/db/queries', () => ({
   getArtifactById: vi.fn(),
 }))
 
+vi.mock('@/lib/artifact-content-utils', () => ({
+  getDisplayContent: vi.fn(),
+}))
+
 describe('AI Tool - artifactContent', () => {
   const mockExistingArtifact: { doc: Artifact; totalVersions: number } = {
     doc: {
       id: 'existing-artifact-id',
       title: 'Тестовый документ',
       kind: 'text',
-      content_text: 'Это тестовый контент.',
-      content_url: null,
-      content_site_definition: null,
+      // UC-10: Sparse columns удалены из основной таблицы Artifact
       userId: 'test-user-123',
       authorId: 'test-user-123',
       summary: 'Тест',
@@ -50,6 +53,7 @@ describe('AI Tool - artifactContent', () => {
   it('should successfully retrieve artifact content', async () => {
     const args = { artifactId: 'existing-artifact-id', version: 1 }
     vi.mocked(getArtifactById).mockResolvedValue(mockExistingArtifact)
+    vi.mocked(getDisplayContent).mockReturnValue('Это тестовый контент.')
 
     const result = await artifactContent.execute(args, {
       toolCallId: 'test-id',

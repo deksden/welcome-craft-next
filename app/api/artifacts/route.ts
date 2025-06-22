@@ -64,7 +64,7 @@ export async function GET (request: NextRequest) {
 
     // Normalize artifacts for API response (add unified content field)
     const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
-    const normalizedArtifacts = result.data.map(normalizeArtifactForAPI)
+    const normalizedArtifacts = await Promise.all(result.data.map(async artifact => await normalizeArtifactForAPI(artifact)))
     
     // ✅ Format response for infinite scroll compatibility
     const totalPages = Math.ceil(result.totalCount / pageSize)

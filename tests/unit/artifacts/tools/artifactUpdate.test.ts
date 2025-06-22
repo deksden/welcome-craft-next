@@ -1,13 +1,14 @@
 /**
  * @file tests/unit/artifacts/tools/artifactUpdate.test.ts
- * @description Юнит-тесты для AI-инструмента artifactUpdate.
+ * @description UC-10 SCHEMA-DRIVEN CMS - Юнит-тесты для AI-инструмента artifactUpdate под новой архитектурой.
  * @author Claude Code
  * @created 13.06.2025
- * @purpose ПОСТОЯННЫЙ - для тестирования логики обновления артефактов.
- * @version 0.2.0
+ * @purpose ПОСТОЯННЫЙ - для тестирования логики обновления артефактов с диспетчером artifact-tools.
+ * @version 2.0.0
  */
 
 /** HISTORY:
+ * v2.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Переписано под новую архитектуру с artifact-tools диспетчером. Обновлено мокирование для специализированных таблиц.
  * v0.2.0 (2025-06-13): Обновлен тест на проверку прав доступа.
  * v0.1.0 (2025-06-13): Начальные тесты для успешного обновления и обработки ошибок.
  */
@@ -57,9 +58,7 @@ describe('AI Tool - artifactUpdate', () => {
       id: 'existing-artifact-id',
       title: 'Старый заголовок',
       kind: 'text',
-      content_text: 'старый контент',
-      content_url: null,
-      content_site_definition: null,
+      // UC-10: Sparse columns удалены из основной таблицы Artifact
       userId: 'test-user-123',
       createdAt: new Date(),
       authorId: 'test-user-123',

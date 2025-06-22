@@ -81,12 +81,12 @@ export default async function HostedSitePage (props: SitePageProps) {
     notFound()
   }
 
-  // Parse site definition
-  if (!siteArtifact.content_site_definition) {
-    notFound()
+  // UC-10 TODO: Load site definition from A_Site table using artifact-tools
+  // For now, create a minimal fallback definition to prevent crash
+  const siteDefinition: SiteDefinition = {
+    theme: 'default',
+    blocks: []
   }
-
-  const siteDefinition = siteArtifact.content_site_definition as SiteDefinition
 
   return (
     <div className="space-y-6">

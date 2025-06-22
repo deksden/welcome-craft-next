@@ -34,9 +34,7 @@ describe('AI Tool - artifactDelete', () => {
       id: 'existing-artifact-id',
       title: 'Артефакт для удаления',
       kind: 'text',
-      content_text: '...',
-      content_url: null,
-      content_site_definition: null,
+      // UC-10: Sparse columns удалены из основной таблицы Artifact
       userId: 'test-user-123',
       createdAt: new Date(),
       authorId: 'test-user-123',

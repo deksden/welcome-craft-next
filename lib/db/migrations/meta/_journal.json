@@ -43,6 +43,13 @@
       "when": 1750304400000,
       "tag": "0005_remove_legacy_message",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1750481586238,
+      "tag": "0006_huge_luke_cage",
+      "breakpoints": true
     }
   ]
 }

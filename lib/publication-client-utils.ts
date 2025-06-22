@@ -20,13 +20,13 @@ import type { PublicationInfo } from '@/lib/types'
  * @feature Система публикации с поддержкой TTL
  */
 export function isArtifactPublished(artifact: Artifact): boolean {
-  if (!artifact.publication_state || artifact.publication_state.length === 0) {
+  if (!artifact.publicationState || artifact.publicationState.length === 0) {
     return false
   }
 
   const now = new Date()
   
-  return artifact.publication_state.some((pub: PublicationInfo) => {
+  return artifact.publicationState.some((pub: PublicationInfo) => {
     // Если expiresAt null - публикация бессрочная
     if (pub.expiresAt === null) {
       return true
@@ -49,13 +49,13 @@ export function isSitePublished(siteArtifact: Artifact): boolean {
     return false
   }
 
-  if (!siteArtifact.publication_state || siteArtifact.publication_state.length === 0) {
+  if (!siteArtifact.publicationState || siteArtifact.publicationState.length === 0) {
     return false
   }
 
   const now = new Date()
   
-  return siteArtifact.publication_state.some((pub: PublicationInfo) => {
+  return siteArtifact.publicationState.some((pub: PublicationInfo) => {
     // Проверяем что это публикация именно как сайт
     if (pub.source !== 'site') {
       return false
@@ -75,16 +75,16 @@ export function isSitePublished(siteArtifact: Artifact): boolean {
 /**
  * @description Проверяет, опубликован ли чат (клиентская версия)
  * @param chat Объект чата для проверки
- * @returns true если чат опубликован (published_until в будущем или null для бессрочного)
+ * @returns true если чат опубликован (publishedUntil в будущем или null для бессрочного)
  * @feature Система публикации чатов
  */
 export function isChatPublished(chat: Chat): boolean {
-  if (!chat.published_until) {
+  if (!chat.publishedUntil) {
     return false
   }
 
   const now = new Date()
-  const publishedUntil = new Date(chat.published_until)
+  const publishedUntil = new Date(chat.publishedUntil)
   
   return publishedUntil > now
 }
@@ -96,13 +96,13 @@ export function isChatPublished(chat: Chat): boolean {
  * @feature Система публикации с множественными источниками
  */
 export function getActivePublications(artifact: Artifact): PublicationInfo[] {
-  if (!artifact.publication_state || artifact.publication_state.length === 0) {
+  if (!artifact.publicationState || artifact.publicationState.length === 0) {
     return []
   }
 
   const now = new Date()
   
-  return artifact.publication_state.filter((pub: PublicationInfo) => {
+  return artifact.publicationState.filter((pub: PublicationInfo) => {
     // Если expiresAt null - публикация бессрочная
     if (pub.expiresAt === null) {
       return true

@@ -15,11 +15,10 @@
 import 'server-only'
 import { notFound } from 'next/navigation'
 import { inArray, eq } from 'drizzle-orm'
-import type { Artifact, Chat } from '@/lib/db/types'
+import type { Artifact, Chat } from '@/lib/db/schema'
 import type { PublicationInfo } from '@/lib/types'
 import { artifact } from '@/lib/db/schema'
 import { db } from '@/lib/db'
-import { getDisplayContent } from '@/lib/artifact-content-utils'
 
 /**
  * @description Проверяет, опубликован ли артефакт из любого источника
@@ -127,12 +126,19 @@ export async function fetchPublishedSiteData(siteId: string): Promise<PublishedS
     notFound()
   }
 
-  // 3. Распарсить site definition
-  if (!siteArtifact.content_site_definition) {
+  // 3. UC-10 SCHEMA-DRIVEN CMS: Load site definition from A_Site table
+  let siteDefinition: any
+  try {
+    const { loadSiteArtifact } = await import('@/artifacts/kinds/site/server')
+    const siteData = await loadSiteArtifact(siteId, siteArtifact.createdAt)
+    if (!siteData?.siteDefinition) {
+      notFound()
+    }
+    siteDefinition = siteData.siteDefinition
+  } catch (error) {
+    console.error('Failed to load site definition:', error)
     notFound()
   }
-
-  const siteDefinition = siteArtifact.content_site_definition
 
   // 4. Собрать все artifact IDs из блоков сайта
   const artifactIds: string[] = []
@@ -164,8 +170,9 @@ export async function fetchPublishedSiteData(siteId: string): Promise<PublishedS
       .where(inArray(artifact.id, artifactIds))
 
     for (const art of artifacts) {
-      const content = getDisplayContent(art as Artifact)
-      artifactContents.set(art.id, content)
+      // UC-10 TODO: Replace with artifact-tools.loadArtifact() 
+      // For now return empty content during transition
+      artifactContents.set(art.id, '')
     }
   }
 
@@ -250,11 +257,16 @@ export async function isArtifactUsedInPublishedSites(artifactId: string): Promis
       continue
     }
 
-    // Проверяем использует ли этот сайт наш артефакт
-    if (siteArtifact.content_site_definition && typeof siteArtifact.content_site_definition === 'object') {
-      const siteDefinition = siteArtifact.content_site_definition as any
+    // UC-10 SCHEMA-DRIVEN CMS: Load site definition from A_Site table
+    try {
+      const { loadSiteArtifact } = await import('@/artifacts/kinds/site/server')
+      const siteData = await loadSiteArtifact(siteArtifact.id, siteArtifact.createdAt)
+      if (!siteData?.siteDefinition) {
+        continue
+      }
+      const siteDefinition = siteData.siteDefinition as any
       
-      if (siteDefinition.blocks && Array.isArray(siteDefinition.blocks)) {
+      if (siteDefinition?.blocks && Array.isArray(siteDefinition.blocks)) {
         for (const block of siteDefinition.blocks) {
           if (block.slots && typeof block.slots === 'object') {
             for (const slot of Object.values(block.slots)) {
@@ -269,6 +281,9 @@ export async function isArtifactUsedInPublishedSites(artifactId: string): Promis
           }
         }
       }
+    } catch (error) {
+      console.error(`Failed to load site definition for ${siteArtifact.id}:`, error)
+      continue
     }
   }
 

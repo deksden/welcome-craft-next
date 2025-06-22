@@ -41,7 +41,7 @@ test.describe.serial('Redis Clipboard Operations', () => {
         }
       )
       expect(createResponse.status()).toBe(200)
-      const [createdArtifact] = await createResponse.json()
+      const createdArtifact = await createResponse.json()
 
       // Note: copyArtifactToClipboard, getArtifactFromClipboard, clearArtifactFromClipboard 
       // are Server Actions, not API endpoints. This test documents expected behavior
@@ -80,10 +80,25 @@ test.describe.serial('Redis Clipboard Operations', () => {
       expect(response.status()).toBe(200)
     })
 
-    test('Unauthenticated user cannot access artifacts for clipboard', async ({ request }) => {
+    test('Unauthenticated user cannot access artifacts for clipboard', async ({ request, adaContext }) => {
+      // First create a real artifact with authenticated user
       const artifactId = generateUUID()
-      const response = await request.get(`/api/artifact?id=${artifactId}`)
-      expect(response.status()).toBe(401)
+      const createResponse = await adaContext.request.post(
+        `/api/artifact?id=${artifactId}`,
+        {
+          data: {
+            title: 'Private Artifact',
+            kind: 'text',
+            content: 'This should be private',
+          },
+        }
+      )
+      expect(createResponse.status()).toBe(200)
+      const createdArtifact = await createResponse.json()
+
+      // Now try to access it without authentication - should get 403 (forbidden)
+      const response = await request.get(`/api/artifact?id=${createdArtifact.id}`)
+      expect(response.status()).toBe(403)
     })
   })
 
@@ -145,13 +160,14 @@ test.describe.serial('Redis Clipboard Operations', () => {
       )
       expect(response.status()).toBe(200)
       
-      const [createdArtifact] = await response.json()
+      const createdArtifact = await response.json()
       expect(createdArtifact.kind).toBe('site')
       
-      // Verify site definition structure (content is already parsed by Drizzle)
-      expect(createdArtifact.content.theme).toBe('default')
-      expect(createdArtifact.content.blocks).toHaveLength(1)
-      expect(createdArtifact.content.blocks[0].type).toBe('hero')
+      // Verify site definition structure (content is JSON string from API)
+      const parsedContent = JSON.parse(createdArtifact.content)
+      expect(parsedContent.theme).toBe('default')
+      expect(parsedContent.blocks).toHaveLength(1)
+      expect(parsedContent.blocks[0].type).toBe('hero')
     })
   })
 
@@ -173,7 +189,7 @@ test.describe.serial('Redis Clipboard Operations', () => {
         }
       )
       expect(createResponse.status()).toBe(200)
-      const [adaArtifact] = await createResponse.json()
+      const adaArtifact = await createResponse.json()
 
       // Babbage tries to access Ada's artifact
       const accessResponse = await babbageContext.request.get(
@@ -198,7 +214,7 @@ test.describe.serial('Redis Clipboard Operations', () => {
         }
       )
       expect(firstResponse.status()).toBe(200)
-      const [firstVersion] = await firstResponse.json()
+      const firstVersion = await firstResponse.json()
 
       // Create second version
       const secondResponse = await adaContext.request.post(

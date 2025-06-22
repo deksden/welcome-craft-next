@@ -76,9 +76,7 @@ describe('UC-09 Holistic Generator', () => {
               title: 'CEO Welcome',
               summary: 'Professional welcome',
               kind: 'text',
-              content_text: 'Welcome content',
-              content_url: null,
-              content_site_definition: null,
+              // UC-10: Sparse columns удалены из основной таблицы Artifact
               userId: mockUserId,
               createdAt: new Date(),
               deletedAt: null,
@@ -96,9 +94,7 @@ describe('UC-09 Holistic Generator', () => {
               title: 'Team Contacts',
               summary: 'Contact list',
               kind: 'sheet',
-              content_text: 'Name,Email\nJohn,john@company.com',
-              content_url: null,
-              content_site_definition: null,
+              // UC-10: Sparse columns удалены из основной таблицы Artifact
               userId: mockUserId,
               createdAt: new Date(),
               deletedAt: null,
@@ -142,9 +138,7 @@ describe('UC-09 Holistic Generator', () => {
               title: 'CEO Welcome',
               summary: 'Professional welcome',
               kind: 'text',
-              content_text: 'Welcome content',
-              content_url: null,
-              content_site_definition: null,
+              // UC-10: Sparse columns удалены из основной таблицы Artifact
               userId: mockUserId,
               createdAt: new Date(),
               deletedAt: null,

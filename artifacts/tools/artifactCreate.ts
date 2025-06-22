@@ -18,7 +18,8 @@ import type { Session } from 'next-auth'
 import { artifactTools } from '@/artifacts/kinds/artifact-tools'
 import { createLogger } from '@fab33/fab-logger'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
-import { saveArtifact } from '@/lib/db/queries'
+import { saveArtifact as dbSaveArtifact } from '@/lib/db/queries'
+import { saveArtifact as toolsSaveArtifact } from '@/artifacts/kinds/artifact-tools'
 import { artifactKinds } from '@/lib/types'
 import { generateAndSaveSummary } from '@/lib/ai/summarizer'
 
@@ -81,10 +82,11 @@ export const artifactCreate = ({ session }: CreateArtifactProps) =>
           contentType: typeof content
         }, 'Content generation completed')
 
-        childLogger.debug('Saving artifact to database')
+        childLogger.debug('Saving artifact to database (UC-10 Schema-Driven)')
         const dbSaveStart = Date.now()
         
-        await saveArtifact({
+        // UC-10: Первый шаг - сохранение в основную таблицу Artifact
+        const savedArtifacts = await dbSaveArtifact({
           id: artifactId,
           title,
           content,
@@ -93,8 +95,18 @@ export const artifactCreate = ({ session }: CreateArtifactProps) =>
           authorId: null, // Created by AI
         })
         
+        const savedArtifact = savedArtifacts[0]
         const dbSaveTime = Date.now() - dbSaveStart
-        childLogger.info({ dbSaveTimeMs: dbSaveTime }, 'Artifact saved to database successfully')
+        childLogger.info({ dbSaveTimeMs: dbSaveTime }, 'Artifact saved to main table successfully')
+        
+        // UC-10: Второй шаг - сохранение в специализированную таблицу через диспетчер
+        childLogger.debug('Saving content to specialized table via tools dispatcher')
+        const toolsSaveStart = Date.now()
+        
+        await toolsSaveArtifact(savedArtifact, content)
+        
+        const toolsSaveTime = Date.now() - toolsSaveStart
+        childLogger.info({ toolsSaveTimeMs: toolsSaveTime }, 'Content saved to specialized table successfully')
 
         // Background summary generation
         childLogger.debug('Starting background summary generation')

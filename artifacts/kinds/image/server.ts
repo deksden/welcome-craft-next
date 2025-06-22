@@ -1,12 +1,13 @@
 /**
  * @file artifacts/image/server.ts
  * @description Серверный обработчик для артефактов-изображений.
- * @version 3.0.0
- * @date 2025-06-10
- * @updated Refactored to export a standalone `imageTool` object, removing the factory function.
+ * @version 4.0.0
+ * @date 2025-06-20
+ * @updated UC-10 SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции сохранения/загрузки для A_Image таблицы.
  */
 
 /** HISTORY:
+ * v4.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveImageArtifact, loadImageArtifact, deleteImageArtifact функции для работы с новой A_Image таблицей.
  * v3.0.0 (2025-06-10): Refactored to export a standalone tool object.
  * v2.4.0 (2025-06-10): Added `providerOptions` to `generateText` to request the correct image modality.
  * v2.3.0 (2025-06-09): Рефакторинг. Обработчик теперь возвращает URL изображения.
@@ -20,10 +21,14 @@ import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactTool } from '@/artifacts/kinds/artifact-tools'
 import { getDisplayContent } from '@/lib/artifact-content-utils'
 import { createLogger } from '@fab33/fab-logger'
+import { db } from '@/lib/db'
+import { artifactImage } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
+import type { Artifact, ArtifactImage } from '@/lib/db/schema'
 
 const logger = createLogger('artifacts:kinds:image:server')
 
-export const imageTool: ArtifactTool = {
+const imageLegacyTool: ArtifactTool = {
   kind: 'image',
   create: async ({ id, title, prompt, session }) => {
     const childLogger = logger.child({ artifactId: id, userId: session?.user?.id })
@@ -224,6 +229,155 @@ export const imageTool: ArtifactTool = {
       throw error
     }
   },
+}
+
+/**
+ * @description Image artifact tool с поддержкой UC-10 schema-driven операций  
+ * @feature Поддержка как legacy AI операций, так и новых save/load/delete
+ */
+export const imageTool = {
+  kind: 'image' as const,
+  // Legacy AI operations (для совместимости)
+  create: imageLegacyTool.create,
+  update: imageLegacyTool.update,
+  // UC-10 Schema-Driven операции
+  save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
+    return saveImageArtifact(artifact, content, metadata)
+  },
+  load: loadImageArtifact,
+  delete: deleteImageArtifact,
+}
+
+// =============================================================================
+// UC-10 SCHEMA-DRIVEN CMS: Новые функции для работы с A_Image таблицей
+// =============================================================================
+
+/**
+ * @description Сохраняет артефакт-изображение в специализированную таблицу A_Image
+ * @feature Извлечение метаданных изображения из URL и metadata
+ * @param artifact - Базовая информация об артефакте
+ * @param content - URL изображения
+ * @param metadata - Дополнительные метаданные (altText, width, height, fileSize, mimeType)
+ * @returns Promise с результатом операции
+ * @throws Ошибка если сохранение не удалось
+ */
+export async function saveImageArtifact(
+  artifact: Artifact, 
+  content: string, 
+  metadata?: Record<string, any>
+): Promise<void> {
+  const childLogger = logger.child({ artifactId: artifact.id, kind: artifact.kind })
+  
+  try {
+    childLogger.info({ 
+      url: content,
+      metadata,
+      altText: metadata?.altText
+    }, 'Saving image artifact to A_Image table')
+    
+    await db.insert(artifactImage).values({
+      artifactId: artifact.id,
+      createdAt: artifact.createdAt,
+      url: content,
+      altText: metadata?.altText || artifact.title,
+      width: metadata?.width ? Number(metadata.width) : undefined,
+      height: metadata?.height ? Number(metadata.height) : undefined,
+      fileSize: metadata?.fileSize ? Number(metadata.fileSize) : undefined,
+      mimeType: metadata?.mimeType || 'image/png'
+    }).onConflictDoUpdate({
+      target: [artifactImage.artifactId, artifactImage.createdAt],
+      set: {
+        url: content,
+        altText: metadata?.altText || artifact.title,
+        width: metadata?.width ? Number(metadata.width) : undefined,
+        height: metadata?.height ? Number(metadata.height) : undefined,
+        fileSize: metadata?.fileSize ? Number(metadata.fileSize) : undefined,
+        mimeType: metadata?.mimeType || 'image/png'
+      }
+    })
+    
+    childLogger.info('Image artifact saved successfully to A_Image table')
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Failed to save image artifact to A_Image table')
+    
+    throw error
+  }
+}
+
+/**
+ * @description Загружает данные артефакта-изображения из таблицы A_Image
+ * @param artifactId - ID артефакта для загрузки
+ * @param createdAt - Timestamp версии артефакта (composite key)
+ * @returns Promise с данными артефакта-изображения или null
+ */
+export async function loadImageArtifact(artifactId: string, createdAt: Date): Promise<ArtifactImage | null> {
+  const childLogger = logger.child({ artifactId, createdAt })
+  
+  try {
+    childLogger.debug('Loading image artifact from A_Image table')
+    
+    const result = await db.select().from(artifactImage)
+      .where(and(
+        eq(artifactImage.artifactId, artifactId),
+        eq(artifactImage.createdAt, createdAt)
+      ))
+      .limit(1)
+    
+    const imageData = result[0] || null
+    
+    if (imageData) {
+      childLogger.info({ 
+        url: imageData.url,
+        width: imageData.width,
+        height: imageData.height,
+        fileSize: imageData.fileSize,
+        mimeType: imageData.mimeType
+      }, 'Image artifact loaded successfully from A_Image table')
+    } else {
+      childLogger.warn('Image artifact not found in A_Image table')
+    }
+    
+    return imageData
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Failed to load image artifact from A_Image table')
+    
+    throw error
+  }
+}
+
+/**
+ * @description Удаляет данные артефакта-изображения из таблицы A_Image
+ * @param artifactId - ID артефакта для удаления
+ * @param createdAt - Timestamp версии артефакта (composite key)
+ * @returns Promise с результатом операции
+ */
+export async function deleteImageArtifact(artifactId: string, createdAt: Date): Promise<void> {
+  const childLogger = logger.child({ artifactId, createdAt })
+  
+  try {
+    childLogger.info('Deleting image artifact from A_Image table')
+    
+    await db.delete(artifactImage)
+      .where(and(
+        eq(artifactImage.artifactId, artifactId),
+        eq(artifactImage.createdAt, createdAt)
+      ))
+    
+    childLogger.info('Image artifact deleted successfully from A_Image table')
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Failed to delete image artifact from A_Image table')
+    
+    throw error
+  }
 }
 
 // END OF: artifacts/image/server.ts

@@ -1,154 +1,207 @@
 /**
- * @file artifacts/text/server.ts
- * @description Серверный обработчик для текстовых артефактов.
- * @version 2.0.0
- * @date 2025-06-10
- * @updated Refactored to export a standalone `textTool` object, removing the factory function.
+ * @file artifacts/kinds/text/server.ts
+ * @description Серверный обработчик для текстовых артефактов с поддержкой UC-10 Schema-Driven CMS.
+ * @version 4.0.0
+ * @date 2025-06-21
+ * @updated UC-10 SCHEMA-DRIVEN CMS - Полностью переписан для унификации с artifact-tools.ts реестром.
  */
 
 /** HISTORY:
+ * v4.0.0 (2025-06-21): UC-10 SCHEMA-DRIVEN CMS - Полностью переписан для унификации с artifact-tools.ts. Удален дублированный код, оставлены только schema-driven функции.
+ * v3.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveTextArtifact, loadTextArtifact, deleteTextArtifact функции для работы с новой A_Text таблицей.
  * v2.0.0 (2025-06-10): Refactored to export a standalone tool object.
  * v1.3.0 (2025-06-09): Рефакторинг. Обработчик теперь возвращает сгенерированный текст.
  */
 
-import { generateText } from 'ai'
-import { myProvider } from '@/lib/ai/providers'
-import { updateDocumentPrompt } from '@/lib/ai/prompts'
-import type { ArtifactTool } from '@/artifacts/kinds/artifact-tools'
-import { getDisplayContent } from '@/lib/artifact-content-utils'
 import { createLogger } from '@fab33/fab-logger'
+import { db } from '@/lib/db'
+import { artifactText } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
+import type { Artifact, ArtifactText } from '@/lib/db/schema'
 
 const logger = createLogger('artifacts:kinds:text:server')
 
-export const textTool: ArtifactTool = {
-  kind: 'text',
-  create: async ({ id, title, prompt, session }) => {
-    const childLogger = logger.child({ artifactId: id, userId: session?.user?.id })
-    const startTime = Date.now()
+// =============================================================================
+// UC-10 SCHEMA-DRIVEN CMS: Функции для работы с A_Text таблицей
+// =============================================================================
+
+/**
+ * @description Сохраняет текстовый артефакт в специализированную таблицу A_Text
+ * @feature Автоматический подсчет слов и символов
+ * @param artifact - Базовая информация об артефакте
+ * @param content - Текстовый контент для сохранения
+ * @param language - Язык программирования (для code артефактов)
+ * @returns Promise с результатом операции
+ * @throws Ошибка если сохранение не удалось
+ */
+export async function saveTextArtifact(
+  artifact: Artifact, 
+  content: string, 
+  language?: string
+): Promise<void> {
+  const childLogger = logger.child({ artifactId: artifact.id, kind: artifact.kind })
+  
+  try {
+    // Подсчет метрик текста
+    const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0
+    const charCount = content.length
     
     childLogger.info({ 
-      title, 
-      prompt: prompt?.substring(0, 100) + (prompt && prompt.length > 100 ? '...' : ''),
-      promptLength: prompt?.length || 0
-    }, 'Starting text artifact creation')
-
-    try {
-      const systemPrompt = 'Write about the given topic. Markdown is supported. Use headings wherever appropriate.'
-      const userPrompt = prompt || title
-      
-      childLogger.debug({ 
-        systemPrompt,
-        model: 'artifact-model'
-      }, 'Calling AI model for text generation')
-      
-      const aiCallStart = Date.now()
-      
-      // Создаем Promise для таймаута (80 секунд)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('AI model call timed out after 80 seconds')), 80000)
-      )
-
-      // Запускаем гонку между вызовом API и таймаутом
-      const generateTextPromise = generateText({
-        model: myProvider.languageModel('artifact-model'),
-        system: systemPrompt,
-        prompt: userPrompt,
-      })
-      
-      const { text } = await Promise.race([generateTextPromise, timeoutPromise]) as { text: string }
-      const aiCallTime = Date.now() - aiCallStart
-      
-      childLogger.info({ aiCallTimeMs: aiCallTime }, 'AI model call completed successfully')
-      
-      const generatedText = text
-      const totalTime = Date.now() - startTime
-      
-      childLogger.info({ 
-        aiCallTimeMs: aiCallTime,
-        totalTimeMs: totalTime,
-        generatedTextLength: generatedText.length,
-        generatedTextPreview: generatedText.substring(0, 150) + (generatedText.length > 150 ? '...' : '')
-      }, 'Text artifact creation completed successfully')
-      
-      return generatedText
-    } catch (error) {
-      const totalTime = Date.now() - startTime
-      
-      const err = error as Error
-      if (err.message?.includes('timed out')) {
-        childLogger.error({ 
-          error: 'AI model call timed out after 80 seconds',
-          executionTimeMs: totalTime,
-          recommendation: 'Check network connectivity or consider using mock data'
-        }, 'Text artifact creation failed due to timeout')
-      } else {
-        childLogger.error({ 
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-          executionTimeMs: totalTime
-        }, 'Text artifact creation failed')
+      wordCount, 
+      charCount, 
+      language,
+      contentPreview: content.substring(0, 100) + (content.length > 100 ? '...' : '')
+    }, 'Saving text artifact to A_Text table')
+    
+    await db.insert(artifactText).values({
+      artifactId: artifact.id,
+      createdAt: artifact.createdAt,
+      content,
+      wordCount,
+      charCount,
+      language: language || (artifact.kind === 'code' ? 'javascript' : undefined)
+    }).onConflictDoUpdate({
+      target: [artifactText.artifactId, artifactText.createdAt],
+      set: {
+        content,
+        wordCount,
+        charCount,
+        language: language || (artifact.kind === 'code' ? 'javascript' : undefined)
       }
-      
-      throw error
-    }
-  },
-  update: async ({ document, description }) => {
-    const childLogger = logger.child({ artifactId: document.id })
-    const startTime = Date.now()
+    })
     
-    const existingContent = getDisplayContent(document)
-    childLogger.info({ 
-      description: description.substring(0, 100) + (description.length > 100 ? '...' : ''),
-      descriptionLength: description.length,
-      existingContentLength: existingContent.length
-    }, 'Starting text artifact update')
-
-    try {
-      const systemPrompt = updateDocumentPrompt(existingContent, 'text')
-      
-      childLogger.debug({ 
-        systemPromptLength: systemPrompt.length,
-        model: 'artifact-model'
-      }, 'Calling AI model for text update')
-      
-      const aiCallStart = Date.now()
-      const { text } = await generateText({
-        model: myProvider.languageModel('artifact-model'),
-        system: systemPrompt,
-        prompt: description,
-        experimental_providerMetadata: {
-          openai: {
-            prediction: {
-              type: 'content',
-              content: existingContent,
-            },
-          },
-        },
-      })
-      const aiCallTime = Date.now() - aiCallStart
-      
-      const updatedText = text
-      const totalTime = Date.now() - startTime
-      
-      childLogger.info({ 
-        aiCallTimeMs: aiCallTime,
-        totalTimeMs: totalTime,
-        updatedTextLength: updatedText.length,
-        updatedTextPreview: updatedText.substring(0, 150) + (updatedText.length > 150 ? '...' : '')
-      }, 'Text artifact update completed successfully')
-      
-      return updatedText
-    } catch (error) {
-      const totalTime = Date.now() - startTime
-      childLogger.error({ 
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        executionTimeMs: totalTime
-      }, 'Text artifact update failed')
-      
-      throw error
-    }
-  },
+    childLogger.info('Text artifact saved successfully to A_Text table')
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Failed to save text artifact to A_Text table')
+    
+    throw error
+  }
 }
 
-// END OF: artifacts/text/server.ts
+/**
+ * @description Загружает данные текстового артефакта из таблицы A_Text
+ * @param artifactId - ID артефакта для загрузки
+ * @param createdAt - Timestamp версии артефакта (composite key)
+ * @returns Promise с данными текстового артефакта или null
+ */
+export async function loadTextArtifact(artifactId: string, createdAt: Date): Promise<ArtifactText | null> {
+  const childLogger = logger.child({ artifactId, createdAt })
+  
+  try {
+    childLogger.debug('Loading text artifact from A_Text table')
+    
+    const result = await db.select().from(artifactText)
+      .where(and(
+        eq(artifactText.artifactId, artifactId),
+        eq(artifactText.createdAt, createdAt)
+      ))
+      .limit(1)
+    
+    const textData = result[0] || null
+    
+    if (textData) {
+      childLogger.info({ 
+        wordCount: textData.wordCount,
+        charCount: textData.charCount,
+        language: textData.language,
+        contentPreview: textData.content?.substring(0, 100) + (textData.content && textData.content.length > 100 ? '...' : '')
+      }, 'Text artifact loaded successfully from A_Text table')
+    } else {
+      childLogger.warn('Text artifact not found in A_Text table')
+    }
+    
+    return textData
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Failed to load text artifact from A_Text table')
+    
+    throw error
+  }
+}
+
+/**
+ * @description Удаляет данные текстового артефакта из таблицы A_Text
+ * @param artifactId - ID артефакта для удаления
+ * @param createdAt - Timestamp версии артефакта (composite key)
+ * @returns Promise с результатом операции
+ */
+export async function deleteTextArtifact(artifactId: string, createdAt: Date): Promise<void> {
+  const childLogger = logger.child({ artifactId, createdAt })
+  
+  try {
+    childLogger.info('Deleting text artifact from A_Text table')
+    
+    await db.delete(artifactText)
+      .where(and(
+        eq(artifactText.artifactId, artifactId),
+        eq(artifactText.createdAt, createdAt)
+      ))
+    
+    childLogger.info('Text artifact deleted successfully from A_Text table')
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Failed to delete text artifact from A_Text table')
+    
+    throw error
+  }
+}
+
+// Алиас для code артефактов (используют ту же A_Text таблицу)
+export const saveCodeArtifact = saveTextArtifact
+export const loadCodeArtifact = loadTextArtifact
+export const deleteCodeArtifact = deleteTextArtifact
+
+// =============================================================================
+// UC-10 SCHEMA-DRIVEN CMS: Экспорт tools для использования в artifact-tools.ts
+// =============================================================================
+
+/**
+ * @description Text artifact tool с поддержкой UC-10 schema-driven операций
+ * @feature Поддержка как legacy AI операций, так и новых save/load/delete
+ */
+export const textTool = {
+  kind: 'text' as const,
+  // Legacy AI operations (для совместимости с существующими тестами)
+  create: async () => {
+    throw new Error('textTool.create is deprecated - use AI tools instead')
+  },
+  update: async () => {
+    throw new Error('textTool.update is deprecated - use AI tools instead') 
+  },
+  // UC-10 Schema-Driven операции с адаптацией metadata
+  save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
+    return saveTextArtifact(artifact, content, metadata?.language)
+  },
+  load: loadTextArtifact,
+  delete: deleteTextArtifact,
+}
+
+/**
+ * @description Code artifact tool (alias for textTool)
+ * @feature Code артефакты используют ту же A_Text таблицу с language полем
+ */
+export const codeTool = {
+  kind: 'code' as const,
+  // Legacy AI operations (для совместимости)
+  create: async () => {
+    throw new Error('codeTool.create is deprecated - use AI tools instead')
+  },
+  update: async () => {
+    throw new Error('codeTool.update is deprecated - use AI tools instead')
+  },
+  // UC-10 Schema-Driven операции с адаптацией metadata
+  save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
+    return saveCodeArtifact(artifact, content, metadata?.language)
+  },
+  load: loadCodeArtifact,
+  delete: deleteCodeArtifact,
+}
+
+// END OF: artifacts/kinds/text/server.ts

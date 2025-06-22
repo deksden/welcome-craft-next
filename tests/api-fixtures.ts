@@ -78,73 +78,44 @@ async function createAPIAuthenticatedContext ({
     throw new Error(`Failed to get userId from create-user response: ${JSON.stringify(createUserData)}`)
   }
 
-  // Create a page to perform login and capture cookies
-  const page = await context.newPage()
-  let authenticatedRequest: APIRequestContext
+  // Простой подход: создаем test session данные напрямую без страницы
+  const authResponse = await request.post(`${appURL}/api/test/auth-signin`, {
+    data: { email, password, userId },
+    headers: { 'X-Test-Environment': 'playwright' },
+  })
 
-  try {
-    // Use direct auth endpoint that creates proper session cookies
-    const authResponse = await request.post(`${appURL}/api/test/auth-signin`, {
-      data: { email, password, userId },
-      headers: { 'X-Test-Environment': 'playwright' },
-    })
-
-    if (!authResponse.ok()) {
-      const errorText = await authResponse.text()
-      throw new Error(`Failed to authenticate: ${authResponse.status()} ${errorText}`)
-    }
-
-    const authData = await authResponse.json()
-    console.log(`Authentication successful for user: ${authData.user.email}`)
-    
-    // Navigate to main page to capture the session cookies set by the auth endpoint
-    await page.goto(`${appURL}/`)
-    await page.waitForLoadState('networkidle')
-
-    // Get cookies from the context - they should now include authjs.session-token
-    const appCookies = await context.cookies(appURL)
-    
-    console.log(`${name} email: ${email}`)
-    console.log(`Available cookies from ${appURL}:`, appCookies.map(c => `${c.name}=${c.value.substring(0, 20)}...`))
-    
-    // Verify session works
-    const sessionTestResponse = await request.get(`${appURL}/api/auth/session`, {
-      headers: { 'X-Test-Environment': 'playwright' },
-    })
-    
-    if (sessionTestResponse.ok()) {
-      const sessionData = await sessionTestResponse.json()
-      console.log(`Session verification successful: ${!!sessionData?.user}`)
-    } else {
-      console.log(`Session verification failed: ${sessionTestResponse.status()}`)
-    }
-    
-    // Filter for test and auth session cookies
-    const authCookies = appCookies.filter(cookie => 
-      cookie.name === 'test-session' ||
-      cookie.name.startsWith('authjs.') || 
-      cookie.name.startsWith('next-auth.') ||
-      cookie.name.startsWith('__Secure-next-auth.')
-    )
-    
-    console.log(`Auth cookies to forward:`, authCookies.map(c => c.name))
-    
-    const cookieHeader = authCookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
-
-    // Create new authenticated request context with session cookies
-    await context.request.dispose()
-    const newContext = await browser.newContext({
-      baseURL: appURL,
-      extraHTTPHeaders: {
-        'Cookie': cookieHeader,
-        'X-Test-Environment': 'playwright',
-      },
-    })
-    authenticatedRequest = newContext.request
-
-  } finally {
-    await page.close()
+  if (!authResponse.ok()) {
+    const errorText = await authResponse.text()
+    throw new Error(`Failed to authenticate: ${authResponse.status()} ${errorText}`)
   }
+
+  const authData = await authResponse.json()
+  console.log(`Authentication successful for user: ${authData.user.email}`)
+  
+  // Создаем test session cookie данные напрямую
+  const sessionData = {
+    user: {
+      id: userId,
+      email,
+      name: email,
+      type: 'regular'
+    },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+  }
+  
+  const cookieValue = JSON.stringify(sessionData)
+  console.log(`${name} email: ${email}`)
+  
+  // Создаем новый контекст с test session cookie в заголовках
+  await context.request.dispose()
+  const newContext = await browser.newContext({
+    baseURL: appURL,
+    extraHTTPHeaders: {
+      'Cookie': `test-session-fallback=${encodeURIComponent(cookieValue)}`,
+      'X-Test-Environment': 'playwright',
+    },
+  })
+  const authenticatedRequest = newContext.request
 
   return {
     context,

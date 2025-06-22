@@ -415,11 +415,8 @@ function PureArtifact ({
             authorId: fullArtifact.authorId,
             deletedAt: fullArtifact.deletedAt,
             summary: fullArtifact.summary,
-            content_text: fullArtifact.content,
-            content_url: null,
-            content_site_definition: fullArtifact.content,
-            publication_state: [],
-            world_id: null
+            worldId: fullArtifact.worldId,
+            publicationState: fullArtifact.publicationState || []
           } : {
             id: artifact.artifactId,
             title: artifact.title,
@@ -429,20 +426,18 @@ function PureArtifact ({
             authorId: null,
             deletedAt: null,
             summary: '',
-            content_text: null,
-            content_url: null,
-            content_site_definition: null,
-            publication_state: [],
-            world_id: null
+            worldId: null,
+            publicationState: []
           }}
-          onSiteUpdate={(updatedArtifact) => {
+          onSiteUpdate={async (updatedArtifact) => {
             // Обновляем кеш с полной информацией об артефакте
             // Для API /api/artifact нужно обновить массив артефактов
-            mutate(`/api/artifact?id=${artifact.artifactId}`, (currentData: Array<ArtifactApiResponse> | undefined) => {
-              if (!currentData) return [normalizeArtifactForAPI(updatedArtifact)]
+            await mutate(`/api/artifact?id=${artifact.artifactId}`, async (currentData: Array<ArtifactApiResponse> | undefined) => {
+              const normalizedArtifact = await normalizeArtifactForAPI(updatedArtifact)
+              if (!currentData) return [normalizedArtifact]
               // Заменяем последний элемент обновленным артефактом
               const newData = [...currentData]
-              newData[newData.length - 1] = normalizeArtifactForAPI(updatedArtifact)
+              newData[newData.length - 1] = normalizedArtifact
               return newData
             }, { revalidate: false })
           }}

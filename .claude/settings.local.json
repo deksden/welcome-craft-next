@@ -80,7 +80,13 @@
       "Bash(pnpm build:*)",
       "Bash(npm info:*)",
       "Bash(pnpm vitest:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(pnpm next lint:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(/dev/null)",
+      "Bash(pnpm playwright test:*)",
+      "Bash(wait)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }
