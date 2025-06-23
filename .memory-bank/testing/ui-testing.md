@@ -42,6 +42,17 @@
 | `site-publication-dialog` | `components/site-publication-dialog.tsx` | Диалог управления публикацией. | ✅ Реализован |
 | **Toast Zone** | | | |
 | `toast` | UI Library | Системные уведомления. | ✅ Реализован |
+| `toast-icon` | `components/toast.tsx` | Иконка типа toast уведомления. | ✅ Реализован |
+| `toast-message` | `components/toast.tsx` | Текст toast уведомления. | ✅ Реализован |
+| **Save Status Zone** | | | |
+| `artifact-save-status-icon` | `components/artifact-actions.tsx` | Иконка статуса сохранения. | ✅ Реализован |
+| `artifact-actions-save-status` | `components/artifact-actions.tsx` | Контейнер статуса сохранения. | ✅ Реализован |
+| **World Zone** | | | |
+| `world-indicator` | `components/world-indicator.tsx` | Индикатор тестового мира. | ✅ Реализован |
+| `world-indicator-name` | `components/world-indicator.tsx` | Название текущего мира. | ✅ Реализован |
+| **Skeleton Zone** | | | |
+| `artifact-skeleton` | `components/artifact-skeleton.tsx` | Skeleton loader для артефактов. | ✅ Реализован |
+| `artifact-inline-skeleton` | `components/artifact-skeleton.tsx` | Inline skeleton loader. | ✅ Реализован |
 
 ## Схема статусов
 - ✅ **Реализован** — `data-testid` существует и протестирован

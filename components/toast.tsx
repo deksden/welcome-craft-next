@@ -75,6 +75,7 @@ function Toast (props: ToastProps) {
       >
         <div
           data-type={type}
+          data-testid="toast-icon"
           className={cn(
             'data-[type=error]:text-red-600 data-[type=success]:text-green-600 data-[type=loading]:text-blue-600',
             { 'pt-1': multiLine },
@@ -82,7 +83,7 @@ function Toast (props: ToastProps) {
         >
           {iconsByType[type]}
         </div>
-        <div ref={descriptionRef} className="text-zinc-950 text-sm">
+        <div ref={descriptionRef} className="text-zinc-950 text-sm" data-testid="toast-message">
           {description}
         </div>
       </div>

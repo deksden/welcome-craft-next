@@ -40,6 +40,55 @@ test.describe('UC-07: AI Suggestions', () => {
     process.env.AI_FIXTURES_MODE = undefined
   })
 
+  test.beforeEach(async ({ page }) => {
+    console.log('🚀 FAST AUTHENTICATION: Устанавливаем test session')
+    
+    // Быстрая установка test session cookie
+    const timestamp = Date.now()
+    const userId = `uc07-user-${timestamp.toString().slice(-12)}`
+    const testEmail = `uc07-test-${timestamp}@playwright.com`
+    
+    const cookieValue = JSON.stringify({
+      user: {
+        id: userId,
+        email: testEmail,
+        name: `uc07-test-${timestamp}`
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    })
+
+    // КРИТИЧЕСКИ ВАЖНО: Сначала устанавливаем cookies БЕЗ navigation
+    await page.context().addCookies([
+      {
+        name: 'test-session',
+        value: cookieValue,
+        domain: '.localhost',
+        path: '/'
+      },
+      {
+        name: 'test-session-fallback',
+        value: cookieValue,
+        domain: 'localhost',
+        path: '/'
+      },
+      {
+        name: 'test-session',
+        value: cookieValue,
+        domain: 'app.localhost',
+        path: '/'
+      }
+    ])
+    
+    // Устанавливаем test environment header
+    await page.setExtraHTTPHeaders({
+      'X-Test-Environment': 'playwright'
+    })
+    
+    // ТЕПЕРЬ переходим на admin домен С уже установленными cookies
+    await page.goto('/')
+    
+    console.log('✅ Fast authentication completed: cookies → headers → navigation')
+  })
 
   test('AI suggestions workflow через SidebarPage POM', async ({ page }) => {
     console.log('🎯 Running UC-07: AI suggestions workflow with POM')
