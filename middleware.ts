@@ -1,7 +1,7 @@
 /**
  * @file middleware.ts
  * @description Middleware для мультидоменной архитектуры WelcomeCraft
- * @version 2.0.0
+ * @version 2.1.0
  * 
  * МУЛЬТИДОМЕННАЯ АРХИТЕКТУРА:
  * - app.localhost:port - административная панель (основное приложение)
@@ -16,6 +16,7 @@
  * В тестах используются test-session cookies с domain='.localhost'  
  * 
  * ИСТОРИЯ:
+ * v2.1.0 (2025-06-25): Исправлена проблема с определением admin домена в production режиме для localhost
  * v2.0.0 (2025-06-15): Добавлена поддержка тестовых sessions, улучшена документация
  * v1.0.0: Базовая мультидоменная маршрутизация
  */
@@ -60,7 +61,9 @@ export async function middleware (request: NextRequest) {
   }
 
   // Определяем домен для админ-панели  
-  const isAppDomain = process.env.NODE_ENV === 'production'
+  // ИСПРАВЛЕНИЕ: В production режиме локально может быть app.localhost с портом
+  const isProductionRemote = process.env.NODE_ENV === 'production' && !hostname.includes('localhost')
+  const isAppDomain = isProductionRemote
     ? hostname === 'app.welcome-onboard.ru'
     : hostname.startsWith('app.localhost')
 
@@ -77,9 +80,11 @@ export async function middleware (request: NextRequest) {
 
     // Проверяем тестовый cookie в тестовом окружении
     const testHeader = request.headers.get('X-Test-Environment');
+    const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT;
     const isTestEnv = process.env.NODE_ENV === 'test' || 
                       process.env.PLAYWRIGHT === 'true' || 
-                      testHeader === 'playwright';
+                      testHeader === 'playwright' ||
+                      hasPlaywrightPort; // ИСПРАВЛЕНИЕ: Также считаем тестовым если есть PLAYWRIGHT_PORT
     
     let token = null;
     
@@ -135,7 +140,7 @@ export async function middleware (request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Переписываем путь на директорию (app)
+    // Переписываем путь на директорию app для мультидоменной архитектуры
     url.pathname = `/app${url.pathname}`
     return NextResponse.rewrite(url)
   }

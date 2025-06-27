@@ -101,8 +101,8 @@ const providers = [
   }),
 ]
 
-// Add test provider only in development (official Auth.js approach)
-if (process.env.NODE_ENV === 'development') {
+// Add test provider in development and Playwright testing (official Auth.js approach)
+if (process.env.NODE_ENV === 'development' || process.env.PLAYWRIGHT_PORT) {
   providers.push(
     Credentials({
       id: 'test-credentials',

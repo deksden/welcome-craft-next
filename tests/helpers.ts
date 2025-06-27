@@ -11,7 +11,7 @@ import {
 import { generateId } from 'ai';
 import { ChatPage } from './pages/chat';
 import { getUnixTime } from 'date-fns';
-import { mockAuthentication } from './helpers/auth-mock';
+import { fastAuthentication } from './helpers/e2e-auth.helper';
 
 export type UserContext = {
   context: BrowserContext;
@@ -102,8 +102,8 @@ export async function createMockAuthenticatedContext({
   const timestamp = getUnixTime(new Date());
   const email = `test-${name}-${timestamp}@playwright.com`;
 
-  // Используем mock аутентификацию вместо реальной регистрации
-  await mockAuthentication(page, email);
+  // Используем fast аутентификацию вместо реальной регистрации
+  await fastAuthentication(page, { email });
 
   return {
     context,

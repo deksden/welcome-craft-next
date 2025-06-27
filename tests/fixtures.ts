@@ -2,14 +2,14 @@ import { expect as baseExpect, test as baseTest } from '@playwright/test';
 import { createAuthenticatedContext, type UserContext } from './helpers';
 import { getUnixTime } from 'date-fns';
 import { TestUtils } from './helpers/test-utils';
-import { AIMockHelper } from './helpers/ai-mock';
+// AI Fixtures system automatically handles mocking - no manual imports needed
 
 interface Fixtures {
   adaContext: UserContext;
   babbageContext: UserContext;
   curieContext: UserContext;
   testUtils: TestUtils;
-  aiMock: typeof AIMockHelper;
+  // AI Fixtures system handles mocking automatically
 }
 
 export const test = baseTest.extend<Fixtures>({
@@ -47,10 +47,6 @@ export const test = baseTest.extend<Fixtures>({
   testUtils: async ({ page }, use) => {
     const testUtils = new TestUtils(page);
     await use(testUtils);
-  },
-  
-  aiMock: async ({ page }, use) => {
-    await use(AIMockHelper);
   },
 });
 

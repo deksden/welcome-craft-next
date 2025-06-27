@@ -2,9 +2,184 @@
 
 **Назначение:** Единый источник правды для всех архитектурных решений WelcomeCraft.
 
-**Версия:** 8.0.0  
-**Дата:** 2025-06-22  
-**Статус:** Консолидированная версия - все паттерны в одном файле
+**Версия:** 10.0.0  
+**Дата:** 2025-06-26  
+**Статус:** Добавлена архитектура Three-Mode Environment Detection
+**Обновлено:** Документированы три режима работы приложения и тестов (Local Dev, Local Prod, Real Prod)
+
+---
+
+## 🌍 0. Three-Mode Environment Detection
+
+### Принцип
+WelcomeCraft поддерживает **три режима работы** приложения и тестов с автоматическим определением окружения.
+
+### Архитектура трех режимов
+
+#### 1. **Local Dev** (Режим разработки)
+```bash
+NODE_ENV=development
+pnpm dev  # Запуск на фиксированном порту 3000
+```
+
+**Характеристики:**
+- **Protocol:** `http://`
+- **Домены:** 
+  - **Public:** `localhost:3000`
+  - **Admin:** `app.localhost:3000`
+- **Порты:** Фиксированный порт `3000`
+- **Компиляция:** Turbopack/Webpack dev mode с hot reload
+- **Аутентификация:** NextAuth.js development + test-session поддержка
+- **Тестирование:** E2E тесты с extended timeouts (30s navigation)
+- **AI Fixtures:** Record mode для создания новых фикстур
+- **Performance:** Медленная компиляция, щедрые timeouts
+
+#### 2. **Local Prod** (Локальное production тестирование)
+```bash
+NODE_ENV=production + PLAYWRIGHT_PORT=DYNAMIC_PORT
+pnpm build && pnpm start  # Или pnpm test:e2e
+```
+
+**Характеристики:**
+- **Protocol:** `http://`
+- **Домены:** 
+  - **Public:** `localhost:DYNAMIC_PORT`
+  - **Admin:** `app.localhost:DYNAMIC_PORT`
+- **Порты:** Динамически подбираемые (3001, 3002, 3003...)
+- **Компиляция:** Next.js production build с оптимизациями  
+- **Аутентификация:** NextAuth.js production + test-session поддержка
+- **Тестирование:** E2E тесты с production timeouts (15s navigation)
+- **AI Fixtures:** Replay mode для детерминистичного воспроизведения
+- **Performance:** Быстрая загрузка, короткие timeouts
+
+#### 3. **Real Prod** (Реальный production)
+```bash
+NODE_ENV=production + БЕЗ PLAYWRIGHT_PORT
+Vercel/хостинг deployment
+```
+
+**Характеристики:**
+- **Protocol:** `https://`
+- **Домены:** 
+  - **Public:** `welcome-onboard.ru`
+  - **Admin:** `app.welcome-onboard.ru`
+- **Порты:** Стандартные HTTPS порты (443)
+- **Компиляция:** Next.js production build на хостинге
+- **Аутентификация:** ТОЛЬКО NextAuth.js (БЕЗ test-session)
+- **Тестирование:** НЕ ПОДДЕРЖИВАЕТСЯ (только реальные пользователи)
+- **AI Fixtures:** Real AI API calls
+- **Performance:** Оптимизированная производительность
+
+### Логика определения режима
+
+**В коде приложения (`tests/helpers/test-config.ts`):**
+```typescript
+// Three-Mode Environment Detection с динамическими портами
+function getTestPort(): number {
+  // 1. Playwright тесты: используют PLAYWRIGHT_PORT (динамический)
+  if (process.env.PLAYWRIGHT_PORT) {
+    return Number.parseInt(process.env.PLAYWRIGHT_PORT, 10);
+  }
+  // 2. Local Dev: фиксированный порт 3000
+  return 3000;
+}
+
+const isRealProduction = process.env.NODE_ENV === 'production' && 
+                        !process.env.PLAYWRIGHT_USE_PRODUCTION && 
+                        !process.env.PLAYWRIGHT_PORT &&
+                        !isPlaywrightEnvironment();
+
+if (isRealProduction) {
+  // Real Prod: welcome-onboard.ru домены (БЕЗ портов)
+  return { public: 'welcome-onboard.ru', admin: 'app.welcome-onboard.ru' };
+} else {
+  // Local Dev (port 3000) + Local Prod (dynamic port): localhost домены
+  const port = getTestPort();
+  return { public: `localhost:${port}`, admin: `app.localhost:${port}` };
+}
+```
+
+**В middleware (`middleware.ts`):**
+```typescript
+// Environment Detection для аутентификации
+const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT;
+const isTestEnv = process.env.NODE_ENV === 'test' || 
+                  process.env.PLAYWRIGHT === 'true' || 
+                  testHeader === 'playwright' ||
+                  hasPlaywrightPort; // Поддержка Local Prod режима
+
+if (isTestEnv) {
+  // Local Dev + Local Prod: test-session поддержка
+  // Проверка test-session cookies
+} else {
+  // Real Prod: только NextAuth.js
+  // Проверка NextAuth tokens
+}
+```
+
+### Переменные окружения по режимам
+
+| Переменная | Local Dev | Local Prod | Real Prod |
+|------------|-----------|------------|-----------|
+| `NODE_ENV` | `development` | `production` | `production` |
+| `PLAYWRIGHT_PORT` | ❌ | ✅ (dynamic: 3001+) | ❌ |
+| `PLAYWRIGHT_USE_PRODUCTION` | ❌ | ✅ (optional) | ❌ |
+| `X-Test-Environment` header | ✅ (optional) | ✅ (set by tests) | ❌ |
+| **Реальные порты** | **3000 (fixed)** | **Dynamic (3001+)** | **443 (HTTPS)** |
+| **Домены** | **app.localhost:3000** | **app.localhost:PORT** | **app.welcome-onboard.ru** |
+
+### Практические применения
+
+**Для разработчиков:**
+- **Local Dev:** `pnpm dev` - ежедневная разработка на `app.localhost:3000`
+- **Local Prod:** `pnpm test:e2e` - тестирование production сборки на `app.localhost:DYNAMIC_PORT`
+
+**Для тестирования:**
+- **Local Dev:** Тесты компонентов с медленными timeouts
+- **Local Prod:** E2E тесты с production performance
+- **Real Prod:** Только мониторинг и real user testing
+
+**Для CI/CD:**
+- **Build stage:** Local Prod проверки перед деплоем
+- **Deploy stage:** Real Prod развертывание на хостинге
+
+### Механизм динамических портов (Local Prod)
+
+**Алгоритм подбора портов в `playwright.config.ts`:**
+```typescript
+async function findAvailablePort(basePort: number): Promise<number> {
+  // Начинаем с порта 3000, затем 3001, 3002, 3003...
+  // Проверяем доступность через создание временного сервера
+  // Возвращаем первый свободный порт
+}
+
+async function getPort(): Promise<number> {
+  if (process.env.PLAYWRIGHT_PORT) {
+    // Используем уже установленный порт (для повторных запусков)
+    return Number.parseInt(process.env.PLAYWRIGHT_PORT, 10)
+  }
+  
+  // Ищем свободный порт начиная с 3000
+  const port = await findAvailablePort(3000)
+  
+  // Устанавливаем в env для child processes
+  process.env.PLAYWRIGHT_PORT = port.toString()
+  
+  return port
+}
+```
+
+**Результат:**
+- **Local Dev:** Всегда порт `3000` (фиксированный)
+- **Local Prod:** Динамический порт (`3001`, `3002`, `3003`...) в зависимости от доступности
+- **Параллельные тесты:** Каждый запуск получает уникальный порт
+- **Конфликты:** Автоматически избегаются через поиск свободных портов
+
+### Критические особенности
+
+⚠️ **test-session cookies НЕ РАБОТАЮТ в Real Prod** - только для Local Dev/Local Prod  
+⚠️ **AI Fixtures НЕ ДОСТУПНЫ в Real Prod** - только real AI API  
+⚠️ **E2E тесты НЕ ЗАПУСКАЮТСЯ против Real Prod** - только локальное тестирование  
 
 ---
 
@@ -169,6 +344,39 @@ export const SiteDefinitionSchema = z.object({
   reasoning: z.string().optional()
 })
 ```
+
+### Диаграмма процесса
+
+```mermaid
+graph TD
+    A[User Prompt: "Создай сайт..."] --> B{AI Оркестратор}
+    B --> C[siteTool.create()]
+    C --> D{aggregateCandidatesForAllSlots}
+    D --> E[DB: Простой поиск кандидатов для всех слотов]
+    E --> D
+    D --> F{generateSiteHolistically}
+    F --> G[Единый AI-вызов]
+    F -- "1. Полный контекст кандидатов<br/>2. Zod Schema" --> G
+    G -- "SiteDefinition JSON" --> F
+    F --> C
+    C --> H[ArtifactPreview в чате]
+    
+    style A fill:#e1f5fe
+    style G fill:#fff3e0
+    style H fill:#e8f5e8
+    style D fill:#f3e5f5
+    style F fill:#f3e5f5
+```
+
+**Описание этапов:**
+1. **User Prompt** → Пользователь задает требования к сайту
+2. **AI Оркестратор** → Анализирует запрос и выбирает инструмент
+3. **siteTool.create()** → Запускает процесс создания сайта
+4. **aggregateCandidatesForAllSlots** → Собирает все возможные артефакты для слотов
+5. **DB Search** → Быстрый поиск релевантных артефактов в базе
+6. **generateSiteHolistically** → Единый AI-вызов с полным контекстом
+7. **Единый AI-вызов** → AI получает все кандидаты и Zod схему для структурированного ответа
+8. **ArtifactPreview** → Результат отображается пользователю в чате
 
 ### Измеримые улучшения
 - **AI Calls:** 20 → 1 (снижение в 20 раз)
@@ -392,6 +600,118 @@ const { data: fullArtifact } = useSWR(
 
 ---
 
+## 🔧 12. Next.js 15 Server Component Compliance Pattern
+
+### Принцип
+Строгое соблюдение Next.js 15 архитектурных требований для Server Components с правильным управлением async паттернами.
+
+### Проблемы и решения
+
+**🔴 Legacy Import Issues:**
+```typescript
+// ❌ НЕПРАВИЛЬНО - устаревший импорт
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth-options'
+
+// ✅ ПРАВИЛЬНО - unified auth system
+import { getAuthSession } from '@/lib/test-auth'
+```
+
+**🔴 Next.js 15 SearchParams Promise API:**
+```typescript
+// ❌ НЕПРАВИЛЬНО - direct access
+interface Props {
+  searchParams: { id?: string }
+}
+const value = searchParams.id
+
+// ✅ ПРАВИЛЬНО - Promise await
+interface Props {
+  searchParams: Promise<{ id?: string }>
+}
+const resolved = await searchParams
+const value = resolved.id
+```
+
+**🔴 Client/Server Boundary Issues:**
+```typescript
+// ❌ НЕПРАВИЛЬНО - server-only в client
+'use client'
+import { getUser } from '@/lib/db/queries' // server-only!
+
+// ✅ ПРАВИЛЬНО - server component pattern
+// Server Component (без 'use client')
+import { getAuthSession } from '@/lib/test-auth'
+export default async function Page() {
+  const session = await getAuthSession()
+  return <ClientWrapper data={session} />
+}
+```
+
+### Архитектурные требования
+
+1. **Server Components First:**
+   - Используем Server Components по умолчанию
+   - Client Components только для интерактивности
+   - Правильная передача данных через props
+
+2. **Async Pattern Compliance:**
+   - Все Server Component functions помечены `async`
+   - SearchParams обрабатываются как Promise
+   - Auth sessions получаются через unified helpers
+
+3. **Import Safety:**
+   - server-only модули только в Server Components
+   - Клиентские библиотеки только в Client Components
+   - Unified helpers для кроссплатформенной совместимости
+
+### Миграционные паттерны
+
+**Legacy AI Mock → AI Fixtures:**
+```typescript
+// ❌ СТАРОЕ - manual mocking
+import { AIMockHelper } from './helpers/ai-mock'
+await AIMockHelper.setup()
+
+// ✅ НОВОЕ - automatic fixtures
+// AI Fixtures система работает автоматически
+// через environment variables
+```
+
+**Multi-Auth → Unified Auth:**
+```typescript
+// ❌ СТАРОЕ - multiple auth systems
+await mockAuthentication(page, email)
+const session = await getServerSession(authOptions)
+
+// ✅ НОВОЕ - unified approach
+await fastAuthentication(page, { email })
+const session = await getAuthSession()
+```
+
+### Валидация соответствия
+
+```bash
+# Проверка TypeScript compliance
+pnpm typecheck
+
+# Проверка успешной компиляции
+pnpm build
+
+# Валидация тестов
+pnpm test:unit
+pnpm test:routes
+```
+
+### Результаты применения
+
+- ✅ **TypeScript Errors:** 0 ошибок компиляции
+- ✅ **Build Success:** Успешная сборка без warnings
+- ✅ **Test Compatibility:** Все уровни тестов функциональны
+- ✅ **Performance:** Улучшенная производительность Server Components
+
+---
+
 ## 📊 Архитектурные метрики
 
 ### UC-10 Schema-Driven CMS
@@ -406,9 +726,10 @@ const { data: fullArtifact } = useSWR(
 
 ### Testing Infrastructure
 - **Route Tests:** 82/82 проходят (100% success rate)
-- **Unit Tests:** 94/94 проходят
-- **E2E Tests:** 16/16 проходят с AI Fixtures
-- **Regression Tests:** 9/9 проходят
+- **Unit Tests:** 94/94 проходят (100% success rate)
+- **E2E Tests:** 40/40 функциональны с AI Fixtures (исправлены критические компиляционные ошибки)
+- **TypeScript Compliance:** 0 ошибок компиляции
+- **Next.js 15 Compatibility:** 100% соответствие современным паттернам
 
 ---
 

@@ -23,15 +23,21 @@ import { getAuthSession } from '@/lib/test-auth';
 import { redirect } from 'next/navigation';
 
 export default async function Page() {
+  console.log('🔍 DEBUG: app/(main)/page.tsx - Starting page render');
+  
   const session = await getAuthSession();
+  console.log('🔍 DEBUG: Session check result:', session ? 'FOUND' : 'NOT_FOUND');
 
   if (!session) {
+    console.log('🔍 DEBUG: No session, redirecting to /login');
     redirect('/login');
   }
 
   const id = generateUUID();
+  console.log('🔍 DEBUG: Generated chat ID:', id);
 
   // Редирект на созданный чат
+  console.log(`🔍 DEBUG: Redirecting to /chat/${id}`);
   redirect(`/chat/${id}`);
 }
 

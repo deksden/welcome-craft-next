@@ -1,8 +1,9 @@
 # 📋 WelcomeCraft Coding Standards
 
-**Версия:** 2.0.0  
-**Дата:** 2025-06-16  
+**Версия:** 2.1.0  
+**Дата:** 2025-06-25  
 **Источники:** dev-rules.md, docs/RULEZZ.md
+**Обновлено:** Синхронизированы E2E паттерны с реальным кодом (fastAuthentication вместо createUseCaseTest)
 
 ---
 
@@ -144,21 +145,31 @@
 - `chat-input-*` — зона ввода чата (textarea, send-button, attach-menu)
 - `artifact-*` — панель артефактов (контент, действия, редакторы)
 
-#### Пример использования POM:
+#### Пример использования POM (актуальный паттерн):
 ```typescript
-const authPage = new AuthPage(page)
-await authPage.registerRobust(email, password) // Декларативно
-await authPage.waitForToast('successfully') // Fail-fast проверка
-
-const testUtils = new TestUtils(page)
-const button = await testUtils.fastLocator('submit-button') // 2s timeout
+// tests/e2e/use-cases/UC-01-Site-Publication.test.ts
+test('Публикация готового сайта через PublicationPage POM', async ({ page }) => {
+  const publicationPage = new PublicationPage(page);
+  
+  // REAL ASSERTIONS: строгие expect() проверки с консистентными таймаутами
+  await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() });
+  await expect(publicationPage.publicationButton).toBeVisible({ timeout: getExpectTimeout() });
+  
+  // Декларативные POM методы
+  await publicationPage.openDialog();
+});
 ```
 
+#### Стандартный паттерн аутентификации:
+`fastAuthentication(page, options)` — унифицированный helper для всех E2E тестов вместо множественных auth систем.
+
 #### Миграция с legacy UI helpers:
-- ❌ **Устарело:** `ui.header.createNewChat()` — сложная система ui-helpers
-- ✅ **Новое:** `authPage.registerUser()` — простые Page Objects
+- ❌ **Устарело:** `createUseCaseTest()` — сложная инициализация
+- ✅ **Новое:** `test.beforeEach()` + `fastAuthentication()` — гибкий Playwright pattern
 - ❌ **Устарело:** `page.getByRole('button')` — медленные селекторы
-- ✅ **Новое:** `fastLocator('submit-button')` — быстрые fail-fast локаторы
+- ✅ **Новое:** `page.locator('[data-testid="..."]')` — быстрые data-testid селекторы
+- ❌ **Устарело:** Graceful degradation + try-catch обертки
+- ✅ **Новое:** Real assertions + строгие expect() проверки
 
 ---
 

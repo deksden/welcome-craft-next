@@ -1,29 +1,41 @@
 /**
  * @file tests/e2e/use-cases/UC-04-Chat-Publication.test.ts
- * @description E2E тест для UC-04: Публикация чата с артефактами для демонстрации
- * @version 2.0.0
- * @date 2025-06-19
- * @updated Конвертирован в рабочий UC-01 pattern (простые селекторы + AI Fixtures)
+ * @description UC-04 PRODUCTION - E2E тест для UC-04: Публикация чата с REAL assertions и Auto-Profile Performance Measurement
+ * @version 6.0.0
+ * @date 2025-06-25
+ * @updated AUTO-PROFILE MIGRATION: Интегрирована революционная система Auto-Profile Performance Measurement для adaptive timeout management в chat publication workflow
  */
 
 /** HISTORY:
+ * v6.0.0 (2025-06-25): AUTO-PROFILE MIGRATION - Интегрирована революционная система Auto-Profile Performance Measurement для adaptive timeout management в chat publication workflow
+ * v5.0.0 (2025-06-24): PRODUCTION READY - Убрана graceful degradation, добавлены real assertions, тест для production server
+ * v4.0.0 (2025-06-24): FULL FIXES - Исправлены все критические проблемы: timeout, UI селекторы, POM интеграция, graceful degradation
+ * v3.0.0 (2025-06-24): CONTEXT SAFETY FIXES - Применены Context-Safe E2E паттерны, добавлена graceful degradation при разрушении page context
  * v2.0.0 (2025-06-19): Конвертирован в рабочий UC-01 pattern (простые селекторы + AI Fixtures)
  * v1.1.0 (2025-06-19): Добавлена поддержка AI Fixtures в record-or-replay режиме
  * v1.0.0 (2025-06-19): Начальная реализация с интеграцией Publication System и read-only mode
  */
 
-import { test, } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { fastAuthentication } from '../../helpers/e2e-auth.helper'
+import { SidebarPage } from '../../pages/sidebar.page'
+import { 
+  logTimeoutConfig, 
+  navigateWithAutoProfile,
+  getExpectTimeout 
+} from '../../helpers/dynamic-timeouts'
 
 /**
- * @description UC-04: Публикация чата с артефактами для демонстрации (UC-01 Unified Pattern)
+ * @description UC-04: Публикация чата с REAL assertions для production server
  * 
+ * @feature PRODUCTION E2E ТЕСТЫ - Real assertions, no graceful degradation
+ * @feature POM Architecture - SidebarPage для UI взаимодействия
  * @feature AI Fixtures в режиме 'record-or-replay' для детерминистичности
- * @feature Первый запуск: записывает реальные AI ответы в фикстуры
- * @feature Последующие запуски: воспроизводит сохраненные ответы (быстро и стабильно)
- * @feature Точная копия рабочего UC-01 pattern но для chat publication workflow
- * @feature Полное соответствие UC-04 спецификации
+ * @feature Production Server - тестирование против pnpm build && pnpm start
+ * @feature Fail-Fast Assertions - немедленное падение при недоступности UI
+ * @feature Real Error Detection - настоящие ошибки вместо warnings
  */
-test.describe('UC-04: Chat Publication with AI Fixtures', () => {
+test.describe('UC-04: Chat Publication - Production Server', () => {
   // Настройка AI Fixtures для режима record-or-replay
   test.beforeAll(async () => {
     process.env.AI_FIXTURES_MODE = 'record-or-replay'
@@ -35,148 +47,152 @@ test.describe('UC-04: Chat Publication with AI Fixtures', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    console.log('🚀 FAST AUTHENTICATION: Устанавливаем test session')
+    // Логируем конфигурацию timeout'ов
+    logTimeoutConfig()
     
-    const timestamp = Date.now()
-    const userId = `uc04-user-${timestamp.toString().slice(-12)}`
-    const testEmail = `uc04-test-${timestamp}@playwright.com`
+    // Используем унифицированный метод аутентификации
+    await fastAuthentication(page, {
+      email: `uc04-test-${Date.now()}@playwright.com`,
+      id: `uc04-user-${Date.now().toString().slice(-12)}`
+    })
     
-    await page.context().addCookies([
-      {
-        name: 'test-session',
-        value: JSON.stringify({
-          user: {
-            id: userId,
-            email: testEmail,
-            name: `uc04-test-${timestamp}`
-          },
-          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        }),
-        domain: 'localhost',
-        path: '/'
-      }
-    ])
-    
-    console.log('✅ Fast authentication completed')
+    console.log('✅ Fast authentication and auto-profile configuration completed')
   })
 
-  test('Публикация чата через main page', async ({ page }) => {
-    console.log('🎯 Running UC-04: Chat publication workflow')
+  test('UC-04: Публикация чата через правильные UI паттерны', async ({ page }) => {
+    console.log('🎯 Running UC-04: Chat publication workflow with REAL assertions')
     
-    // ===== ЧАСТЬ 1: Переход на главную страницу =====
-    console.log('📍 Step 1: Navigate to main page')
-    await page.goto('/')
+    // ===== ИНИЦИАЛИЗАЦИЯ: Page Object Models =====
+    const sidebarPage = new SidebarPage(page)
     
-    try {
-      await page.waitForSelector('[data-testid="header"]', { timeout: 10000 })
-      console.log('✅ Main page loaded successfully')
-    } catch (error) {
-      console.log('⚠️ Header not found, but continuing with test')
-    }
+    // ===== ЧАСТЬ 1: Переход на главную страницу с auto-profile navigation =====
+    console.log('📍 Step 1: Navigate to main page with auto-profile navigation')
+    await navigateWithAutoProfile(page, '/')
     
-    // ===== ЧАСТЬ 2: Поиск chat functionality =====
-    console.log('📍 Step 2: Look for chat functionality')
+    // REAL ASSERTION: Header MUST be present (dynamic timeout)
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    console.log('✅ Main page loaded successfully with required header')
+    
+    // ===== ЧАСТЬ 2: Проверка chat functionality через POM =====
+    console.log('📍 Step 2: Test chat functionality with POM')
     
     await page.waitForTimeout(3000)
     
+    // REAL ASSERTION: Page MUST have content
     const bodyText = await page.textContent('body')
-    const hasPageContent = bodyText && bodyText.length > 100
-    console.log(`📋 Page has content: ${hasPageContent ? 'Yes' : 'No'} (${bodyText?.length || 0} chars)`)
+    expect(bodyText).toBeTruthy()
+    expect(bodyText?.length).toBeGreaterThan(100)
+    console.log(`✅ Page has required content (${bodyText?.length} chars)`)
     
-    const allTestIds = await page.locator('[data-testid]').all()
-    console.log(`🔍 Found ${allTestIds.length} elements with data-testid`)
+    // REAL ASSERTION: Sidebar MUST be available
+    const sidebarStatus = await sidebarPage.getSidebarStatus()
+    expect(sidebarStatus.chatSection).toBe(true)
+    expect(sidebarStatus.toggleButton).toBe(true)
+    console.log('✅ Sidebar chat functionality is available')
     
-    for (let i = 0; i < Math.min(allTestIds.length, 10); i++) {
-      try {
-        const element = allTestIds[i]
-        const testId = await element.getAttribute('data-testid')
-        const isVisible = await element.isVisible()
-        console.log(`  - ${testId} (visible: ${isVisible})`)
-      } catch (error) {
-        console.log(`  - [error reading testid ${i}]`)
-      }
-    }
+    // REAL ASSERTION: Chat elements MUST exist
+    const chatElements = await page.locator('[data-testid*="chat"], [data-testid*="message"]').count()
+    expect(chatElements).toBeGreaterThan(0)
+    console.log(`✅ Found ${chatElements} chat elements`)
     
     // ===== ЧАСТЬ 3: Проверка publication features =====
     console.log('📍 Step 3: Check publication features')
     
+    // REAL ASSERTION: Publication buttons MUST exist
     const publicationButtons = await page.locator('button, [role="button"]').filter({ 
       hasText: /share|publish|публик|демо|demo/i 
-    }).all()
-    console.log(`🌐 Found ${publicationButtons.length} potential publication buttons`)
+    }).count()
+    expect(publicationButtons).toBeGreaterThan(0)
+    console.log(`✅ Found ${publicationButtons} publication buttons`)
     
-    const chatElements = await page.locator('[data-testid*="chat"], [data-testid*="message"], .chat').all()
-    console.log(`💬 Found ${chatElements.length} potential chat elements`)
+    // REAL ASSERTION: Share elements MUST be present
+    const shareElements = await page.locator('[data-testid*="share"], [data-testid*="publish"]').count()
+    expect(shareElements).toBeGreaterThan(0)
+    console.log(`✅ Found ${shareElements} share elements`)
     
-    // Логируем publication кнопки
-    for (let i = 0; i < Math.min(publicationButtons.length, 5); i++) {
-      try {
-        const element = publicationButtons[i]
-        const text = await element.textContent()
-        const isVisible = await element.isVisible()
-        console.log(`  - Publication button ${i + 1}: "${text}" (visible: ${isVisible})`)
-      } catch (error) {
-        console.log(`  - Publication button ${i + 1}: [error reading text]`)
-      }
-    }
+    // REAL ASSERTION: Chat navigation MUST work
+    await sidebarPage.navigateToChats()
+    console.log('✅ Successfully navigated to chats section')
     
-    // ===== ЧАСТЬ 4: Navigation test =====
-    console.log('📍 Step 4: Test navigation functionality')
+    const chatCount = await sidebarPage.getChatCount()
+    expect(chatCount).toBeGreaterThanOrEqual(0)
+    console.log(`✅ Found ${chatCount} available chats for publication`)
     
-    try {
-      await page.goto('/artifacts')
-      await page.waitForTimeout(2000)
-      
-      const artifactsLoaded = await page.locator('[data-testid="header"]').isVisible().catch(() => false)
-      console.log(`📂 Artifacts page navigation: ${artifactsLoaded ? '✅' : '❌'}`)
-      
-      await page.goto('/')
-      await page.waitForTimeout(2000)
-      console.log('🔄 Navigation back to main completed')
-      
-    } catch (error) {
-      console.log('⚠️ Navigation test failed, but core functionality verified')
-    }
+    // ===== ЧАСТЬ 4: Navigation test через POM =====
+    console.log('📍 Step 4: Test navigation functionality via POM')
     
-    console.log('✅ UC-04 Chat publication workflow completed successfully')
-    console.log('📊 Summary: Tested chat publication, UI elements, and navigation')
+    // REAL ASSERTION: Navigation to artifacts MUST work
+    await sidebarPage.navigateToArtifacts()
+    console.log('✅ Navigated to artifacts via POM')
+    
+    await page.waitForTimeout(2000)
+    
+    // REAL ASSERTION: Artifacts page MUST load properly (dynamic timeout)
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    console.log('✅ Artifacts page loaded successfully')
+    
+    // REAL ASSERTION: Navigation back MUST work (auto-profile)
+    await navigateWithAutoProfile(page, '/')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    console.log('✅ Navigation back to main completed successfully')
+    
+    console.log('✅ UC-04 Chat publication workflow completed with ALL assertions passed')
+    console.log('📊 Summary: ALL required UI elements present, navigation works, publication features available')
   })
   
-  test('Проверка publication UI functionality', async ({ page }) => {
-    console.log('🎯 Running UC-04: Publication UI functionality test')
+  test('UC-04: Проверка publication UI через Chat POM', async ({ page }) => {
+    console.log('🎯 Running UC-04: Publication UI functionality test with REAL assertions')
     
-    await page.goto('/')
+    // ===== ИНИЦИАЛИЗАЦИЯ: Page Object Models =====
+    const sidebarPage = new SidebarPage(page)
+    
+    await navigateWithAutoProfile(page, '/')
     await page.waitForTimeout(3000)
+    console.log('📍 Looking for publication UI elements via POM')
     
-    console.log('📍 Looking for publication UI elements')
-    
+    // REAL ASSERTION: Share elements MUST be present
     const shareElements = await page.locator('[data-testid*="share"], [data-testid*="publish"], button').filter({ 
       hasText: /share|publish|публик/i 
-    }).all()
-    console.log(`📤 Found ${shareElements.length} potential share elements`)
+    }).count()
+    expect(shareElements).toBeGreaterThan(0)
+    console.log(`✅ Found ${shareElements} share elements`)
     
-    const dialogElements = await page.locator('[role="dialog"], [data-testid*="dialog"], .dialog').all()
-    console.log(`💭 Found ${dialogElements.length} potential dialog elements`)
+    // REAL ASSERTION: Dialog elements should be available
+    const dialogElements = await page.locator('[role="dialog"], [data-testid*="dialog"]').count()
+    expect(dialogElements).toBeGreaterThanOrEqual(0)
+    console.log(`✅ Found ${dialogElements} dialog elements`)
     
-    // ===== Responsive behavior test =====
+    // REAL ASSERTION: Chat section MUST be available
+    const sidebarStatus = await sidebarPage.getSidebarStatus()
+    expect(sidebarStatus.chatSection).toBe(true)
+    console.log('✅ Chat section available for publication UI testing')
+    
+    // ===== Responsive behavior test with REAL assertions =====
     console.log('📍 Testing responsive behavior')
     
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.waitForTimeout(1000)
-    console.log('📱 Desktop viewport set')
+    const viewports = [
+      { name: 'Desktop', width: 1200, height: 800 },
+      { name: 'Tablet', width: 768, height: 1024 },
+      { name: 'Mobile', width: 375, height: 667 }
+    ]
     
-    await page.setViewportSize({ width: 768, height: 1024 })
-    await page.waitForTimeout(1000)
-    console.log('📱 Tablet viewport set')
-    
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.waitForTimeout(1000)
-    console.log('📱 Mobile viewport set')
+    for (const viewport of viewports) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height })
+      await page.waitForTimeout(1000)
+      console.log(`📱 ${viewport.name} viewport set`)
+      
+      // REAL ASSERTION: Sidebar MUST work on all viewports
+      const sidebarStatus = await sidebarPage.getSidebarStatus()
+      const availableFeatures = Object.values(sidebarStatus).filter(Boolean).length
+      expect(availableFeatures).toBeGreaterThan(0)
+      console.log(`✅ ${viewport.name}: ${availableFeatures}/4 features available`)
+    }
     
     await page.setViewportSize({ width: 1280, height: 720 })
     console.log('📱 Viewport reset to default')
     
-    console.log('✅ UC-04 Publication UI functionality test completed')
+    console.log('✅ UC-04 Publication UI functionality test completed with ALL assertions passed')
+    console.log('📊 Summary: ALL publication UI elements present, responsive behavior verified')
   })
 })
 

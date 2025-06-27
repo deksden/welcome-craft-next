@@ -12,7 +12,6 @@
  */
 
 import type { Page, Locator } from '@playwright/test';
-import { getAIResponse, type MockAIResponse } from './ai-mock';
 import { getTestHeaders, } from './test-config';
 
 export class TestUtils {
@@ -409,108 +408,19 @@ export class TestUtils {
   }
 
   /**
-   * Настройка перехвата AI запросов с моками
+   * @deprecated Legacy AI mocking - use AI Fixtures system instead
+   * AI Fixtures are automatically enabled by environment mode
    */
   async setupAIMocks() {
-    console.log('🤖 Setting up AI mocks...');
-    
-    await this.page.route('**/api/chat', async (route) => {
-      const request = route.request();
-      const postData = request.postData();
-      
-      if (!postData) {
-        await route.continue();
-        return;
-      }
-      
-      try {
-        const body = JSON.parse(postData);
-        const messages = body.messages || [];
-        const lastUserMessage = messages.filter((msg: any) => msg.role === 'user').pop();
-        
-        if (!lastUserMessage) {
-          await route.continue();
-          return;
-        }
-        
-        console.log('🔍 AI Mock intercepting message:', lastUserMessage.content);
-        const mockResponse = getAIResponse(lastUserMessage.content);
-        console.log('🎭 AI Mock responding with:', mockResponse.content);
-        
-        // Создаем streaming response как реальный API
-        const mockStreamResponse = this.createMockStreamResponseV4(mockResponse);
-        
-        await route.fulfill({
-          status: 200,
-          headers: {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'no-cache, no-transform',
-            'Connection': 'keep-alive',
-          },
-          body: mockStreamResponse
-        });
-      } catch (error) {
-        console.log('❌ AI Mock error:', error);
-        await route.continue();
-      }
-    });
-    
-    console.log('✅ AI mocks setup complete');
+    console.log('⚠️ Legacy setupAIMocks() - AI Fixtures system handles this automatically');
   }
 
-  /**
-   * Создает mock streaming response в формате AI SDK
-   */
-  private createMockStreamResponse(mockResponse: MockAIResponse): string {
-    const response = {
-      id: `mock-${Date.now()}`,
-      content: mockResponse.content,
-      role: 'assistant'
-    };
-    
-    // Имитируем streaming format
-    const chunks = [
-      `0:"${JSON.stringify(response).replace(/"/g, '\\"')}"\n`,
-      'e:\n'
-    ];
-    
-    return chunks.join('');
-  }
 
   /**
-   * Создает mock streaming response в формате AI SDK v4
-   */
-  private createMockStreamResponseV4(mockResponse: MockAIResponse): string {
-    const messageId = `msg-${Date.now()}`;
-    
-    // Формат AI SDK v4 streaming response
-    const chunks = [
-      // Начало сообщения ассистента
-      `0:{"type":"message","id":"${messageId}","role":"assistant","content":"","createdAt":"${new Date().toISOString()}"}\n`,
-      
-      // Текстовые дельты для контента
-      ...mockResponse.content.split(' ').map((word, index) => 
-        `1:{"type":"text-delta","textDelta":"${index > 0 ? ' ' : ''}${word}"}\n`
-      ),
-      
-      // Если есть артефакт, добавляем tool call и result
-      ...(mockResponse.hasArtifact ? [
-        `2:{"type":"tool-call","id":"call-${Date.now()}","name":"artifactCreate","args":{"type":"${mockResponse.artifactType || 'text'}","content":"${mockResponse.artifactContent || mockResponse.content}","title":"Test Artifact"}}\n`,
-        `3:{"type":"tool-result","id":"call-${Date.now()}","result":{"success":true,"artifactId":"artifact-${Date.now()}","artifactType":"${mockResponse.artifactType || 'text'}"}}\n`
-      ] : []),
-      
-      // Завершение
-      'e:\n'
-    ];
-    
-    return chunks.join('');
-  }
-
-  /**
-   * Отключение перехвата AI запросов
+   * @deprecated Legacy AI mocking - AI Fixtures system handles this automatically
    */
   async disableAIMocks() {
-    await this.page.unroute('**/api/chat');
+    console.log('⚠️ Legacy disableAIMocks() - AI Fixtures system handles this automatically');
   }
 
   /**

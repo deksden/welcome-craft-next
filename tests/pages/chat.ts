@@ -7,7 +7,7 @@ export class ChatPage {
   constructor(private page: Page) {}
 
   public get sendButton() {
-    return this.page.getByTestId('send-button'); // ❌ ИЗВЕСТНО: Должно быть 'chat-input-send-button', но факт 'send-button'
+    return this.page.getByTestId('chat-input-send-button'); // ✅ ИСПРАВЛЕНО: Использует правильный selector из ui-testing.md
   }
 
   public get stopButton() {
@@ -15,7 +15,7 @@ export class ChatPage {
   }
 
   public get chatInput() {
-    return this.page.getByTestId('chat-input'); // ❌ ИЗВЕСТНО: Должно быть 'chat-input-textarea', но факт 'chat-input'
+    return this.page.getByTestId('chat-input-textarea'); // ✅ ИСПРАВЛЕНО: Использует правильный selector из ui-testing.md
   }
 
   public get scrollContainer() {

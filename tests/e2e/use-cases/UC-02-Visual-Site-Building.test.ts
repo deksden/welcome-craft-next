@@ -1,12 +1,13 @@
 /**
  * @file tests/e2e/use-cases/UC-02-Visual-Site-Building.test.ts
  * @description E2E тест для UC-02 Visual Site Building - полная реализация visual-first подхода с Site Editor
- * @version 3.0.0
- * @date 2025-06-22
- * @updated ПОЛНАЯ РЕАЛИЗАЦИЯ: переход от упрощенных проверок к полному Site Editor workflow согласно UC-02 v2.0 спецификации
+ * @version 4.0.0
+ * @date 2025-06-25
+ * @updated AUTO-PROFILE MIGRATION: Интегрирована революционная система Auto-Profile Performance Measurement для adaptive timeout management в visual site building workflow
  */
 
 /** HISTORY:
+ * v4.0.0 (2025-06-25): AUTO-PROFILE MIGRATION - Интегрирована революционная система Auto-Profile Performance Measurement для adaptive timeout management в visual site building workflow
  * v3.0.0 (2025-06-22): ПОЛНАЯ РЕАЛИЗАЦИЯ - реализован полный visual-first Site Editor workflow с SiteEditorPage POM и UC-10 интеграцией (Фаза 1.2 выполнена)
  * v2.1.0 (2025-06-22): Упрощена для стабильности - переход на прямую аутентификацию и проверку UI элементов
  * v2.0.0 (2025-06-22): Полная переработка для UC-10 - переход от AI-first к visual-first подходу с Site Editor и новыми типами артефактов
@@ -14,7 +15,12 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { SiteEditorPage } from '../../helpers/site-editor-page'
+import { SiteEditorPage } from '../../pages/site-editor.page'
+import { fastAuthentication } from '../../helpers/e2e-auth.helper'
+import { 
+  logTimeoutConfig, 
+  navigateWithAutoProfile,
+} from '../../helpers/dynamic-timeouts'
 
 /**
  * @description UC-02: Visual Site Building - полная реализация согласно спецификации UC-02 v2.0
@@ -29,30 +35,16 @@ import { SiteEditorPage } from '../../helpers/site-editor-page'
  */
 test.describe('UC-02: Visual Site Building (Complete Implementation)', () => {
   test.beforeEach(async ({ page }) => {
-    console.log('🚀 FAST AUTHENTICATION: Устанавливаем test session для UC-02')
+    // Логируем конфигурацию timeout'ов
+    logTimeoutConfig()
     
-    // Быстрая установка test session cookie (как в UC-01)
-    const timestamp = Date.now()
-    const userId = `uc02-user-${timestamp.toString().slice(-12)}`
-    const testEmail = `uc02-test-${timestamp}@playwright.com`
+    // Используем унифицированный метод аутентификации
+    await fastAuthentication(page, {
+      email: `uc02-test-${Date.now()}@playwright.com`,
+      id: `uc02-user-${Date.now().toString().slice(-12)}`
+    })
     
-    await page.context().addCookies([
-      {
-        name: 'test-session',
-        value: JSON.stringify({
-          user: {
-            id: userId,
-            email: testEmail,
-            name: `uc02-test-${timestamp}`
-          },
-          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        }),
-        domain: 'localhost',
-        path: '/'
-      }
-    ])
-    
-    console.log('✅ Fast authentication completed')
+    console.log('✅ Fast authentication completed via unified helper')
   })
 
   test('Полная реализация UC-02: Visual Site Building workflow', async ({ page }) => {
@@ -65,7 +57,7 @@ test.describe('UC-02: Visual Site Building (Complete Implementation)', () => {
     // ===== СЦЕНАРИЙ 1: Создание site артефакта =====
     console.log('📍 Step 2: Create or find site artifact for editing')
     
-    await page.goto('/artifacts')
+    await navigateWithAutoProfile(page, '/artifacts')
     await page.waitForTimeout(3000)
     
     // Попробуем найти существующий site артефакт или создать новый
@@ -299,7 +291,7 @@ test.describe('UC-02: Visual Site Building (Complete Implementation)', () => {
       })
     }
     
-    await page.goto('/artifacts')
+    await navigateWithAutoProfile(page, '/artifacts')
     
     try {
       // Создаем тестовые артефакты
@@ -398,7 +390,7 @@ test.describe('UC-02: Visual Site Building (Complete Implementation)', () => {
   test('Responsive behavior и UI stability', async ({ page }) => {
     console.log('🎯 Running UC-02: Responsive behavior and UI stability test')
     
-    await page.goto('/artifacts')
+    await navigateWithAutoProfile(page, '/artifacts')
     await page.waitForTimeout(2000)
     
     // ===== RESPONSIVE TESTING =====

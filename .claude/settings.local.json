@@ -86,7 +86,25 @@
       "Bash(/dev/null)",
       "Bash(pnpm playwright test:*)",
       "Bash(wait)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(-quit)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm test:e2e tests/e2e/components/artifact-editor-behavior.test.ts)",
+      "Bash(pnpm start:*)",
+      "Bash(export PLAYWRIGHT_USE_PRODUCTION=true)",
+      "Bash(export NODE_ENV=production)",
+      "Bash(pnpm kill-port:*)",
+      "Bash(./scripts/test-e2e-production.sh:*)",
+      "Bash(PORT=3001 pnpm start)",
+      "Bash(git add:*)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm playwright test tests/e2e/components/artifact-editor-behavior.test.ts -g \"Scenario 1\" --timeout 30000)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm playwright test tests/e2e/components/artifact-editor-behavior.test.ts -g \"Scenario 1\" --timeout 60000)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm playwright test tests/e2e/components/artifact-editor-behavior.test.ts --timeout 60000)",
+      "Bash(PLAYWRIGHT_PORT=3003 pnpm playwright test --grep \"Scenario 1: Artifact loading and initialization behavior\")",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm test:e2e tests/e2e/components/artifact-editor-behavior.test.ts --reporter=line --timeout=120000)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm test:e2e tests/e2e/components/artifact-editor-behavior.test.ts -g \"Scenario 2\")",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm test:e2e tests/e2e/components/artifact-editor-behavior.test.ts -g \"Scenario 2|Scenario 3|Integration\" --reporter=line --timeout=60000)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm exec playwright test tests/e2e/components/artifact-editor-behavior.test.ts --verbose)",
+      "Bash(PLAYWRIGHT_USE_PRODUCTION=true pnpm exec playwright test tests/e2e/components/artifact-editor-behavior.test.ts)"
     ],
     "deny": []
   }

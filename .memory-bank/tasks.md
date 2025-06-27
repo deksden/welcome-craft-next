@@ -46,6 +46,37 @@
 
 ## ✅ Done (Завершенные задачи)
 
+- ✅ **#TASK-005: Конвертация UC-01 в Production-Ready тест** `Priority: High` `Status: Completed` `Type: Test` (2025-06-24)
+  - **Description:** Конвертировать UC-01-Site-Publication.test.ts с graceful degradation паттернов на real assertions для production server
+  - **Result:** ✅ COMPLETED - UC-01 полностью конвертирован для production testing
+  - **Achievement:** 
+    - ✅ Заменены все try-catch graceful degradation блоки на expect() assertions
+    - ✅ Убраны fallback логики, которые позволяли тестам проходить при недоступности UI
+    - ✅ Обновлен до v10.0.0 с PRODUCTION READY статусом
+    - ✅ Все ложно-позитивные результаты устранены - тест падает при реальных проблемах
+    - ✅ Интеграция с production server infrastructure
+  - **Files Changed:** 
+    - `UC-01-Site-Publication.test.ts` v10.0.0 - real assertions, no graceful degradation
+    - Удален fallback UI verification код
+    - Добавлены строгие expect() проверки для всех критических элементов
+
+- ✅ **#TASK-004: E2E Production Server Migration** `Priority: High` `Status: Completed` `Type: Test` (2025-06-24)
+  - **Description:** Переработать UC-04, UC-06, UC-07 тесты для запуска через production сервер (next build && next start) вместо dev server
+  - **Result:** ✅ COMPLETED - Все тесты переработаны для production server с real assertions вместо graceful degradation
+  - **Achievement:** 
+    - ✅ Playwright конфигурация поддерживает production mode через `PLAYWRIGHT_USE_PRODUCTION=true`
+    - ✅ Graceful degradation заменена на fail-fast real assertions с `expect()`
+    - ✅ UC-04, UC-06, UC-07 полностью переработаны для production testing
+    - ✅ Добавлен npm script `test:e2e:production` для удобного запуска
+    - ✅ Создан production test script `/scripts/test-e2e-production.sh`
+  - **Files Changed:** 
+    - `playwright.config.ts` - добавлена production server поддержка
+    - `package.json` - добавлен script `test:e2e:production`
+    - `scripts/test-e2e-production.sh` - production test runner
+    - `UC-04-Chat-Publication.test.ts` v5.0.0 - real assertions, no graceful degradation
+    - `UC-06-Content-Management.test.ts` v6.0.0 - real assertions, no graceful degradation
+    - `UC-07-AI-Suggestions.test.ts` v5.0.0 - real assertions, no graceful degradation
+
 **🎉 ВСЕ ЗАДАЧИ АРХИВИРОВАНЫ (2025-06-21)**
 
 - ✅ **42+ задач полностью завершены**

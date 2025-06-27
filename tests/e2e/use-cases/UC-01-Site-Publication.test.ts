@@ -1,12 +1,16 @@
 /**
  * @file tests/e2e/use-cases/UC-01-Site-Publication.test.ts
- * @description E2E тест для UC-01: Публикация сайта с углубленной UC-10 валидацией контента
- * @version 7.0.0
- * @date 2025-06-22
- * @updated ПОЛНЫЙ ЖИЗНЕННЫЙ ЦИКЛ: добавлена проверка отзыва публикации с блокировкой анонимного доступа согласно UC-01 спецификации
+ * @description UC-01 PRODUCTION - E2E тест для UC-01: Публикация сайта с REAL assertions для production server
+ * @version 11.0.0
+ * @date 2025-06-25
+ * @updated AUTO-PROFILE MIGRATION: Интегрирована революционная система Auto-Profile Performance Measurement для adaptive timeout management
  */
 
 /** HISTORY:
+ * v11.0.0 (2025-06-25): AUTO-PROFILE MIGRATION - Интегрирована революционная система Auto-Profile Performance Measurement для adaptive timeout management
+ * v10.0.0 (2025-06-24): FINAL PRODUCTION READY - Удалена ВСЯ graceful degradation логика, строгие expect() assertions, ликвидированы ложно-позитивные результаты
+ * v9.0.0 (2025-06-24): PRODUCTION READY - Убрана graceful degradation, добавлены real assertions, тест для production server
+ * v8.0.0 (2025-06-23): FAIL-FAST ARCHITECTURE - применены короткие timeout (3s для navigation, 2s для elements) и быстрая диагностика
  * v7.0.0 (2025-06-22): ПОЛНЫЙ ЖИЗНЕННЫЙ ЦИКЛ - добавлена секция проверки отзыва публикации с блокировкой анонимного доступа (Фаза 1.1 выполнена)
  * v6.0.0 (2025-06-22): UC-10 интеграция - углубленная валидация специфического контента UC-10 артефактов на публичных страницах
  * v5.1.0 (2025-06-19): КОНТЕНТ ВЕРИФИКАЦИЯ - проверка что опубликованные сайты содержат реальный контент из артефактов
@@ -17,22 +21,29 @@
  * v1.0.0 (2025-06-18): Начальная реализация с Use Cases + Worlds интеграцией
  */
 
-import { test, } from '@playwright/test'
-import { PublicationPage, PublicAccessHelpers } from '../../helpers/publication-page'
+import { test, expect } from '@playwright/test'
+import { PublicationPage, PublicAccessHelpers } from '../../pages/publication.page'
+import { fastAuthentication } from '../../helpers/e2e-auth.helper'
+import { 
+  logTimeoutConfig, 
+  navigateWithAutoProfile,
+  getExpectTimeout 
+} from '../../helpers/dynamic-timeouts'
 
 /**
- * @description UC-01: Публикация сгенерированного сайта (Доктрина WelcomeCraft v4.0)
+ * @description UC-01: Публикация сгенерированного сайта с REAL assertions для production server
  * 
- * @feature ЖЕЛЕЗОБЕТОННЫЙ E2E ТЕСТ согласно Доктрине WelcomeCraft
+ * @feature FINAL PRODUCTION E2E ТЕСТЫ - Строгие real assertions, ПОЛНОСТЬЮ убрана graceful degradation
+ * @feature NO FALSE POSITIVES - Тест падает при реальных проблемах вместо ложных успехов
  * @feature Полная интеграция PublicationPage и PublicAccessHelpers POM
  * @feature AI Fixtures в режиме 'record-or-replay' для детерминистичности
- * @feature Проверка бизнес-результата: анонимный доступ к опубликованному сайту
- * @feature Graceful degradation при недоступности site артефактов
+ * @feature Production Server - тестирование против pnpm build && pnpm start
+ * @feature Strict Assertions - expect() для всех критических элементов
+ * @feature Real Error Detection - настоящие ошибки вместо warnings
  * @feature TTL управление и кастомные даты через POM API
  * @feature Привязка к спецификации UC-01 из .memory-bank/specs/
- * @feature Детальное логирование каждого шага для отладки в CI
  */
-test.describe('UC-01: Site Publication with AI Fixtures', () => {
+test.describe('UC-01: Site Publication - Production Server', () => {
   // Настройка AI Fixtures для режима record-or-replay
   test.beforeAll(async () => {
     // Устанавливаем режим record-or-replay через переменную окружения
@@ -46,53 +57,19 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    console.log('🚀 FAST AUTHENTICATION: Устанавливаем test session')
+    // Логируем конфигурацию timeout'ов
+    logTimeoutConfig()
     
-    // Быстрая установка test session cookie
-    const timestamp = Date.now()
-    const userId = `uc01-user-${timestamp.toString().slice(-12)}`
-    const testEmail = `uc01-test-${timestamp}@playwright.com`
-    
-    const cookieValue = JSON.stringify({
-      user: {
-        id: userId,
-        email: testEmail,
-        name: `uc01-test-${timestamp}`
-      },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    })
-
-    // КРИТИЧЕСКИ ВАЖНО: Сначала устанавливаем cookies БЕЗ navigation
-    await page.context().addCookies([
-      {
-        name: 'test-session',
-        value: cookieValue,
-        domain: '.localhost',
-        path: '/'
-      },
-      {
-        name: 'test-session-fallback',
-        value: cookieValue,
-        domain: 'localhost',
-        path: '/'
-      },
-      {
-        name: 'test-session',
-        value: cookieValue,
-        domain: 'app.localhost',
-        path: '/'
-      }
-    ])
-    
-    // Устанавливаем test environment header
-    await page.setExtraHTTPHeaders({
-      'X-Test-Environment': 'playwright'
+    // Используем унифицированный метод аутентификации
+    await fastAuthentication(page, {
+      email: `uc01-test-${Date.now()}@playwright.com`,
+      id: `uc01-user-${Date.now().toString().slice(-12)}`
     })
     
-    // ТЕПЕРЬ переходим на страницу артефактов С уже установленными cookies
-    await page.goto('/artifacts')
+    // Переходим на страницу артефактов с auto-profile measurement
+    await navigateWithAutoProfile(page, '/artifacts')
     
-    console.log('✅ Fast authentication completed: cookies → headers → navigation')
+    console.log('✅ Fast authentication and auto-profile navigation completed')
   })
 
   test('Публикация готового сайта через PublicationPage POM', async ({ page }) => {
@@ -103,15 +80,12 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
     const publicationPage = new PublicationPage(page)
     const publicAccessHelpers = new PublicAccessHelpers(page)
     
-    // ===== ЧАСТЬ 1: Проверка загрузки страницы артефактов =====
+    // ===== ЧАСТЬ 1: Проверка загрузки страницы артефактов с REAL assertions =====
     console.log('📍 Step 2: Verify artifacts page loaded (already navigated in beforeEach)')
     
-    try {
-      await page.waitForSelector('[data-testid="header"]', { timeout: 10000 })
-      console.log('✅ Artifacts page loaded successfully')
-    } catch (error) {
-      console.log('⚠️ Header not found, but continuing with test')
-    }
+    // REAL ASSERTION: Header MUST be present (dynamic timeout)
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    console.log('✅ Artifacts page loaded successfully with required header')
     
     // ===== ЧАСТЬ 2: Поиск site артефактов =====
     console.log('📍 Step 3: Look for site artifacts')
@@ -123,11 +97,11 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
     const hasPageContent = bodyText && bodyText.length > 100
     console.log(`📋 Page has content: ${hasPageContent ? 'Yes' : 'No'} (${bodyText?.length || 0} chars)`)
     
-    // Ищем publication button для site артефактов
-    const publicationButtonExists = await publicationPage.publicationButton.isVisible().catch(() => false)
-    console.log(`🌐 Publication button found: ${publicationButtonExists ? '✅' : '❌'}`)
+    // REAL ASSERTION: Publication button MUST exist for site artifacts
+    await expect(publicationPage.publicationButton).toBeVisible({ timeout: 10000 })
+    console.log('🌐 Publication button found: ✅')
     
-    if (publicationButtonExists) {
+    // Обязательное выполнение полного workflow
       console.log('🚀 Testing Publication Dialog Workflow')
       
       // ===== ЧАСТЬ 3: Открытие диалога публикации =====
@@ -206,7 +180,7 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
         
         // Возвращаемся на страницу /artifacts под аутентифицированным пользователем
         console.log('🔄 Returning to artifacts page as authenticated user for revocation test')
-        await page.goto('/artifacts')
+        await navigateWithAutoProfile(page, '/artifacts')
         await page.waitForTimeout(2000)
         
         // Повторно ищем и открываем диалог публикации для того же сайта
@@ -249,46 +223,31 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
         
         console.log('✅ FULL PUBLICATION LIFECYCLE tested: Publish → Verify → Revoke → Block')
         
+      // В случае любых ошибок в публикации - тест должен упасть
       } catch (error) {
-        console.log(`⚠️ Publication workflow failed: ${error}`)
-        console.log('📊 Graceful degradation: Testing basic UI functionality instead')
+        console.log(`❌ CRITICAL FAILURE: Publication workflow failed: ${error}`)
+        throw new Error(`UC-01 Publication workflow failed: ${error}`)
       }
-    } else {
-      console.log('⚠️ No publication button found - testing basic UI functionality')
-    }
     
-    // ===== ЧАСТЬ 8: Fallback UI verification =====
-    console.log('📍 Step 9: UI functionality verification')
+    // ===== ЧАСТЬ 8: Final UI verification с REAL assertions =====
+    console.log('📍 Step 9: Final UI verification with REAL assertions')
     
-    const hasHeader = await page.locator('[data-testid="header"]').isVisible().catch(() => false)
-    const hasSidebar = await page.locator('[data-testid*="sidebar"]').isVisible().catch(() => false)
-    const hasMainContent = await page.locator('main, [role="main"], .main-content').isVisible().catch(() => false)
+    // REAL ASSERTION: All critical UI components MUST be present
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 10000 })
+    console.log('✅ Header component verified')
     
-    console.log(`🎯 UI Components Status:`)
-    console.log(`  - Header: ${hasHeader ? '✅' : '❌'}`)
-    console.log(`  - Sidebar: ${hasSidebar ? '✅' : '❌'}`)
-    console.log(`  - Main Content: ${hasMainContent ? '✅' : '❌'}`)
+    // REAL ASSERTION: Navigation MUST work
+    await navigateWithAutoProfile(page, '/')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 15000 })
+    console.log('✅ Home navigation verified')
     
-    // ===== ЧАСТЬ 9: Navigation test =====
-    console.log('📍 Step 10: Test navigation functionality')
+    // REAL ASSERTION: Return navigation MUST work
+    await navigateWithAutoProfile(page, '/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 15000 })
+    console.log('✅ Navigation back to artifacts verified')
     
-    try {
-      await page.goto('/')
-      await page.waitForTimeout(2000)
-      
-      const homeLoaded = await page.locator('[data-testid="header"]').isVisible().catch(() => false)
-      console.log(`🏠 Home page navigation: ${homeLoaded ? '✅' : '❌'}`)
-      
-      await page.goto('/artifacts')
-      await page.waitForTimeout(2000)
-      console.log('🔄 Navigation back to artifacts completed')
-      
-    } catch (error) {
-      console.log('⚠️ Navigation test failed, but core functionality verified')
-    }
-    
-    console.log('✅ UC-01 Site Publication workflow with POM completed successfully')
-    console.log('📊 Summary: Tested POM-based publication workflow, UI elements, and navigation')
+    console.log('✅ UC-01 Site Publication workflow with STRICT assertions completed successfully')
+    console.log('📊 Summary: ALL functionality verified with REAL assertions - NO false positives')
   })
   
   test('Проверка Publication System через POM методы', async ({ page }) => {
@@ -298,7 +257,7 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
     const publicationPage = new PublicationPage(page)
     const publicAccessHelpers = new PublicAccessHelpers(page)
     
-    await page.goto('/artifacts')
+    await navigateWithAutoProfile(page, '/artifacts')
     await page.waitForTimeout(3000)
     
     // ===== ЧАСТЬ 1: Проверка Publication Button API =====
@@ -447,7 +406,7 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
     // ===== ЧАСТЬ 2: Публикация сайта =====
     console.log('📍 Step 3: Publish site with UC-10 content')
     
-    await page.goto('/artifacts')
+    await navigateWithAutoProfile(page, '/artifacts')
     await page.waitForTimeout(3000)
     
     // Ищем наш test сайт
@@ -613,7 +572,8 @@ test.describe('UC-01: Site Publication with AI Fixtures', () => {
       }
       
     } catch (error) {
-      console.log('⚠️ Publication workflow tested with graceful degradation')
+      console.log(`❌ CRITICAL FAILURE: UC-10 content validation failed: ${error}`)
+      throw new Error(`UC-10 content validation failed: ${error}`)
     }
     
     console.log('✅ UC-01 UC-10 enhanced content validation completed')
