@@ -16,9 +16,9 @@ import { worldMeta } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     worldId: string
-  }
+  }>
 }
 
 /**
@@ -30,7 +30,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { worldId } = params
+    const { worldId } = await params
 
     const [world] = await db
       .select()
@@ -69,7 +69,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
   } catch (error) {
-    console.error(`❌ PHOENIX API: Error retrieving world '${params.worldId}':`, error)
+    const { worldId } = await params
+    console.error(`❌ PHOENIX API: Error retrieving world '${worldId}':`, error)
     return NextResponse.json(
       { 
         success: false, 
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { worldId } = params
+    const { worldId } = await params
     const body = await request.json()
 
     // Проверяем что мир существует
@@ -146,7 +147,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
 
   } catch (error) {
-    console.error(`❌ PHOENIX API: Error updating world '${params.worldId}':`, error)
+    const { worldId } = await params
+    console.error(`❌ PHOENIX API: Error updating world '${worldId}':`, error)
     return NextResponse.json(
       { 
         success: false, 
@@ -167,7 +169,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { worldId } = params
+    const { worldId } = await params
 
     // Проверяем что мир существует
     const [existingWorld] = await db
@@ -206,7 +208,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
   } catch (error) {
-    console.error(`❌ PHOENIX API: Error deleting world '${params.worldId}':`, error)
+    const { worldId } = await params
+    console.error(`❌ PHOENIX API: Error deleting world '${worldId}':`, error)
     return NextResponse.json(
       { 
         success: false, 
