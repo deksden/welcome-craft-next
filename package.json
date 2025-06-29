@@ -67,7 +67,10 @@
     "phoenix:beta": "pnpm env:beta && pnpm db:beta:up && pnpm db:migrate && echo 'BETA environment ready!'",
     "phoenix:dev": "pnpm phoenix:local && pnpm dev",
     "phoenix:status": "echo 'PHOENIX PROJECT - Environment Status:' && docker ps --filter 'name=welcomecraft' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'",
-    "phoenix:cleanup": "docker-compose -f docker-compose.dev.yml down && docker-compose -f docker-compose.beta.yml down && docker-compose down && echo 'All PHOENIX environments stopped'"
+    "phoenix:cleanup": "docker-compose -f docker-compose.dev.yml down && docker-compose -f docker-compose.beta.yml down && docker-compose down && echo 'All PHOENIX environments stopped'",
+    "phoenix:migrate-worlds": "npx tsx scripts/migrate-worlds-to-db.ts",
+    "phoenix:test-api": "curl -s http://localhost:3000/api/phoenix/worlds | jq",
+    "phoenix:init": "pnpm phoenix:local && pnpm db:migrate && pnpm phoenix:migrate-worlds && echo 'PHOENIX PROJECT fully initialized!'"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
