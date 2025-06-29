@@ -1,0 +1,98 @@
+/**
+ * @file docker-compose.beta.yml
+ * @description BETA staging environment infrastructure - PHOENIX PROJECT
+ * @version 1.0.0
+ * @date 2025-06-29
+ * @updated PHOENIX PROJECT Step 2 - трехуровневая архитектура окружений
+ */
+
+/**
+ * PHOENIX PROJECT - BETA Environment Infrastructure
+ * 
+ * Назначение: Staging окружение максимально приближенное к PROD:
+ * - PostgreSQL база данных на порту 5435
+ * - Redis cache для session management  
+ * - Production-like configuration для реалистичного тестирования
+ * 
+ * Особенности BETA среды:
+ * - APP_STAGE=BETA
+ * - test-session поддержка ВКЛЮЧЕНА (для staging тестирования)
+ * - World isolation поддержка ВКЛЮЧЕНА (для QA)
+ * - Production performance settings
+ * - Отдельные порты для избежания конфликтов с LOCAL/PROD
+ */
+
+version: '3.8'
+
+services:
+  # PostgreSQL для BETA staging
+  postgres_beta:
+    image: postgres:16-alpine
+    container_name: welcomecraft_postgres_beta
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: betauser
+      POSTGRES_PASSWORD: betapassword
+      POSTGRES_DB: welcomecraft_beta
+      # Production-like настройки производительности
+      POSTGRES_SHARED_BUFFERS: 512MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 2GB
+      POSTGRES_MAX_CONNECTIONS: 200
+    ports:
+      - '5435:5432'  # Уникальный порт для BETA среды
+    volumes:
+      # Persistent volume для staging данных
+      - postgres_beta_data:/var/lib/postgresql/data
+      - ./scripts/db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U betauser -d welcomecraft_beta"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - welcomecraft_beta
+    # Resource limits для realistic production testing
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # Redis для BETA session management и caching
+  redis_beta:
+    image: redis:7-alpine
+    container_name: welcomecraft_redis_beta
+    restart: unless-stopped
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - '6381:6379'  # Уникальный порт для BETA среды
+    volumes:
+      - redis_beta_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - welcomecraft_beta
+    # Resource limits для realistic production testing
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+volumes:
+  # Persistent volumes для BETA staging данных
+  postgres_beta_data:
+    driver: local
+  redis_beta_data:
+    driver: local
+
+networks:
+  welcomecraft_beta:
+    driver: bridge
+    name: welcomecraft_beta_network
+
+# END OF: docker-compose.beta.yml
