@@ -95,8 +95,8 @@ describe('File Import System', () => {
       // Assert
       expect(result.artifactKind).toBe('text')
       expect(result.suggestedTitle).toBe('sample')
-      expect(result.content).toContain('# Sample Markdown')
-      expect(result.content).toContain('This is a **test** markdown file')
+      expect(result.content).toContain('# Sample Markdown File')
+      expect(result.content).toContain('This is a test markdown file for UC-11')
       expect(result.metadata.originalFormat).toBe('md')
       expect(result.metadata.encoding).toBe('utf-8')
       expect(result.metadata.wordCount).toBeGreaterThan(0)
@@ -116,8 +116,8 @@ describe('File Import System', () => {
       // Assert
       expect(result.artifactKind).toBe('sheet')
       expect(result.suggestedTitle).toBe('sample')
-      expect(result.content).toContain('Name,Position,Department')
-      expect(result.content).toContain('John Doe,Software Engineer,Engineering')
+      expect(result.content).toContain('Name,Age,City')
+      expect(result.content).toContain('John Doe,30,New York')
       expect(result.metadata.originalFormat).toBe('csv')
       expect(result.metadata.encoding).toBe('utf-8')
       expect(result.importInfo.originalFilename).toBe('sample.csv')
@@ -135,8 +135,8 @@ describe('File Import System', () => {
       // Assert
       expect(result.artifactKind).toBe('text')
       expect(result.suggestedTitle).toBe('sample')
-      expect(result.content).toContain('Hello from plain text file!')
-      expect(result.content).toContain('multiple lines')
+      expect(result.content).toContain('This is a sample text file for testing UC-11')
+      expect(result.content).toContain('It contains basic text content')
       expect(result.metadata.originalFormat).toBe('txt')
       expect(result.metadata.wordCount).toBeGreaterThan(10)
       expect(result.importInfo.originalFilename).toBe('sample.txt')

@@ -1,12 +1,13 @@
 /**
  * @file components/artifact-grid-client-wrapper.tsx
- * @description Клиентский компонент-обертка для сетки артефактов.
- * @version 2.2.0
- * @date 2025-06-20
- * @updated Added type filtering UI with Select component for filtering artifacts by kind (BUG-022).
+ * @description Клиентский компонент-обертка для сетки артефактов с элегантным обновлением.
+ * @version 2.3.0
+ * @date 2025-06-27
+ * @updated Интегрирован useElegantArtifactRefresh для элегантного обновления списков без page.reload()
  */
 
 /** HISTORY:
+ * v2.3.0 (2025-06-27): Интегрирован useElegantArtifactRefresh hook для элегантного обновления списков артефактов без page.reload() - решение BUG-034
  * v2.2.0 (2025-06-20): Added type filtering UI with Select component - user can filter by text, code, sheet, site, image (BUG-022).
  * v2.1.1 (2025-06-11): Fixed exhaustive-deps linting rule by wrapping handleCardClick in useCallback.
  * v2.1.0 (2025-06-10): Импорт ArtifactKind теперь из общего файла lib/types.
@@ -25,6 +26,7 @@ import { useDebounceCallback } from 'usehooks-ts'
 import { toast } from '@/components/toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useArtifact } from '@/hooks/use-artifact'
+import { useElegantArtifactRefresh } from '@/hooks/use-elegant-artifact-refresh'
 import { fetcher } from '@/lib/utils'
 import type { ArtifactKind } from '@/lib/types'
 
@@ -42,6 +44,7 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
   const searchParams = useSearchParams()
 
   const { setArtifact } = useArtifact()
+  const { refreshArtifacts } = useElegantArtifactRefresh()
 
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1)
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
@@ -84,6 +87,35 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
     },
   )
 
+  /**
+   * @description Элегантное обновление списка артефактов через SWR mutate + global refresh
+   * @feature Заменяет грубый page.reload() на элегантное обновление
+   */
+  const handleElegantRefresh = useCallback(async () => {
+    console.log('🔄 Triggering elegant artifact refresh...')
+    
+    try {
+      // Метод 1: Обновляем текущий SWR endpoint
+      await mutate()
+      
+      // Метод 2: Обновляем все связанные списки артефактов (sidebar, "Мои артефакты" и т.д.)
+      await refreshArtifacts({ 
+        showToast: false, // не показываем toast так как это внутренний refresh
+        endpoints: [
+          `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}`,
+          '/api/artifacts',
+          'artifacts-sidebar'
+        ]
+      })
+      
+      console.log('✅ Elegant artifact refresh completed')
+      return true
+    } catch (error) {
+      console.error('❌ Elegant artifact refresh failed:', error)
+      return false
+    }
+  }, [mutate, refreshArtifacts, currentPage])
+
   const handleCardClick = useCallback((doc: ArtifactDocument) => {
     if (doc.kind) {
       toast({ type: 'loading', description: `Открываю "${doc.title}"...` })
@@ -113,6 +145,22 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
       }
     }
   }, [openArtifactId, data, createQueryString, pathname, router, handleCardClick])
+
+  // Элегантное обновление через window events
+  useEffect(() => {
+    const handleArtifactRefreshEvent = async (event: Event) => {
+      const customEvent = event as CustomEvent
+      console.log('📡 Received artifact refresh event:', customEvent.detail)
+      await handleElegantRefresh()
+    }
+
+    // Слушаем custom event для обновления артефактов
+    window.addEventListener('artifact-list-refresh', handleArtifactRefreshEvent)
+    
+    return () => {
+      window.removeEventListener('artifact-list-refresh', handleArtifactRefreshEvent)
+    }
+  }, [handleElegantRefresh])
 
   const totalPages = data ? Math.ceil(data.totalCount / PAGE_SIZE) : 0
 
@@ -171,7 +219,7 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
           totalCount={data?.totalCount || 0}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          onRefresh={mutate}
+          onRefresh={handleElegantRefresh}
           onCardClick={handleCardClick}
         />
       )}

@@ -1,12 +1,16 @@
 /**
  * @file components/app-sidebar.tsx
  * @description Компонент боковой панели приложения с навигацией.
- * @version 2.2.0
- * @date 2025-06-17
- * @updated Fixed recent artifacts click behavior - removed redundant navigation to artifacts list page.
+ * @version 2.3.3
+ * @date 2025-06-28
+ * @updated DEBUG: Расширена отладочная информация - проверка SWR onSuccess/onError + детальная проверка каждого элемента в map
  */
 
 /** HISTORY:
+ * v2.3.3 (2025-06-28): DEBUG - Расширена отладочная информация: SWR onSuccess/onError callbacks + детальная проверка каждого элемента map
+ * v2.3.2 (2025-06-28): DEBUG - Добавлена отладочная информация для диагностики проблемы с undefined kind в recent artifacts API
+ * v2.3.1 (2025-06-28): React key error исправлен - убран createdAt из key (вызывал "undefined-undefined"), используется только doc.id для уникальности
+ * v2.3.0 (2025-06-28): BUG-043 FIX - Исправлены пустые строки артефактов (добавлен fallback "Без названия"), улучшено выравнивание (иконка BoxIcon, truncate text)
  * v2.2.0 (2025-06-17): Fixed recent artifacts click behavior - removed redundant navigation to artifacts list page.
  * v2.1.0 (2025-06-10): Импорт ArtifactKind из lib/types.
  * v2.0.0 (2025-06-09): Рефакторинг. "Контент" переименован в "Артефакты", обновлены маршруты и API-вызовы.
@@ -45,19 +49,25 @@ interface SidebarArtifactItemProps {
 }
 
 function SidebarArtifactItem ({ artifact: doc, isActive, onClick }: SidebarArtifactItemProps) {
+  // Обрабатываем пустые title и добавляем fallback
+  const displayTitle = doc.title?.trim() || 'Без названия'
+  
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
         isActive={isActive}
         tooltip={{
-          children: doc.title,
+          children: displayTitle,
           side: 'right',
           align: 'center',
         }}
       >
         <button type="button" onClick={onClick} className="w-full text-left">
-          <span>{doc.title}</span>
+          <div className="flex items-center gap-2">
+            <BoxIcon size={16} className="shrink-0" />
+            <span className="truncate">{displayTitle}</span>
+          </div>
         </button>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -65,6 +75,13 @@ function SidebarArtifactItem ({ artifact: doc, isActive, onClick }: SidebarArtif
 }
 
 export function AppSidebar ({ user }: { user: User | undefined }) {
+  console.log('🔍 DEBUG: AppSidebar user state:', {
+    userExists: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
+    userName: user?.name
+  })
+  
   const router = useRouter()
   const pathname = usePathname()
   const { setOpenMobile, state: sidebarState } = useSidebar()
@@ -89,7 +106,25 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
   } = useSWR<Array<Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'kind' | 'content'>>>(
     user ? `/api/artifacts/recent?limit=5` : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      onSuccess: (data) => {
+        console.log('🔍 DEBUG: recentArtifacts SWR onSuccess:', {
+          dataExists: !!data,
+          dataLength: data?.length,
+          rawData: data,
+          mappedData: data?.map(item => ({
+            id: item.id,
+            title: item.title,
+            kind: item.kind,
+            allKeys: Object.keys(item)
+          }))
+        })
+      },
+      onError: (error) => {
+        console.error('🔍 DEBUG: recentArtifacts SWR onError:', error)
+      }
+    }
   )
 
   const { setArtifact } = useArtifact()
@@ -97,6 +132,14 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
   const activeArtifactId = artifactHook.artifact.isVisible ? artifactHook.artifact.artifactId : null
 
   const handleArtifactClick = (doc: Pick<ArtifactApiResponse, 'id' | 'title' | 'kind' | 'content'>) => {
+    console.log('🔍 DEBUG: handleArtifactClick called with:', {
+      id: doc.id,
+      title: doc.title,
+      kind: doc.kind,
+      hasContent: !!doc.content,
+      allKeys: Object.keys(doc)
+    })
+    
     if (!doc.kind) {
       console.error('SYS_COMP_APP_SIDEBAR: Artifact kind is undefined, cannot open.', doc)
       toast({ type: 'error', description: 'Не удалось определить тип артефакта.' })
@@ -198,14 +241,23 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                     <Skeleton className="h-7 w-3/5"/>
                   </div>
                 )}
-                {!isLoadingRecentArtifacts && recentArtifacts?.map((doc) => (
-                  <SidebarArtifactItem
-                    key={`${doc.id}-${doc.createdAt}`}
-                    artifact={doc}
-                    isActive={activeArtifactId === doc.id}
-                    onClick={() => handleArtifactClick(doc)}
-                  />
-                ))}
+                {!isLoadingRecentArtifacts && recentArtifacts?.map((doc, index) => {
+                  console.log(`🔍 DEBUG: Rendering artifact ${index}:`, {
+                    id: doc.id,
+                    title: doc.title,
+                    kind: doc.kind,
+                    hasContent: !!doc.content,
+                    allKeys: Object.keys(doc)
+                  })
+                  return (
+                    <SidebarArtifactItem
+                      key={doc.id}
+                      artifact={doc}
+                      isActive={activeArtifactId === doc.id}
+                      onClick={() => handleArtifactClick(doc)}
+                    />
+                  )
+                })}
                 {!isLoadingRecentArtifacts && (!recentArtifacts || recentArtifacts.length === 0) && (
                   <div className="px-2 py-1 text-xs text-sidebar-foreground/70 text-center">Нет недавних
                     артефактов.</div>

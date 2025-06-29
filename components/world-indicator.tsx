@@ -1,12 +1,13 @@
 /**
  * @file components/world-indicator.tsx
  * @description Индикатор текущего тестового мира в хедере для трехуровневой системы тестирования.
- * @version 1.1.0
- * @date 2025-06-18
- * @updated Добавлена поддержка PRODUCTION режима - индикатор скрывается в стандартном режиме.
+ * @version 1.2.0
+ * @date 2025-06-28
+ * @updated УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - поддержка cookies от DevWorldSelector с правильным приоритетом
  */
 
 /** HISTORY:
+ * v1.2.0 (2025-06-28): УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - читает test-session cookies от DevWorldSelector с приоритетом
  * v1.1.0 (2025-06-18): Добавлена поддержка PRODUCTION режима - индикатор не показывается для стандартного режима.
  * v1.0.0 (2025-06-18): Начальная версия индикатора мира для трехуровневой системы тестирования.
  */
@@ -72,38 +73,31 @@ export function WorldIndicator() {
       return
     }
 
-    // Read world_id from cookie with fallback support
+    // ЕДИНЫЙ ИСТОЧНИК: читаем worldId из test-session cookie
     const getWorldFromCookie = () => {
       if (typeof document === 'undefined') return null
       
       const cookies = document.cookie.split(';')
       console.log('🌍 All cookies:', cookies)
       
-      // Try main world_id cookie first
-      let worldCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('world_id=')
+      // Читаем worldId из test-session cookie
+      const testSessionCookie = cookies.find(cookie => 
+        cookie.trim().startsWith('test-session=')
       )
       
-      // If not found, try fallback
-      if (!worldCookie) {
-        worldCookie = cookies.find(cookie => 
-          cookie.trim().startsWith('world_id_fallback=')
-        )
-        if (worldCookie) {
-          console.log('🌍 Using fallback world cookie')
+      if (testSessionCookie) {
+        try {
+          const sessionData = JSON.parse(decodeURIComponent(testSessionCookie.split('=')[1]))
+          if (sessionData.worldId && sessionData.worldId in WORLDS) {
+            console.log('🌍 Found worldId in test-session:', sessionData.worldId)
+            return sessionData.worldId as WorldId
+          }
+        } catch (error) {
+          console.warn('🌍 Failed to parse test-session cookie:', error)
         }
       }
       
-      console.log('🌍 Found world cookie:', worldCookie)
-      
-      if (worldCookie) {
-        const worldId = worldCookie.split('=')[1]?.trim()
-        const isValid = worldId in WORLDS
-        console.log('🌍 Extracted worldId:', worldId, 'isValid:', isValid)
-        return isValid ? worldId as WorldId : null
-      }
-      
-      console.log('🌍 No world cookie found (checked both world_id and world_id_fallback)')
+      console.log('🌍 No worldId found in test-session')
       return null
     }
 
@@ -131,13 +125,13 @@ export function WorldIndicator() {
   }
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md" data-testid="world-indicator">
       <span className="text-blue-600 dark:text-blue-400">🌍</span>
       <div className="flex flex-col">
         <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
           Тестовый мир
         </span>
-        <span className="text-xs text-blue-600 dark:text-blue-400">
+        <span className="text-xs text-blue-600 dark:text-blue-400" data-testid="world-indicator-name">
           {WORLDS[currentWorld]}
         </span>
       </div>

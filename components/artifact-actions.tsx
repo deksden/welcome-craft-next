@@ -39,13 +39,13 @@ interface ArtifactActionsProps {
 
 function SaveStatusIndicator ({ status }: { status: UIArtifact['saveStatus'] }) {
   if (status === 'idle') {
-    return <VercelIcon size={18}/>
+    return <VercelIcon size={18} data-testid="artifact-save-status-icon" data-save-status="idle"/>
   }
   if (status === 'saving') {
-    return <LoaderIcon className="animate-spin" size={18}/>
+    return <LoaderIcon className="animate-spin" size={18} data-testid="artifact-save-status-icon" data-save-status="saving"/>
   }
   if (status === 'saved') {
-    return <CheckCircleFillIcon size={18} className="text-green-500"/>
+    return <CheckCircleFillIcon size={18} className="text-green-500" data-testid="artifact-save-status-icon" data-save-status="saved"/>
   }
   return null
 }

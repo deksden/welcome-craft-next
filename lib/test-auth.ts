@@ -1,7 +1,7 @@
 /**
  * @file lib/test-auth.ts
  * @description Универсальная auth система с поддержкой тестовых и production sessions
- * @version 2.0.0
+ * @version 2.1.0
  * @created 2025-06-15
  * @purpose Обертка над NextAuth для поддержки test-session cookies в мультидоменной архитектуре
  * 
@@ -11,6 +11,7 @@
  * - Тестовые cookies работают через оба домена (.localhost)
  * 
  * HISTORY:
+ * v2.1.0 (2025-06-27): Исправлено несоответствие логики isTestEnv с middleware.ts - добавлена проверка PLAYWRIGHT_PORT
  * v2.0.0 (2025-06-15): Добавлена универсальная getAuthSession с fallback на NextAuth
  * v1.0.0 (2025-06-15): Создание custom auth для тестов
  */
@@ -44,9 +45,11 @@ export async function getTestSession(): Promise<Session | null> {
   const headerStore = await headers();
   const testHeader = headerStore.get('X-Test-Environment');
   
+  const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT;
   const isTestEnv = process.env.NODE_ENV === 'test' || 
                     process.env.PLAYWRIGHT === 'true' ||
-                    testHeader === 'playwright';
+                    testHeader === 'playwright' ||
+                    hasPlaywrightPort; // ИСПРАВЛЕНИЕ: Синхронизация логики с middleware.ts
   
   if (!isTestEnv) {
     return null;

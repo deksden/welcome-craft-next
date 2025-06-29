@@ -1,12 +1,14 @@
 /**
  * @file lib/db/world-context.ts
  * @description Контекст тестового мира для автоматической изоляции данных в БД
- * @version 1.0.0
- * @date 2025-06-18
- * @updated Реализация Phase 2 - Database Isolation
+ * @version 1.2.0
+ * @date 2025-06-28
+ * @updated UNIFIED COOKIE ARCHITECTURE - только test-session как источник world isolation данных
  */
 
 /** HISTORY:
+ * v1.2.0 (2025-06-28): UNIFIED COOKIE ARCHITECTURE - максимальное упрощение, убрана сложность множественных cookies
+ * v1.1.0 (2025-06-28): УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - унифицированный порядок приоритета cookies (test-session → world_id → world_id_fallback → test-world-id)
  * v1.0.0 (2025-06-18): Начальная реализация world context для автоматической изоляции данных
  */
 
@@ -14,9 +16,9 @@ import { cookies } from 'next/headers'
 import type { WorldId } from '@/tests/helpers/worlds.config'
 
 /**
- * @description Ключ cookie для хранения активного мира
+ * @description Унифицированный ключ cookie для хранения активного мира (в составе test-session)
  */
-export const WORLD_COOKIE_KEY = 'test-world-id'
+export const WORLD_COOKIE_KEY = 'test-session'
 
 /**
  * @description Время жизни world cookie (4 часа)
@@ -171,6 +173,7 @@ export function canAccessRecord(
  * @description Middleware helper для проверки изоляции мира
  * 
  * @feature Автоматическая проверка изоляции в API routes
+ * @feature УНИФИЦИРОВАННАЯ система чтения cookies для изоляции миров
  * @param request - Next.js Request объект
  * @returns Контекст мира для использования в API
  */
@@ -180,16 +183,18 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
   try {
     // Извлекаем world_id из cookie в заголовке
     const cookieHeader = request.headers.get('cookie')
+    const isDev = process.env.NODE_ENV === 'development'
     const isWorldUIEnabled = process.env.ENABLE_TEST_WORLDS_UI === 'true'
     
     console.log('🌍 getWorldContextFromRequest DEBUG:', {
       hasCookieHeader: !!cookieHeader,
+      isDev,
       isWorldUIEnabled,
       NODE_ENV: process.env.NODE_ENV,
       ENABLE_TEST_WORLDS_UI: process.env.ENABLE_TEST_WORLDS_UI
     })
     
-    if (cookieHeader && isWorldUIEnabled) {
+    if (cookieHeader && (isDev || isWorldUIEnabled)) {
       const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=')
         acc[key] = value
@@ -198,20 +203,30 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
       
       console.log('🌍 Available cookies:', Object.keys(cookies))
       
-      // Try main world_id cookie first
-      if (cookies.world_id) {
-        worldId = cookies.world_id as WorldId
-        console.log('🌍 Found world_id cookie:', worldId)
-      } 
-      // Try fallback cookie
-      else if (cookies.world_id_fallback) {
-        worldId = cookies.world_id_fallback as WorldId
-        console.log('🌍 Found world_id_fallback cookie:', worldId)
+      // МАКСИМАЛЬНО УПРОЩЕННАЯ СИСТЕМА: читаем worldId из test-session cookie
+      if (cookies[WORLD_COOKIE_KEY]) {
+        try {
+          const sessionData = JSON.parse(decodeURIComponent(cookies[WORLD_COOKIE_KEY]))
+          if (sessionData.worldId) {
+            worldId = sessionData.worldId as WorldId
+            console.log('🌍 Found worldId in test-session:', worldId)
+          }
+        } catch (error) {
+          console.warn('🌍 Failed to parse test-session cookie:', error)
+        }
       }
-      // Try old format for backward compatibility
-      else if (cookies[WORLD_COOKIE_KEY]) {
-        worldId = cookies[WORLD_COOKIE_KEY] as WorldId
-        console.log('🌍 Found test-world-id cookie:', worldId)
+      
+      // Fallback - пробуем test-session-fallback  
+      if (!worldId && cookies['test-session-fallback']) {
+        try {
+          const sessionData = JSON.parse(decodeURIComponent(cookies['test-session-fallback']))
+          if (sessionData.worldId) {
+            worldId = sessionData.worldId as WorldId
+            console.log('🌍 Found worldId in test-session-fallback:', worldId)
+          }
+        } catch (error) {
+          console.warn('🌍 Failed to parse test-session-fallback cookie:', error)
+        }
       }
     }
   } catch (error) {
@@ -220,6 +235,12 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
   
   const isTestMode = worldId !== null
   const isolationPrefix = worldId ? `test-${worldId}` : null
+  
+  console.log('🌍 Final world context:', {
+    worldId,
+    isTestMode,
+    isolationPrefix
+  })
   
   return {
     worldId,

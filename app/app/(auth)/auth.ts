@@ -1,12 +1,14 @@
 /**
  * @file app/app/(auth)/auth.ts
  * @description Конфигурация NextAuth.js для аутентификации пользователей.
- * @version 1.1.0
- * @date 2025-06-11
- * @updated Удалена гостевая сессия, теперь требуется регистрация.
+ * @version 1.3.0
+ * @date 2025-06-27
+ * @updated BUG-038 FIX - Убрана Fast Cookie Bridge логика из session callback, перенесена в FastSessionProvider.
  */
 
 /** HISTORY:
+ * v1.3.0 (2025-06-27): BUG-038 FIX - Убрана Fast Cookie Bridge логика, теперь используется FastSessionProvider с custom React Context
+ * v1.2.0 (2025-06-27): BUG-038 FIX - Fast Cookie Bridge в session callback для интеграции fastAuthentication() с useSession() hooks
  * v1.1.0 (2025-06-11): Удален провайдер гостевой аутентификации.
  * v1.0.0 (2025-05-25): Начальная версия.
  */
@@ -101,8 +103,8 @@ const providers = [
   }),
 ]
 
-// Add test provider only in development (official Auth.js approach)
-if (process.env.NODE_ENV === 'development') {
+// Add test provider in development and Playwright testing (Auth.js + fast cookie bridge)
+if (process.env.NODE_ENV === 'development' || process.env.PLAYWRIGHT_PORT) {
   providers.push(
     Credentials({
       id: 'test-credentials',
@@ -120,6 +122,38 @@ if (process.env.NODE_ENV === 'development') {
             name: credentials.email as string,
             type: 'regular' as UserType
           };
+        }
+        return null;
+      },
+    })
+  );
+
+  // BUG-038 FIX: Fast Cookie Bridge Provider for E2E tests
+  // This provider bridges our fastAuthentication() cookies with Auth.js session system
+  providers.push(
+    Credentials({
+      id: 'fast-cookie-bridge',
+      name: 'Fast Cookie Bridge',
+      credentials: {
+        // This provider doesn't use traditional credentials - it reads from cookies
+        testSessionData: { label: 'Test Session Data', type: 'text' }
+      },
+      async authorize(credentials, request) {
+        // This provider will be called from our custom session endpoint
+        // when it detects test-session cookies
+        if (credentials?.testSessionData) {
+          try {
+            const sessionData = JSON.parse(credentials.testSessionData as string);
+            return {
+              id: sessionData.user?.id || 'fast-cookie-user',
+              email: sessionData.user?.email || 'test@fast-cookie.com',
+              name: sessionData.user?.name || 'Fast Cookie User',
+              type: (sessionData.user?.type as UserType) || 'regular'
+            };
+          } catch (error) {
+            console.log('🔍 Fast Cookie Bridge: Failed to parse test session data:', error);
+            return null;
+          }
         }
         return null;
       },
@@ -153,6 +187,7 @@ export const {
       return token;
     },
     async session({ session, token }) {
+      // Regular Auth.js session processing
       if (session.user) {
         session.user.id = token.id || token.sub || '';
         session.user.type = (token.type as UserType) || 'regular';

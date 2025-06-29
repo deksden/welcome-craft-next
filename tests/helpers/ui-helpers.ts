@@ -1,9 +1,14 @@
 /**
  * @file tests/helpers/ui-helpers.ts
- * @description Хелперы для тестов с использованием структурированных data-testid
- * @version 1.0.0
- * @date 2025-06-16
- * @created Создан для работы с новой иерархической системой testid
+ * @description Унифицированные UI хелперы после рефакторинга POM архитектуры
+ * @version 2.0.0
+ * @date 2025-06-22
+ * @updated Удалены SidebarHelpers и PublicationHelpers (дублируют отдельные POM)
+ */
+
+/** HISTORY:
+ * v2.0.0 (2025-06-22): Рефакторинг - удалены дублирующиеся классы, оставлены только уникальные хелперы
+ * v1.0.0 (2025-06-16): Создан для работы с новой иерархической системой testid
  */
 
 import type { Page, } from '@playwright/test'
@@ -265,84 +270,9 @@ export class ArtifactActionsHelpers {
 }
 
 /**
- * Хелперы для работы с Sidebar (боковая панель)
+ * REMOVED: SidebarHelpers - дублирует функциональность tests/helpers/sidebar-page.ts
+ * Используйте вместо этого: new SidebarPage(page)
  */
-export class SidebarHelpers {
-  constructor(private page: Page) {}
-
-  get container() {
-    return this.page.getByTestId('sidebar')
-  }
-
-  get chatsSection() {
-    return this.page.getByTestId('sidebar-chats-section')
-  }
-
-  get chatsHistory() {
-    return this.page.getByTestId('sidebar-chats-history')
-  }
-
-  get artifactsSection() {
-    return this.page.getByTestId('sidebar-artifacts-section')
-  }
-
-  get artifactsList() {
-    return this.page.getByTestId('sidebar-artifacts-list')
-  }
-
-  get toggle() {
-    return this.page.getByTestId('sidebar-toggle')
-  }
-
-  /**
-   * Получает элемент чата по индексу
-   */
-  getChatItem(index: number) {
-    return this.page.getByTestId('sidebar-chat-item').nth(index)
-  }
-
-  /**
-   * Получает кнопку удаления чата по индексу
-   */
-  getChatDeleteButton(index: number) {
-    return this.getChatItem(index).getByTestId('sidebar-chat-item-delete-button')
-  }
-
-  /**
-   * Получает элемент артефакта по индексу
-   */
-  getArtifactItem(index: number) {
-    return this.page.getByTestId('sidebar-artifact-item').nth(index)
-  }
-
-  /**
-   * Переключает видимость сайдбара
-   */
-  async toggleSidebar() {
-    await this.toggle.click()
-  }
-
-  /**
-   * Удаляет чат по индексу
-   */
-  async deleteChat(index: number) {
-    await this.getChatDeleteButton(index).click()
-  }
-
-  /**
-   * Кликает по чату для открытия
-   */
-  async openChat(index: number) {
-    await this.getChatItem(index).click()
-  }
-
-  /**
-   * Проверяет, сколько чатов в истории
-   */
-  async getChatCount() {
-    return await this.page.getByTestId('sidebar-chat-item').count()
-  }
-}
 
 /**
  * Хелперы для работы с Messages (сообщения чата)
@@ -422,136 +352,35 @@ export class ChatMessageHelpers {
 }
 
 /**
- * Хелперы для работы с Publication System
+ * REMOVED: PublicationHelpers - дублирует функциональность tests/helpers/publication-page.ts
+ * Используйте вместо этого: new PublicationPage(page) и new PublicAccessHelpers(page)
  */
-export class PublicationHelpers {
-  constructor(private page: Page) {}
-
-  /**
-   * Проверяет статус публикации артефакта по badge индикатору
-   */
-  async checkPublicationStatus(artifactTestId: string, expectedStatus: 'published' | 'private'): Promise<void> {
-    const badgeSelector = `${artifactTestId}-published-badge`
-    
-    if (expectedStatus === 'published') {
-      await this.page.getByTestId(badgeSelector).waitFor({ 
-        state: 'visible',
-        timeout: 5000 
-      })
-    } else {
-      await this.page.getByTestId(badgeSelector).waitFor({ 
-        state: 'hidden',
-        timeout: 5000 
-      }).catch(() => {
-        // Badge может отсутствовать в DOM для private статуса, это нормально
-      })
-    }
-  }
-
-  /**
-   * Навигация к артефакту по test ID
-   * @feature Использует правильный путь /artifacts для страницы "Мои Артефакты"
-   */
-  async navigateToArtifact(artifactTestId: string): Promise<void> {
-    console.log(`🧭 Navigating to artifact: ${artifactTestId}`)
-    await this.page.goto('/artifacts')
-    
-    // Ждем загрузки страницы артефактов
-    await this.page.waitForSelector('[data-testid="artifacts-page"]', { timeout: 10000 }).catch(() => {
-      console.log('ℹ️ artifacts-page testid not found, continuing...')
-    })
-    
-    // Ищем артефакт по data-testid или по тексту заголовка
-    const artifactElement = this.page.getByTestId(artifactTestId).or(
-      this.page.getByTestId('artifact-item').filter({ hasText: artifactTestId })
-    )
-    
-    console.log(`🔍 Looking for artifact with testid: ${artifactTestId}`)
-    await artifactElement.first().click()
-    console.log(`✅ Successfully clicked on artifact: ${artifactTestId}`)
-  }
-
-  /**
-   * Авторизация под тестовым пользователем
-   */
-  async loginAs(userTestId: string): Promise<void> {
-    await this.page.goto('/')
-    
-    // Устанавливаем тестовый cookie для авторизации
-    await this.page.evaluate((testId) => {
-      const sessionUser = {
-        email: `${testId}@test.com`,
-        name: testId.replace('user-', '').charAt(0).toUpperCase() + testId.replace('user-', '').slice(1),
-        id: `test-user-${testId}`
-      }
-      
-      document.cookie = `test-session=${JSON.stringify({
-        user: sessionUser
-      })}; path=/; domain=.localhost`
-    }, userTestId)
-    
-    await this.page.reload()
-  }
-
-  /**
-   * Проверяет наличие кнопки публикации для определенного типа артефакта
-   */
-  async hasPublicationButton(artifactKind: string): Promise<boolean> {
-    if (artifactKind !== 'site') {
-      return false
-    }
-    
-    return await this.page.getByTestId('artifact-publication-button').isVisible()
-  }
-
-  /**
-   * Эмулирует анонимного пользователя для проверки публичного доступа
-   */
-  async becomeAnonymous(): Promise<void> {
-    await this.page.evaluate(() => {
-      // Очищаем все auth cookies
-      document.cookie = 'test-session=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      document.cookie = 'test-world-id=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    })
-  }
-
-  /**
-   * Проверяет доступность страницы 404
-   */
-  async expectNotFound(): Promise<void> {
-    const is404 = this.page.url().includes('404')
-    const hasNotFoundElement = await this.page.getByTestId('site-not-found').isVisible().catch(() => false)
-    
-    if (!is404 && !hasNotFoundElement) {
-      throw new Error('Expected 404 or site-not-found page, but got accessible content')
-    }
-  }
-}
 
 /**
- * Главный класс для всех UI хелперов
+ * @description Унифицированный класс UI хелперов после рефакторинга POM архитектуры
+ * @feature Содержит только уникальную функциональность, не дублирующую отдельные POM
+ * @note Для sidebar и publication используйте отдельные POM классы
  */
 export class UIHelpers {
   public header: HeaderHelpers
   public chatInput: ChatInputHelpers
   public artifactPanel: ArtifactPanelHelpers
   public artifactActions: ArtifactActionsHelpers
-  public sidebar: SidebarHelpers
   public chatMessages: ChatMessageHelpers
-  public publication: PublicationHelpers
+  // REMOVED: sidebar и publication - используйте отдельные POM классы
 
   constructor(private page: Page) {
     this.header = new HeaderHelpers(page)
     this.chatInput = new ChatInputHelpers(page)
     this.artifactPanel = new ArtifactPanelHelpers(page)
     this.artifactActions = new ArtifactActionsHelpers(page)
-    this.sidebar = new SidebarHelpers(page)
     this.chatMessages = new ChatMessageHelpers(page)
-    this.publication = new PublicationHelpers(page)
   }
 
   /**
-   * Фабричная функция для создания UI хелперов
+   * @description Фабричная функция для создания UI хелперов
+   * @note Для sidebar используйте: new SidebarPage(page)
+   * @note Для publication используйте: new PublicationPage(page)
    */
   static create(page: Page) {
     return new UIHelpers(page)

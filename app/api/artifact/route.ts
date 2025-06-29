@@ -23,6 +23,7 @@ import { deleteArtifactVersionsAfterTimestamp, getArtifactsById, getArtifactById
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 import { isArtifactPublished, isArtifactPubliclyAccessible } from '@/lib/publication-utils'
+import { createApiResponseWithRefresh } from '@/lib/api-response-middleware'
 
 export async function GET (request: Request) {
   const { searchParams } = new URL(request.url)
@@ -147,7 +148,14 @@ export async function POST (request: Request) {
   const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
   const normalizedArtifact = await normalizeArtifactForAPI(artifacts[0])
 
-  return Response.json(normalizedArtifact, { status: 200 })
+  // Return response with automatic refresh trigger for elegant UI updates
+  return createApiResponseWithRefresh(normalizedArtifact, {
+    status: 200,
+    shouldTriggerRefresh: true,
+    operation: 'create',
+    artifactId: id,
+    artifactTitle: title
+  })
 }
 
 export async function DELETE (request: Request) {

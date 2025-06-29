@@ -1,39 +1,42 @@
-'use client' // <-- УЖЕ БЫЛО, НО ЛОГИКА ИЗМЕНЕНА
-
 /**
  * @file app/(main)/artifacts/page.tsx
- * @description Страница для отображения и управления всеми артефактами пользователя.
- * @version 2.1.0
- * @date 2025-06-11
- * @updated Refactored to use `useSearchParams` hook to avoid runtime errors in client components.
+ * @description Server Component страница для артефактов с правильной архитектурой
+ * @version 3.2.0
+ * @date 2025-06-27
+ * @updated Integrated FileImportDemo component for UC-11 E2E tests support
  */
 
 /** HISTORY:
+ * v3.2.0 (2025-06-27): Integrated FileImportDemo component for UC-11 E2E tests support
+ * v3.1.0 (2025-06-23): Fixed Next.js 15 searchParams promise + correct auth imports
+ * v3.0.0 (2025-06-23): Fixed server-only import issues - converted to proper Server Component architecture
  * v2.1.0 (2025-06-11): Refactored to use `useSearchParams` hook.
  * v2.0.0 (2025-06-09): Переименовано в "Артефакты".
  */
 
 import { Suspense } from 'react'
-import { useSession } from 'next-auth/react'
-import { redirect, useSearchParams } from 'next/navigation' // <-- ИЗМЕНЕН ИМПОРТ
+import { redirect } from 'next/navigation'
+import { getAuthSession } from '@/lib/test-auth'
 import { ArtifactGridClientWrapper } from '@/components/artifact-grid-client-wrapper'
+import { FileImportDemo } from '@/components/file-import-demo'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const skeletonKeys = Array.from({ length: 8 }, (_, i) => `sk-${i}`)
 
-// Оборачиваем основной компонент в Suspense Boundary, чтобы useSearchParams не вызывал ошибок
-function ArtifactsPageContent () {
-  const { data: session, status } = useSession()
-  const searchParams = useSearchParams() // <-- ИСПОЛЬЗУЕМ ХУК
-  const openArtifactId = searchParams.get('openArtifactId') as string | undefined // <-- ПОЛУЧАЕМ ПАРАМЕТР
+interface ArtifactsPageProps {
+  searchParams: Promise<{ openArtifactId?: string }>
+}
 
-  if (status === 'loading') {
-    return <GridSkeleton/>
-  }
-
-  if (status === 'unauthenticated' || !session?.user?.id) {
+export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps) {
+  const session = await getAuthSession()
+  
+  if (!session?.user?.id) {
     redirect('/login')
   }
+
+  const resolvedSearchParams = await searchParams
+  const openArtifactId = resolvedSearchParams.openArtifactId
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -47,21 +50,24 @@ function ArtifactsPageContent () {
           </p>
         </header>
 
-        {/* Suspense здесь уже не для `searchParams`, а для `ArtifactGridClientWrapper` */}
-        <Suspense fallback={<GridSkeleton/>}>
-          <ArtifactGridClientWrapper userId={session.user.id} openArtifactId={openArtifactId}/>
-        </Suspense>
+        <Tabs defaultValue="library" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="library">📚 Библиотека</TabsTrigger>
+            <TabsTrigger value="import">📁 Импорт файлов</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="library" className="mt-6">
+            <Suspense fallback={<GridSkeleton/>}>
+              <ArtifactGridClientWrapper userId={session.user.id} openArtifactId={openArtifactId}/>
+            </Suspense>
+          </TabsContent>
+          
+          <TabsContent value="import" className="mt-6">
+            <FileImportDemo />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
-  )
-}
-
-export default function ArtifactsPage () {
-  return (
-    // Обертка в Suspense на верхнем уровне обязательна для useSearchParams
-    <Suspense fallback={<GridSkeleton/>}>
-      <ArtifactsPageContent/>
-    </Suspense>
   )
 }
 

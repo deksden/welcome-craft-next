@@ -1,11 +1,11 @@
-# Sample Markdown
+# Sample Markdown File
 
-This is a **test** markdown file for import testing.
+This is a test markdown file for UC-11 File Import System testing.
 
 ## Features
-- List item 1
-- List item 2
+- Basic markdown formatting
+- Headers and lists
+- Simple content for testing import functionality
 
-```javascript
-console.log('Hello from MD');
-```
+## Test Data
+This file contains sample text content that should be imported as a text artifact.

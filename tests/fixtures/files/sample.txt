@@ -1,4 +1,8 @@
-Hello from plain text file!
+This is a sample text file for testing UC-11 File Import System.
 
-This is a simple text document for testing file import functionality.
-It contains multiple lines and should be imported as a text artifact.
+It contains basic text content that should be imported as a text artifact.
+
+Test data:
+- Line 1
+- Line 2  
+- Line 3

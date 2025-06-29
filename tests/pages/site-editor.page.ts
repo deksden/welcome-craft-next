@@ -11,7 +11,7 @@
  */
 
 import { type Page, type Locator, expect } from '@playwright/test'
-import { TestUtils } from './test-utils'
+import { TestUtils } from '../helpers/test-utils'
 
 /**
  * @description Page Object Model для взаимодействия с Site Editor в UC-10 архитектуре

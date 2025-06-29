@@ -242,7 +242,7 @@ function bubbleSort(arr) {
     // Act & Assert: функция не должна выбросить ошибку
     await expect(
       generateAndSaveSummary(artifactId, testContent, kind)
-    ).resolves.not.toThrow()
+    ).resolves.toBeUndefined()
     
     // DB update не должен быть вызван при ошибке
     expect(vi.mocked(db.update)).not.toHaveBeenCalled()

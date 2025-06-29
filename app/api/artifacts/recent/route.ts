@@ -1,9 +1,9 @@
 /**
  * @file app/api/artifacts/recent/route.ts
  * @description API маршрут для получения списка недавних артефактов пользователя.
- * @version 1.3.0
- * @date 2025-06-20
- * @updated Добавлена ссылка на документацию API.
+ * @version 1.4.0
+ * @date 2025-06-28
+ * @updated BUG-043 FIX: Исправлен критический баг с async mapping - normalizeArtifactForAPI теперь правильно обрабатывается через Promise.all
  * 
  * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#get-apiartifactsrecent`
  * ⚠️ **ВАЖНО:** При изменении параметров или логики - обновить документацию И Use Cases!
@@ -64,7 +64,18 @@ export async function GET (request: NextRequest) {
 
     // Normalize artifacts for API response (add unified content field)
     const { normalizeArtifactForAPI } = await import('@/lib/artifact-content-utils')
-    const normalizedArtifacts = recentArtifacts.map(normalizeArtifactForAPI)
+    const normalizedArtifacts = await Promise.all(recentArtifacts.map(normalizeArtifactForAPI))
+    
+    console.log('🔍 BUG-043 DEBUG: API /artifacts/recent returning:', {
+      count: normalizedArtifacts.length,
+      sample: normalizedArtifacts[0] ? {
+        id: normalizedArtifacts[0].id,
+        title: normalizedArtifacts[0].title,
+        kind: normalizedArtifacts[0].kind,
+        hasContent: !!normalizedArtifacts[0].content,
+        allKeys: Object.keys(normalizedArtifacts[0])
+      } : null
+    })
 
     return NextResponse.json(normalizedArtifacts)
 

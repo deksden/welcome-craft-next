@@ -1,0 +1,1 @@
+This is a simple test document for DOCX import testing. It contains basic text content that should be extracted by mammoth library.

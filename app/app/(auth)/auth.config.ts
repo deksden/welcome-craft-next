@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from 'next-auth';
 
 export const authConfig = {
+  trustHost: true, // Important for Playwright testing in production mode
   pages: {
     signIn: '/login',
     newUser: '/', // Редирект на главную админки после регистрации
@@ -19,9 +20,9 @@ export const authConfig = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        // In development, allow cookies to work across subdomains (app.localhost and localhost)
-        domain: process.env.NODE_ENV === 'development' ? '.localhost' : undefined,
-        secure: process.env.NODE_ENV === 'production',
+        // In development and local testing, allow cookies to work across subdomains (app.localhost and localhost)
+        domain: (process.env.NODE_ENV === 'development' || process.env.PLAYWRIGHT_PORT) ? '.localhost' : undefined,
+        secure: process.env.NODE_ENV === 'production' && !process.env.PLAYWRIGHT_PORT,
       },
     },
     csrfToken: {
@@ -30,8 +31,8 @@ export const authConfig = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        domain: process.env.NODE_ENV === 'development' ? '.localhost' : undefined,
-        secure: process.env.NODE_ENV === 'production',
+        domain: (process.env.NODE_ENV === 'development' || process.env.PLAYWRIGHT_PORT) ? '.localhost' : undefined,
+        secure: process.env.NODE_ENV === 'production' && !process.env.PLAYWRIGHT_PORT,
       },
     },
   },

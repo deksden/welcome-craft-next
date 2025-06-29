@@ -16,23 +16,44 @@ const nextConfig: NextConfig = {
   },
 
   /**
-   * Кастомная конфигурация Webpack для отключения логов от tsconfig-paths-webpack-plugin.
+   * Кастомная конфигурация Webpack для подавления всех логов от tsconfig-paths плагинов.
    * @param {import('webpack').Configuration} config - Текущая конфигурация Webpack.
    * @returns {import('webpack').Configuration} - Измененная конфигурация.
    */
   webpack: (config) => {
-    // Находим плагин TsconfigPathsPlugin в массиве плагинов для разрешения модулей.
-    const tsconfigPathsPlugin = config.resolve.plugins?.find(
-      (plugin: WebpackPluginInstance) =>
-        plugin.constructor.name === 'TsconfigPathsPlugin'
-    )
-
-    if (tsconfigPathsPlugin) {
-      // Устанавливаем опцию 'silent' в 'true', чтобы отключить подробный вывод.
-      (tsconfigPathsPlugin as any).options.silent = true
+    // Подавляем логи от всех tsconfig-paths плагинов
+    if (config.resolve?.plugins) {
+      config.resolve.plugins.forEach((plugin: WebpackPluginInstance) => {
+        const pluginName = plugin.constructor.name
+        
+        // Подавляем логи от различных вариантов tsconfig-paths плагинов
+        if (pluginName === 'TsconfigPathsPlugin' || 
+            pluginName.includes('tsconfig') || 
+            pluginName.includes('TsConfig')) {
+          
+          // Устанавливаем максимальное подавление логов
+          const pluginOptions = (plugin as any).options || {}
+          pluginOptions.silent = true
+          pluginOptions.logLevel = 'silent'
+          pluginOptions.logInfoToStdOut = false
+          
+          // Присваиваем обратно для гарантии
+          if ((plugin as any).options) {
+            (plugin as any).options = { ...pluginOptions }
+          }
+        }
+      })
     }
 
-    // Возвращаем измененную конфигурацию.
+    // Дополнительно подавляем webpack логи в development
+    if (process.env.NODE_ENV === 'development') {
+      config.stats = {
+        ...config.stats,
+        moduleTrace: false,
+        errorDetails: false,
+      }
+    }
+
     return config
   },
 }

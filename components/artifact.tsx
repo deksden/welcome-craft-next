@@ -44,7 +44,7 @@ import type { Session } from 'next-auth'
 import { toast } from './toast'
 import { createClientLogger } from '@/lib/client-logger'
 import type { ArtifactKind, ArtifactApiResponse } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
-import { normalizeArtifactForAPI } from '@/lib/artifact-content-utils'
+import { normalizeArtifactForAPI } from '@/lib/artifact-content-utils-client'
 
 const logger = createClientLogger('Artifact')
 

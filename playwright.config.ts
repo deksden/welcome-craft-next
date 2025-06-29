@@ -1,26 +1,18 @@
 /**
  * @file playwright.config.ts
- * @description Playwright test configuration with environment variable for consistent port detection.
- * @version 6.0.0
- * @date 2025-06-14
+ * @description Playwright test configuration with a unified "local-prod" testing mode.
+ * @version 7.0.0
+ * @date 2025-06-27
  */
 
-/** HISTORY:
- * v6.0.0 (2025-06-14): Simplified approach using PLAYWRIGHT_PORT environment variable that can be set externally or defaults to available port.
- * v5.0.0 (2025-06-14): Fixed async config issue by using globalSetup and reading port from file. This ensures port is detected once and reused consistently.
- * v4.0.0 (2025-06-14): Re-implemented async config export. This is the canonical way to handle async setup in Playwright, ensuring the port is resolved once. Removed globalSetup.
- * v3.2.0 (2025-06-14): Replaced require.resolve with a simple relative path for ES Module compatibility.
- * v3.1.0 (2025-06-14): Fixed __dirname not defined in ES module scope error.
- * v3.0.0 (2025-06-14): Refactored to use globalSetup for one-time port detection.
- */
+import { defineConfig, devices } from '@playwright/test';
+import { config as dotenvConfig } from 'dotenv';
+import { createServer } from 'node:http';
+import { getTestUrls, getTestHeaders, getChromeConfig, logTestConfig } from './tests/helpers/test-config';
 
-import { defineConfig, devices } from '@playwright/test'
-import { config as dotenvConfig } from 'dotenv'
-import { createServer } from 'node:http'
-import { getTestUrls, getTestHeaders, getChromeConfig, logTestConfig } from './tests/helpers/test-config'
-
-// Load environment variables from .env.local
-dotenvConfig({ path: '.env.local' })
+// 1. Загружаем переменные окружения. .env.test будет иметь приоритет.
+dotenvConfig({ path: '.env.test' });
+dotenvConfig({ path: '.env.local' });
 
 /**
  * Finds an available port to run the server on.
@@ -29,21 +21,21 @@ dotenvConfig({ path: '.env.local' })
  */
 function findAvailablePort(basePort: number): Promise<number> {
   return new Promise((resolve, reject) => {
-    const server = createServer()
+    const server = createServer();
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
-        server.close()
-        resolve(findAvailablePort(basePort + 1))
+        server.close();
+        resolve(findAvailablePort(basePort + 1));
       } else {
-        reject(err)
+        reject(err);
       }
-    })
+    });
     server.listen(basePort, () => {
       server.close(() => {
-        resolve(basePort)
-      })
-    })
-  })
+        resolve(basePort);
+      });
+    });
+  });
 }
 
 /**
@@ -52,47 +44,54 @@ function findAvailablePort(basePort: number): Promise<number> {
  */
 async function getPort(): Promise<number> {
   if (process.env.PLAYWRIGHT_PORT) {
-    const envPort = Number.parseInt(process.env.PLAYWRIGHT_PORT, 10)
+    const envPort = Number.parseInt(process.env.PLAYWRIGHT_PORT, 10);
     if (!Number.isNaN(envPort)) {
-      console.log(`🔧 Using port ${envPort} from PLAYWRIGHT_PORT environment variable`)
-      return envPort
+      console.log(`🔧 Using port ${envPort} from PLAYWRIGHT_PORT environment variable`);
+      return envPort;
     }
   }
   
-  const port = await findAvailablePort(3000)
-  console.log(`🔧 Found available port ${port}`)
+  const port = await findAvailablePort(3000);
+  console.log(`🔧 Found available port ${port}`);
   
   // Set the environment variable so child processes use the same port
-  process.env.PLAYWRIGHT_PORT = port.toString()
+  process.env.PLAYWRIGHT_PORT = port.toString();
   
-  return port
+  return port;
 }
 
 export default (async () => {
-  const port = await getPort()
+  const port = await getPort();
+  const isCI = !!process.env.CI;
   
-  // Используем централизованную конфигурацию
-  const urls = getTestUrls()
-  const headers = getTestHeaders()
-  const chromeConfig = getChromeConfig()
+  // Упрощенная логика таймаутов
+  if (isCI) {
+    process.env.PLAYWRIGHT_TIMEOUT_NAVIGATION = process.env.PLAYWRIGHT_TIMEOUT_NAVIGATION || '45000';
+    process.env.PLAYWRIGHT_TIMEOUT_ELEMENT = process.env.PLAYWRIGHT_TIMEOUT_ELEMENT || '20000';
+    console.log('⏱️ Using CI timeouts (45s navigation, 20s elements)');
+  } else {
+    process.env.PLAYWRIGHT_TIMEOUT_NAVIGATION = process.env.PLAYWRIGHT_TIMEOUT_NAVIGATION || '15000';
+    process.env.PLAYWRIGHT_TIMEOUT_ELEMENT = process.env.PLAYWRIGHT_TIMEOUT_ELEMENT || '8000';
+    console.log('⏱️ Using Local Production timeouts (15s navigation, 8s elements)');
+  }
+
+  const urls = getTestUrls();
+  const headers = getTestHeaders();
+  const chromeConfig = getChromeConfig();
   
-  // Выводим конфигурацию для отладки
-  logTestConfig()
+  logTestConfig();
 
   return defineConfig({
     testDir: './tests',
-    // 🚀 СИСТЕМНАЯ ОПТИМИЗАЦИЯ: Включаем полный параллелизм с изолированными мирами
-    fullyParallel: true, 
+    fullyParallel: true,
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0, // Увеличиваем retries для стабильности
-    // 🚀 ОПТИМИЗАЦИЯ ПРОИЗВОДИТЕЛЬНОСТИ: Динамическое количество workers
-    workers: process.env.CI 
-      ? '50%' // В CI используем 50% от доступных ядер для экономии ресурсов
-      : undefined, // Локально - автоматическое определение оптимального количества
-    reporter: process.env.CI 
-      ? [['html'], ['github'], ['json', { outputFile: 'test-results.json' }]]
-      : 'html',
-    // globalSetup: './tests/global-setup.ts', // Пока отключаем для API тестов
+    retries: process.env.CI ? 2 : 0,
+    workers: process.env.CI ? '50%' : undefined,
+    reporter: process.env.CI ? [['html'], ['github'], ['json', { outputFile: 'test-results.json' }]] : 'html',
+
+    // ✅ Интеграция с эфемерной БД
+    globalSetup: './tests/global-setup.ts',
+    globalTeardown: './tests/global-teardown.ts',
 
     use: {
       baseURL: urls.publicBase,
@@ -112,7 +111,6 @@ export default (async () => {
         use: {
           ...devices['Desktop Chrome'],
           baseURL: urls.adminBase,
-          // Используем централизованную конфигурацию Chrome
           launchOptions: chromeConfig,
         },
       },
@@ -126,13 +124,25 @@ export default (async () => {
       },
     ],
 
+    // 2. Безусловный запуск продакшн-сборки для всех тестов
     webServer: {
-      command: `pnpm dev --port ${port}`,
+      command: `pnpm build && bash scripts/start-silent-server.sh pnpm start --port ${port}`,
       url: urls.ping,
-      timeout: 120 * 1000,
+      // 3. Увеличенный таймаут для сборки
+      timeout: 180 * 1000, 
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',
       stderr: 'pipe',
+      // 4. Подавление debug логов от webpack плагинов
+      env: {
+        ...process.env,
+        DEBUG: '',
+        WEBPACK_LOGGING: 'false',
+        NEXT_TELEMETRY_DISABLED: '1',
+        // Специально отключаем jsconfig-paths debug логи
+        'DEBUG_COLORS': 'false',
+        NODE_OPTIONS: '--no-deprecation',
+      },
     },
-  })
-})()
+  });
+})();

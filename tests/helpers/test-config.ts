@@ -38,14 +38,21 @@ export interface TestDomainConfig {
 export function getTestDomains(): TestDomainConfig {
   const port = getTestPort();
   
-  if (process.env.NODE_ENV === 'production') {
+  // Check if we're in real production (not local production testing)
+  // ИСПРАВЛЕНИЕ: В Playwright тестах всегда используем локальные домены
+  const isRealProduction = process.env.NODE_ENV === 'production' && 
+                          !process.env.PLAYWRIGHT_USE_PRODUCTION && 
+                          !process.env.PLAYWRIGHT_PORT &&
+                          !isPlaywrightEnvironment();
+  
+  if (isRealProduction) {
     return {
-      public: 'localhost', // В проде будет welcome-onboard.ru
-      admin: 'app.localhost' // В проде будет app.welcome-onboard.ru
+      public: 'welcome-onboard.ru', // Real production domain
+      admin: 'app.welcome-onboard.ru' // Real production admin domain
     };
   }
 
-  // Для разработки и тестов
+  // For local development and local production testing
   return {
     public: `localhost:${port}`,
     admin: `app.localhost:${port}`
@@ -71,7 +78,13 @@ export function getTestUrls(): TestUrlConfig {
   const port = getTestPort();
   const domains = getTestDomains();
   
-  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  // Check if we're in real production (not local production testing)
+  // ИСПРАВЛЕНИЕ: В Playwright тестах всегда используем локальные домены
+  const isRealProduction = process.env.NODE_ENV === 'production' && 
+                          !process.env.PLAYWRIGHT_USE_PRODUCTION && 
+                          !process.env.PLAYWRIGHT_PORT &&
+                          !isPlaywrightEnvironment();
+  const protocol = isRealProduction ? 'https' : 'http';
   
   return {
     publicBase: `${protocol}://${domains.public}`,

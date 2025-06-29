@@ -11,7 +11,7 @@ import {
 import { generateId } from 'ai';
 import { ChatPage } from './pages/chat';
 import { getUnixTime } from 'date-fns';
-import { mockAuthentication } from './helpers/auth-mock';
+import { universalAuthentication } from './helpers/auth.helper';
 
 export type UserContext = {
   context: BrowserContext;
@@ -19,6 +19,11 @@ export type UserContext = {
   request: APIRequestContext;
 };
 
+/**
+ * @deprecated Use universalAuthentication() from tests/helpers/auth.helper instead.
+ * This legacy helper creates complex storageState sessions which are slower and less reliable than universal authentication pattern.
+ * Migration path: Replace createAuthenticatedContext with test.beforeEach + universalAuthentication pattern.
+ */
 export async function createAuthenticatedContext({
   browser,
   name,
@@ -102,8 +107,8 @@ export async function createMockAuthenticatedContext({
   const timestamp = getUnixTime(new Date());
   const email = `test-${name}-${timestamp}@playwright.com`;
 
-  // Используем mock аутентификацию вместо реальной регистрации
-  await mockAuthentication(page, email);
+  // Используем универсальную аутентификацию вместо реальной регистрации
+  await universalAuthentication(page, { email });
 
   return {
     context,
