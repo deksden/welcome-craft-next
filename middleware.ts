@@ -105,13 +105,9 @@ export async function middleware (request: NextRequest) {
     }
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-    // Проверяем тестовый cookie в тестовом окружении
-    const testHeader = request.headers.get('X-Test-Environment');
-    const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT;
-    const isTestEnv = process.env.NODE_ENV === 'test' || 
-                      process.env.PLAYWRIGHT === 'true' || 
-                      testHeader === 'playwright' ||
-                      hasPlaywrightPort; // ИСПРАВЛЕНИЕ: Также считаем тестовым если есть PLAYWRIGHT_PORT
+    // APP_STAGE-based environment detection (PHOENIX PROJECT)
+    const stage = process.env.APP_STAGE || 'PROD';
+    const isTestEnv = stage === 'LOCAL' || stage === 'BETA';
     
     let token = null;
     

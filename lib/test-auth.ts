@@ -45,11 +45,9 @@ export async function getTestSession(): Promise<Session | null> {
   const headerStore = await headers();
   const testHeader = headerStore.get('X-Test-Environment');
   
-  const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT;
-  const isTestEnv = process.env.NODE_ENV === 'test' || 
-                    process.env.PLAYWRIGHT === 'true' ||
-                    testHeader === 'playwright' ||
-                    hasPlaywrightPort; // ИСПРАВЛЕНИЕ: Синхронизация логики с middleware.ts
+  // APP_STAGE-based environment detection (PHOENIX PROJECT)
+  const stage = process.env.APP_STAGE || 'PROD';
+  const isTestEnv = stage === 'LOCAL' || stage === 'BETA';
   
   if (!isTestEnv) {
     return null;
