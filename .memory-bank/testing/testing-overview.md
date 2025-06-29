@@ -3,9 +3,9 @@
 **Назначение:** Высокоуровневый обзор стратегии тестирования в WelcomeCraft. Этот документ служит отправной точкой и
 навигатором по всей документации, связанной с тестированием.
 
-**Версия:** 0.16.0  
-**Дата:** 2025-06-26  
-**Статус:** THREE-MODE ENVIRONMENT INTEGRATION - Полная интеграция с архитектурой трех режимов работы (Local Dev, Local Prod, Real Prod)
+**Версия:** 0.18.0  
+**Дата:** 2025-06-28  
+**Статус:** UNIFIED COOKIE ARCHITECTURE - Максимальное упрощение системы до единого test-session источника данных
 
 **Содержание:**
 
@@ -54,21 +54,31 @@ WelcomeCraft использует **гибридную стратегию тес
 
 ### Аутентификация в тестах
 
-**Краткое описание:** ✅ **УНИФИЦИРОВАННАЯ АРХИТЕКТУРА** - Завершена полная унификация аутентификации через единый
-`fastAuthentication()` helper для всех E2E тестов и "Direct Cookie Header Pattern" для API тестов.
+**Краткое описание:** ✅ **UNIFIED COOKIE ARCHITECTURE** - Максимальное упрощение системы до единого `test-session` cookie как источника всех данных (аутентификация + world isolation).
 
-**Ключевые достижения унификации:**
+**Ключевые достижения Cookie Unification:**
 
-- **✅ E2E Unified Auth:** Все 8 UC тестов используют `fastAuthentication()` helper
+- **✅ Single Cookie System:** Убраны множественные cookies (`world_id`, `world_id_fallback`, `test-world-id`) - остался только `test-session`
+- **✅ Unified Data Source:** `test-session.worldId` как единственный источник world isolation во всей системе
+- **✅ Simplified Architecture:** DevWorldSelector, WorldIndicator, world-context читают из одного места
+- **✅ Maximum Simplification:** Убрана сложность приоритетов cookies, fallback механизмов, множественных источников
+- **✅ Universal Authentication:** Все E2E тесты используют единый `universalAuthentication()` helper
 - **✅ Route tests:** 82/82 (100%) с Direct Cookie Header Pattern
-- **✅ Deprecated code removal:** Удалены дублированные auth helpers
-- **✅ POM Migration:** Все POM классы перенесены в `tests/pages/`
-- **✅ Consistent imports:** Унифицированы импорты в E2E тестах
+
+**Unified Cookie Structure:**
+```typescript
+interface TestSession {
+  user: { id: string, email: string, name: string, type: string }
+  worldId?: string // Опциональный world isolation
+  expires: string
+}
+```
 
 **Performance:**
 
 - ~2-3 секунды на контекст аутентификации
 - 100% consistency across all test types
+- Простота отладки через единый источник данных
 
 > **Для глубокого погружения в историю проблемы и детали реализации см. `api-auth-setup.md`** (документ содержит полное
 > техническое описание эволюции решения, включая примеры кода и метрики производительности).
@@ -136,75 +146,75 @@ tests / fixtures / ai / UC - 01 / // Записанные AI-ответы для
 
 ### Железобетонные тесты (UI)
 
-**Краткое описание:** Наш подход к UI-тестированию основан на Page Object Model (POM) и строгой системе `data-testid`. Система таймаутов упрощена и адаптирована для двух основных окружений: `local` (для локальной машины разработчика) и `ci` (для GitHub Actions).
+**Краткое описание:** ✅ **FAIL-FAST АРХИТЕКТУРА** - Упрощенная и предсказуемая система тестирования с фиксированными timeout'ами вместо сложной динамической адаптации.
 
 **Ключевые принципы:**
 
-- **Simplified Timeout System** — адаптация только для local (15s navigation) и CI (45s navigation) режимов
+- **Fixed Timeout System** — простые и предсказуемые timeouts: 3000ms для элементов, 15000ms для навигации
 - **Production-First Testing** — все тесты выполняются против production build (`pnpm build && pnpm start`)
-- **Fail-Fast Architecture** — быстрая диагностика проблем UI с правильными timeout'ами
-- **System Health Checks** — проверка базовой функциональности
+- **Fail-Fast Architecture** — быстрая диагностика проблем UI без избыточной сложности
+- **Universal Authentication** — единый `universalAuthentication()` helper для всех тестов
 - **POM Patterns** — централизованное управление UI логикой
 - **Memory Bank Integration** — использование проверенных селекторов
 - **AI Fixtures** — детерминистичные ответы AI моделей в режиме replay
 
-**✅ Завершенная POM Унификация (2025-06-23):**
+**✅ Завершенная Unified Authentication Migration (2025-06-28):**
 
-- **UC-01:** ✅ Использует PublicationPage POM
-- **UC-05:** ✅ Обновлен - ChatInputHelpers + прямые селекторы заменены на POM
-- **UC-11:** ✅ Полностью переписан с FileImportPage POM
-- **UC-02,03,04,06,07:** ✅ Обновлены импорты и аутентификация
+- **UC-01:** ✅ Эталонная реализация с universalAuthentication
+- **UC-02, UC-03:** ✅ Мигрированы на unified patterns
+- **UC-04, UC-05, UC-06, UC-07:** ✅ Полная миграция завершена
+- **UC-11:** ✅ File import с unified authentication
+- **artifact-editor-behavior:** ✅ Component тесты обновлены
 
 **Архитектурные улучшения:**
 
-- ✅ Единый `fastAuthentication()` helper для всех E2E тестов
-- ✅ Миграция всех POM в `tests/pages/` директорию
-- ✅ Удаление deprecated auth helpers
-- ✅ Консистентные импорты и паттерны
-- ✅ **Dynamic Timeout System (NEW)** — умная адаптация к производительности компиляции
+- ✅ **Universal Authentication** — единый `universalAuthentication()` helper заменил все legacy системы
+- ✅ **Simplified Timeouts** — убрана сложность dynamic timeout систем в пользу предсказуемых фиксированных значений
+- ✅ **Fail-Fast Principles** — быстрая диагностика без graceful degradation overhead
+- ✅ **Consistent Patterns** — все тесты следуют единым архитектурным принципам
+- ✅ **Legacy Cleanup** — удалены устаревшие auth helpers и сложные timeout системы
 
-### Auto-Profile Performance Measurement System (ENHANCED - 2025-06-25)
+### Simplified Fail-Fast Timeout System (2025-06-28)
 
-**Краткое описание:** ✅ **РЕВОЛЮЦИОННАЯ СИСТЕМА** - Enhanced Dynamic Timeout System с автоматическим измерением производительности компиляции в реальном времени и интеллектуальным выбором оптимальных timeout профилей.
+**Краткое описание:** ✅ **УПРОЩЕННАЯ АРХИТЕКТУРА** - Переход от сложной Dynamic Timeout System к простым и предсказуемым фиксированным timeout'ам для лучшей поддерживаемости.
 
-**Ключевые достижения:**
+**Ключевые преимущества:**
 
-- **✅ Real-time Performance Measurement:** Автоматическое измерение времени компиляции каждой страницы
-- **✅ Intelligent Profile Selection:** FAST (≤3s), MEDIUM (≤10s), SLOW/EXTRA_SLOW (>10s) профили
-- **✅ Adaptive Escalation:** Динамическое повышение timeout'ов при обнаружении медленной компиляции
-- **✅ AI Functionality Restoration:** Полное восстановление создания артефактов через AI с adaptive timeouts
-- **✅ Context Stability:** Graceful handling browser context destruction в extreme performance scenarios
+- **✅ Predictable Behavior:** Фиксированные timeout'ы устраняют непредсказуемость в тестах
+- **✅ Easier Debugging:** Простые timeout значения облегчают диагностику проблем
+- **✅ Reduced Complexity:** Убрана избыточная сложность auto-profile measurement
+- **✅ Better Maintainability:** Новые разработчики легко понимают простую систему
+- **✅ Consistent Performance:** Стабильные результаты тестов без performance variability
 
-**Решенные проблемы:**
+**Упрощенная архитектура:**
 
-- **BUG-031 FULLY RESOLVED:** E2E тест artifact editor теперь работает во всех режимах с умной адаптацией
-- **Performance variability:** Система подстраивается к реальной производительности в реальном времени
-- **AI Creation timeouts:** Восстановлена полная функциональность AI с adaptive timeout management
+- **Фиксированные timeout'ы:** 3000ms для элементов, 15000ms для навигации
+- **Простая навигация:** `page.goto()` вместо сложных auto-profile функций
+- **Предсказуемое поведение:** Тесты работают одинаково в любых условиях
 
 **Технические компоненты:**
 
 ```typescript
-// Auto-Profile Measurement в реальном времени
-export async function measureCompilationTimeAndSelectProfile(page: any, url: string): Promise<{
-  actualTime: number,
-  recommendedProfile: 'fast' | 'medium' | 'slow',
-  timeoutConfig: TimeoutConfig
-}>
+// Простая навигация
+await page.goto('/artifacts')
 
-// Smart Navigation с автоматическим профилированием
-export async function navigateWithAutoProfile(page: any, url: string): Promise<TimeoutConfig>
+// Фиксированные timeout'ы
+await expect(element).toBeVisible({ timeout: 3000 })
 
-// Performance-aware navigation в тестах
-const autoProfile = await navigateWithAutoProfile(page, '/artifacts')
-console.log(`🎯 Auto-profile measurement completed: ${autoProfile.navigation}ms navigation timeout`)
+// Универсальная аутентификация
+const testUser = {
+  email: `test-${Date.now()}@test.com`,
+  id: crypto.randomUUID()
+}
+await universalAuthentication(page, testUser)
 ```
 
-**Real Performance Results (DEV mode):**
+**Результаты упрощения:**
 
-- **📊 /artifacts:** 7895ms → **MEDIUM profile** (15s navigation timeout)
-- **📊 / (AI creation):** 10014ms → **EXTRA_SLOW profile** (45s navigation timeout)  
-- **🎯 Adaptive escalation:** Система автоматически повышает timeout'ы при необходимости
-- **✅ Test success:** 1 passed (27.0s) - оптимальное время для dev режима
+- **✅ Easier onboarding:** Новые разработчики быстро понимают систему
+- **✅ Reduced flakiness:** Меньше переменных = больше стабильности
+- **✅ Better debugging:** Простые timeout'ы легче анализировать
+- **✅ Consistent behavior:** Одинаковое поведение во всех средах
 
 **Environment Variable Overrides:**
 
@@ -261,7 +271,7 @@ pnpm test:db-down      # Остановить и удалить контейне
 pnpm test              # E2E + Route тесты против production build
 pnpm test:unit         # Юнит-тесты (94/94) ✅
 pnpm test:routes       # API тесты (82/82) ✅ Direct Cookie Header Pattern  
-pnpm test:e2e          # E2E тесты (16/16) ✅ Unified fastAuthentication()
+pnpm test:e2e          # E2E тесты (8 UC tests) ✅ Universal Authentication
 pnpm test:ui           # Playwright UI mode для интерактивной отладки
 
 # AI Fixtures управление
@@ -293,7 +303,8 @@ tests/
 │   ├── file-import.page.ts # File import system
 │   └── sidebar.page.ts     # Navigation and content management
 ├── helpers/                # ✅ UNIFIED Utilities
-│   ├── e2e-auth.helper.ts  # Unified fastAuthentication()
+│   ├── auth.helper.ts      # Universal Authentication for all test types
+│   ├── e2e-auth.helper.ts  # Legacy (scheduled for removal)
 │   └── ui-helpers.ts       # ChatInputHelpers, etc.
 ├── fixtures/               # Тестовые данные
 │   ├── ai/                 # AI fixtures для replay
@@ -317,17 +328,17 @@ const context = await browser.newContext({
 #### E2E Testing
 
 ```typescript
-// ✅ UNIFIED: Используй fastAuthentication() helper
-import { fastAuthentication } from '../../helpers/e2e-auth.helper'
+// ✅ UNIFIED: Используй universalAuthentication() helper
+import { universalAuthentication } from '../../helpers/auth.helper'
 
 test.beforeEach(async ({ page }) => {
-  await fastAuthentication(page, {
-    email: `test-${Date.now()}@playwright.com`,
-    id: `test-user-${Date.now().toString().slice(-12)}`
-  })
-
-  await page.goto('/')
-  console.log('✅ Fast authentication completed via unified helper')
+  const testUser = {
+    email: `test-${Date.now()}@test.com`,
+    id: crypto.randomUUID()
+  }
+  
+  await universalAuthentication(page, testUser)
+  console.log('✅ Universal authentication completed')
 })
 
 // ✅ UNIFIED: Используй POM классы из tests/pages/

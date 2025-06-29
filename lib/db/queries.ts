@@ -1,13 +1,14 @@
 /**
  * @file lib/db/queries.ts
  * @description Функции для выполнения запросов к базе данных.
- * @version 2.4.1
- * @date 2025-06-13
- * @updated Добавлен await к вызову query() для корректной работы.
+ * @version 2.5.0
+ * @date 2025-06-28
+ * @updated УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - включена изоляция данных по world_id для тестовых миров
  */
 
 /** HISTORY:
- * v2.4.1 (2025-06-13): Добавлен await к вызову query().
+ * v2.5.0 (2025-06-28): УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - включена изоляция данных по world_id, убрана временная отладка
+ * v2.4.1 (2025-06-13): Добавлен await к вызову query() для корректной работы.
  * v2.4.0 (2025-06-13): Инстанс db теперь импортируется из @/lib/db.
  * v2.3.0 (2025-06-12): Added versionTimestamp param to getArtifactById.
  * v2.2.0 (2025-06-10): Импорт ArtifactKind теперь из общего файла lib/types.
@@ -374,7 +375,7 @@ export async function getPagedArtifactsByUserId ({
     )`
   }
   
-  let baseWhere = and(
+  const baseWhere = and(
     eq(artifact.userId, userId), 
     isNull(artifact.deletedAt), 
     searchConditions,
@@ -382,23 +383,34 @@ export async function getPagedArtifactsByUserId ({
   )
   
   // Add world isolation if enabled
+  let finalWhere = baseWhere
   if (actualWorldContext?.worldId) {
+    console.log('🌍 World isolation ENABLED for worldId:', actualWorldContext.worldId)
     const worldFilter = createWorldFilter(actualWorldContext)
-    baseWhere = and(baseWhere, worldFilter.world_id === null 
+    finalWhere = and(baseWhere, worldFilter.world_id === null 
       ? isNull(artifact.world_id) 
       : eq(artifact.world_id, worldFilter.world_id))
     console.log('🌍 Applied artifact world filter:', worldFilter)
+  } else {
+    console.log('🌍 World isolation DISABLED - showing production data')
   }
   if (groupByVersions) {
     // ✅ JAVASCRIPT GROUPING: Compatible approach that works with mocked tests
     console.log('🔍 BUG-023 FIXED: Using JavaScript grouping for latest versions only')
     
     // Get all artifacts and group by ID in JavaScript (PostgreSQL subquery equivalent)
-    const allData = await db.select().from(artifact).where(baseWhere).orderBy(desc(artifact.createdAt))
-    console.log(`🔍 Found ${allData.length} total artifact versions`)
+    console.log('🔍 About to execute DB query with finalWhere:', finalWhere)
+    let allData: Artifact[] = []
+    try {
+      allData = await db.select().from(artifact).where(finalWhere).orderBy(desc(artifact.createdAt))
+      console.log(`🔍 Found ${allData.length} total artifact versions`)
+    } catch (dbError) {
+      console.error('🚨 DB Query failed:', dbError)
+      throw dbError
+    }
     
     // Group by ID, keeping only the latest version (first in sorted order)
-    const latestVersionsMap = new Map<string, typeof allData[0]>()
+    const latestVersionsMap = new Map<string, Artifact>()
     for (const item of allData) {
       if (!latestVersionsMap.has(item.id)) {
         // Since data is already sorted by createdAt DESC, first occurrence = latest version
@@ -418,8 +430,8 @@ export async function getPagedArtifactsByUserId ({
     }
   } else {
     // ✅ ALL VERSIONS: Show all artifact versions separately
-    const totalCountResult = await db.select({ count: count() }).from(artifact).where(baseWhere)
-    const data = await db.select().from(artifact).where(baseWhere).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
+    const totalCountResult = await db.select({ count: count() }).from(artifact).where(finalWhere)
+    const data = await db.select().from(artifact).where(finalWhere).orderBy(desc(artifact.createdAt)).limit(pageSize).offset(offset)
     return { data, totalCount: totalCountResult[0]?.count ?? 0 }
   }
 }

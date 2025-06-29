@@ -1,12 +1,15 @@
 /**
  * @file components/artifact-card.tsx
  * @description Компонент карточки для одного артефакта.
- * @version 2.0.0
- * @date 2025-06-09
- * @updated Переименован, добавлены новые действия, адаптирован под новую архитектуру.
+ * @version 2.3.0
+ * @date 2025-06-28
+ * @updated BUG-046 RESOLVED: Полностью интегрирован SitePublicationDialog с корректной типизацией и API integration
  */
 
 /** HISTORY:
+ * v2.3.0 (2025-06-28): BUG-046 RESOLVED - Полностью интегрирован SitePublicationDialog с правильной типизацией (ArtifactApiResponse → Artifact адаптер) + исправлены TypeScript ошибки
+ * v2.2.0 (2025-06-28): BUG-046 FIX - Интегрирован полноценный SitePublicationDialog вместо заглушки + исправлено название кнопки с "Опубликовать" на "Публикация"
+ * v2.1.0 (2025-06-27): BUG-034 FIX - Добавлен data-testid="artifact-card" и кнопка публикации для site артефактов для поддержки UC-01 E2E тестов
  * v2.0.0 (2025-06-09): Рефакторинг в ArtifactCard, добавлены новые действия.
  * v1.3.0 (2025-06-07): Добавлено отображение поля `summary`.
  */
@@ -41,6 +44,7 @@ import { deleteArtifact } from '@/app/app/(main)/artifacts/actions'
 import { toast } from '@/components/toast'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from './ui/skeleton'
+import { SitePublicationDialog } from './site-publication-dialog'
 import type { ArtifactApiResponse } from '@/lib/types'
 
 export interface ArtifactDocument extends Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'content' | 'kind' | 'summary'> {}
@@ -67,6 +71,8 @@ const kindIcons = {
 
 export function ArtifactCard ({ artifact, onRefresh, onCardClick }: ArtifactCardProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isPublicationDialogOpen, setIsPublicationDialogOpen] = useState(false)
+  const [artifactForPublication, setArtifactForPublication] = useState<ArtifactApiResponse | null>(null)
   const router = useRouter()
   const Icon = kindIcons[artifact.kind] || FileIcon
 
@@ -92,6 +98,7 @@ export function ArtifactCard ({ artifact, onRefresh, onCardClick }: ArtifactCard
     <div
       role="button"
       tabIndex={0}
+      data-testid="artifact-card"
       className="group relative flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => onCardClick(artifact)}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCardClick(artifact) }}
@@ -134,11 +141,68 @@ export function ArtifactCard ({ artifact, onRefresh, onCardClick }: ArtifactCard
             </div>
           )}
 
+          {/* Publication button for site artifacts */}
+          {artifact.kind === 'site' && (
+            <Button
+              data-testid="artifact-publication-button"
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full"
+              onClick={async (e) => {
+                e.stopPropagation()
+                try {
+                  // Fetch full artifact data needed for publication dialog
+                  const response = await fetch(`/api/artifact/${artifact.id}`)
+                  if (response.ok) {
+                    const fullArtifact = await response.json()
+                    setArtifactForPublication(fullArtifact)
+                    setIsPublicationDialogOpen(true)
+                  } else {
+                    toast({ type: 'error', description: 'Не удалось загрузить данные артефакта.' })
+                  }
+                } catch (error) {
+                  console.error('Error fetching artifact for publication:', error)
+                  toast({ type: 'error', description: 'Ошибка при загрузке артефакта.' })
+                }
+              }}
+            >
+              🌐 Публикация
+            </Button>
+          )}
+
           <p className="text-xs text-muted-foreground pt-1">
             {`Обновлено ${formatDistanceToNow(new Date(artifact.createdAt), { addSuffix: true, locale: ru })}`}
           </p>
         </div>
       </div>
+      
+      {/* Site Publication Dialog */}
+      {artifact.kind === 'site' && artifactForPublication && (
+        <SitePublicationDialog
+          siteArtifact={{
+            id: artifactForPublication.id,
+            createdAt: artifactForPublication.createdAt,
+            title: artifactForPublication.title,
+            summary: artifactForPublication.summary,
+            kind: artifactForPublication.kind,
+            userId: artifactForPublication.userId,
+            authorId: artifactForPublication.authorId,
+            deletedAt: artifactForPublication.deletedAt,
+            worldId: artifactForPublication.worldId,
+            publicationState: artifactForPublication.publicationState,
+          }}
+          onSiteUpdate={(updatedArtifact) => {
+            // Update local state with updated publication info
+            setArtifactForPublication({
+              ...artifactForPublication,
+              publicationState: updatedArtifact.publicationState
+            })
+            onRefresh()
+          }}
+          open={isPublicationDialogOpen}
+          onOpenChange={setIsPublicationDialogOpen}
+        />
+      )}
     </div>
   )
 }

@@ -129,8 +129,10 @@ export const codeTool: ArtifactTool = {
       throw error
     }
   },
-  // UC-10 Schema-Driven операции
-  save: saveCodeArtifact,
+  // UC-10 Schema-Driven операции с адаптацией metadata
+  save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
+    return saveCodeArtifact(artifact, content, metadata)
+  },
   load: loadCodeArtifact,
   delete: deleteCodeArtifact,
 }
@@ -153,7 +155,7 @@ import type { Artifact } from '@/lib/db/schema'
 export async function saveCodeArtifact(
   artifact: Artifact, 
   content: string, 
-  metadata?: { language?: string }
+  metadata?: Record<string, any>
 ): Promise<void> {
   await db.insert(artifactText).values({
     artifactId: artifact.id,

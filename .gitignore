@@ -23,6 +23,9 @@ build
 .DS_Store
 *.pem
 
+# test fixtures in public (copied for route tests)
+public/test-fixtures/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

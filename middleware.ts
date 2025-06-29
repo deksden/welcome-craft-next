@@ -1,7 +1,7 @@
 /**
  * @file middleware.ts
  * @description Middleware для мультидоменной архитектуры WelcomeCraft
- * @version 2.1.0
+ * @version 2.2.0
  * 
  * МУЛЬТИДОМЕННАЯ АРХИТЕКТУРА:
  * - app.localhost:port - административная панель (основное приложение)
@@ -12,10 +12,16 @@
  *   Routes: /site/* (переписываются из / при запросе на localhost)
  *   Auth: Публичный доступ, аутентификация не требуется
  * 
+ * UNIFIED COOKIE ARCHITECTURE:
+ * - ТОЛЬКО test-session cookie используется для world isolation и аутентификации
+ * - test-session-fallback как compatibility layer
+ * - УБРАНЫ устаревшие cookies: world_id, world_id_fallback, test-world-id
+ * 
  * ВАЖНО: Cookies и auth session должны работать между доменами!
  * В тестах используются test-session cookies с domain='.localhost'  
  * 
  * ИСТОРИЯ:
+ * v2.2.0 (2025-06-28): UNIFIED COOKIE ARCHITECTURE - переход на единый test-session источник, убраны legacy cookies
  * v2.1.0 (2025-06-25): Исправлена проблема с определением admin домена в production режиме для localhost
  * v2.0.0 (2025-06-15): Добавлена поддержка тестовых sessions, улучшена документация
  * v1.0.0: Базовая мультидоменная маршрутизация
@@ -29,9 +35,35 @@ export async function middleware (request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') ?? 'localhost:3000'
 
-  // World context logging - detailed diagnostics with fallback support
-  let worldCookie = request.cookies.get('world_id')
-  const fallbackWorldCookie = request.cookies.get('world_id_fallback')
+  // UNIFIED COOKIE ARCHITECTURE: World context from test-session only
+  let worldId = null
+  const testSessionCookie = request.cookies.get('test-session')
+  const fallbackSessionCookie = request.cookies.get('test-session-fallback')
+  
+  // Read worldId from unified test-session cookie
+  if (testSessionCookie) {
+    try {
+      const sessionData = JSON.parse(testSessionCookie.value)
+      if (sessionData.worldId) {
+        worldId = sessionData.worldId
+      }
+    } catch (error) {
+      console.warn('🌍 Failed to parse test-session cookie:', error)
+    }
+  }
+  
+  // Fallback to test-session-fallback for compatibility
+  if (!worldId && fallbackSessionCookie) {
+    try {
+      const sessionData = JSON.parse(fallbackSessionCookie.value)
+      if (sessionData.worldId) {
+        worldId = sessionData.worldId
+        console.log('🌍 Using fallback session cookie for world')
+      }
+    } catch (error) {
+      console.warn('🌍 Failed to parse test-session-fallback cookie:', error)
+    }
+  }
   
   // Get all cookie names for diagnostics
   const allCookieNames: string[] = []
@@ -39,25 +71,20 @@ export async function middleware (request: NextRequest) {
     allCookieNames.push(cookie.name)
   })
   
-  // Use fallback if main cookie is not available
-  if (!worldCookie && fallbackWorldCookie) {
-    worldCookie = fallbackWorldCookie
-    console.log('🌍 Using fallback world cookie')
-  }
-  
-  console.log('🌍 MIDDLEWARE DIAGNOSTIC:', {
+  console.log('🌍 MIDDLEWARE DIAGNOSTIC (Unified Architecture):', {
     pathname: url.pathname,
     hostname,
-    worldCookie: worldCookie ? worldCookie.value : 'NOT_FOUND',
-    fallbackWorldCookie: fallbackWorldCookie ? fallbackWorldCookie.value : 'NOT_FOUND',
+    worldId: worldId || 'NOT_FOUND',
+    testSessionPresent: !!testSessionCookie,
+    fallbackSessionPresent: !!fallbackSessionCookie,
     allCookieNames,
     cookieCount: allCookieNames.length
   })
   
-  if (worldCookie) {
-    console.log(`🌍 Request to ${url.pathname} in world: ${worldCookie.value}`)
+  if (worldId) {
+    console.log(`🌍 Request to ${url.pathname} in world: ${worldId}`)
   } else {
-    console.log(`🌍 Request to ${url.pathname} - NO WORLD COOKIE (checked both world_id and world_id_fallback)`)
+    console.log(`🌍 Request to ${url.pathname} - NO WORLD (checked test-session cookies)`)
   }
 
   // Определяем домен для админ-панели  

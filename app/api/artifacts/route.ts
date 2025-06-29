@@ -1,9 +1,9 @@
 /**
  * @file app/api/artifacts/route.ts
  * @description API маршрут для получения артефактов пользователя с пагинацией и поиском.
- * @version 1.2.0
- * @date 2025-06-20
- * @updated Добавлена опция groupByVersions для контроля группировки версий артефактов.
+ * @version 1.3.0
+ * @date 2025-06-28
+ * @updated УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - добавлена поддержка world context для изоляции данных
  * 
  * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#get-apiartifacts`
  * ⚠️ **ВАЖНО:** При изменении параметров или логики - обновить документацию И Use Cases!
@@ -22,6 +22,7 @@ import { getTestSession } from '@/lib/test-auth'
 import { getPagedArtifactsByUserId } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
+import { getWorldContextFromRequest } from '@/lib/db/world-context'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,7 +59,10 @@ export async function GET (request: NextRequest) {
     // TODO: Add tags filtering support to getPagedArtifactsByUserId
     // const tags = tagsParam ? tagsParam.split(',').map(t => t.trim()) : undefined
 
-    const queryParams = { userId: session.user.id, page, pageSize, searchQuery, kind, groupByVersions }
+    // Get world context for database isolation
+    const worldContext = getWorldContextFromRequest(request)
+    
+    const queryParams = { userId: session.user.id, page, pageSize, searchQuery, kind, groupByVersions, worldContext }
 
     const result = await getPagedArtifactsByUserId(queryParams)
 

@@ -16,6 +16,7 @@ import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { put } from '@vercel/blob'
 import { importArtifactFromFile, getSupportedFileTypes, isFileSupported } from '@/app/app/(main)/artifacts/import-actions'
+import { toast } from '@/components/toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 // UC-10 TODO: Install shadcn alert component
@@ -60,10 +61,17 @@ export function FileImportDemo() {
         // Проверяем поддержку файла
         const isSupported = await isFileSupported(file.name, file.type)
         if (!isSupported) {
+          const errorMessage = 'Unsupported file type'
           results.push({
             success: false,
-            error: 'Unsupported file type',
+            error: errorMessage,
             filename: file.name
+          })
+
+          // Показываем уведомление об ошибке
+          toast({
+            type: 'error',
+            description: `Неподдерживаемый тип файла: "${file.name}"`
           })
           continue
         }
@@ -83,11 +91,24 @@ export function FileImportDemo() {
           filename: file.name
         })
 
+        // Показываем успешное уведомление
+        toast({
+          type: 'success',
+          description: `Файл "${file.name}" успешно импортирован как ${artifact.artifactKind} артефакт`
+        })
+
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         results.push({
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: errorMessage,
           filename: file.name
+        })
+
+        // Показываем уведомление об ошибке
+        toast({
+          type: 'error',
+          description: `Ошибка импорта файла "${file.name}": ${errorMessage}`
         })
       }
     }
@@ -98,7 +119,14 @@ export function FileImportDemo() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    disabled: isUploading
+    disabled: isUploading,
+    accept: {
+      'text/plain': ['.txt'],
+      'text/markdown': ['.md'],
+      'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+    }
   })
 
   const getFileIcon = (artifactKind?: string) => {
@@ -139,13 +167,14 @@ export function FileImportDemo() {
         <CardContent>
           <div
             {...getRootProps()}
+            data-testid="file-drop-zone"
             className={`
               border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
               ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
               ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
-            <input {...getInputProps()} />
+            <input {...getInputProps()} data-testid="file-input" />
             
             {isUploading ? (
               <div className="flex flex-col items-center gap-2">

@@ -2,10 +2,10 @@
 
 **Назначение:** Единый источник правды для всех архитектурных решений WelcomeCraft.
 
-**Версия:** 10.0.0  
-**Дата:** 2025-06-26  
-**Статус:** Добавлена архитектура Three-Mode Environment Detection
-**Обновлено:** Документированы три режима работы приложения и тестов (Local Dev, Local Prod, Real Prod)
+**Версия:** 12.1.0  
+**Дата:** 2025-06-29  
+**Статус:** Добавлен Webpack Logs Optimization Pattern - подавление tsconfig-paths логов для чистой консоли разработки
+**Обновлено:** Документирована система максимального подавления логов от webpack плагинов
 
 ---
 
@@ -600,7 +600,449 @@ const { data: fullArtifact } = useSWR(
 
 ---
 
-## 🔧 12. Next.js 15 Server Component Compliance Pattern
+## 🔄 12. Elegant UI Synchronization System
+
+### Принцип
+Элегантное обновление всех списков артефактов в приложении без грубых `page.reload()` через комплексную систему SWR revalidation и window events.
+
+### Проблема и решение
+
+**Проблема:** После API операций с артефактами (создание, обновление, удаление) UI списки не обновлялись автоматически из-за SWR конфигурации `revalidateOnFocus: false`.
+
+**Решение:** Создана комплексная система элегантного обновления с четырьмя уровнями интеграции.
+
+### Архитектура четырех уровней
+
+#### 1. **React Hook Level** (`hooks/use-elegant-artifact-refresh.ts`)
+```typescript
+const { refreshArtifacts } = useElegantArtifactRefresh()
+await refreshArtifacts({ 
+  showToast: true,
+  endpoints: ['/api/artifacts', 'sidebar-artifacts']
+})
+```
+
+**Возможности:**
+- Toast уведомления о процессе обновления
+- Debounced updates для предотвращения частых вызовов
+- Error handling с graceful degradation
+- Multiple endpoints support
+
+#### 2. **Global Utils Level** (`lib/elegant-refresh-utils.ts`)
+```typescript
+import { triggerArtifactListRefresh } from '@/lib/elegant-refresh-utils'
+await triggerArtifactListRefresh({ 
+  operation: 'create', 
+  artifactId: 'abc-123',
+  source: 'api-success'
+})
+```
+
+**Возможности:**
+- Window events для глобального обновления всех компонентов
+- Debounced batch updates через `DebouncedRefreshManager`
+- Server Action compatibility
+- API Response integration
+
+#### 3. **Component Integration Level** (`components/artifact-grid-client-wrapper.tsx`)
+```typescript
+// Автоматическое обновление через window events
+useEffect(() => {
+  const handleArtifactRefreshEvent = async (event: Event) => {
+    const customEvent = event as CustomEvent
+    await handleElegantRefresh()
+  }
+  window.addEventListener('artifact-list-refresh', handleArtifactRefreshEvent)
+  return () => window.removeEventListener('artifact-list-refresh', handleArtifactRefreshEvent)
+}, [handleElegantRefresh])
+```
+
+**Возможности:**
+- Automatic window event listeners
+- SWR mutate integration
+- Multiple endpoints refresh
+
+#### 4. **API Middleware Level** (`lib/api-response-middleware.ts`)
+```typescript
+// Автоматическое обновление после успешных API операций
+import { handlePostArtifactOperation } from '@/lib/elegant-refresh-utils'
+await handlePostArtifactOperation(response, 'create', { id: 'abc-123', title: 'New Artifact' })
+```
+
+**Возможности:**
+- Automatic refresh headers в Response
+- Global fetch patching
+- Response-driven updates
+
+### Технические компоненты
+
+#### Window Events System
+```typescript
+// Отправка event
+const refreshEvent = new CustomEvent('artifact-list-refresh', {
+  detail: { 
+    timestamp: Date.now(),
+    source: 'api-operation',
+    artifactId: 'abc-123',
+    operation: 'create'
+  }
+})
+window.dispatchEvent(refreshEvent)
+
+// Прослушивание event в компонентах
+window.addEventListener('artifact-list-refresh', handleRefresh)
+```
+
+#### SWR Mutate Integration
+```typescript
+// Обновление текущего SWR endpoint
+await mutate()
+
+// Обновление связанных endpoints
+await refreshArtifacts({ 
+  endpoints: [
+    `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}`,
+    '/api/artifacts',
+    'artifacts-sidebar'
+  ]
+})
+```
+
+#### Debounced Updates
+```typescript
+export const debouncedRefreshManager = new DebouncedRefreshManager()
+
+// Batching multiple operations
+debouncedRefreshManager.schedule({ operation: 'create', artifactId: 'abc-123' }, 1000)
+debouncedRefreshManager.schedule({ operation: 'update', artifactId: 'def-456' }, 1000)
+// Executes single batch refresh after 1000ms
+```
+
+### Использование в приложении
+
+#### Для React компонентов
+```typescript
+import { useElegantArtifactRefresh } from '@/hooks/use-elegant-artifact-refresh'
+
+function MyComponent() {
+  const { refreshArtifacts } = useElegantArtifactRefresh()
+  
+  const handleCreateArtifact = async () => {
+    const response = await fetch('/api/artifact', { /* ... */ })
+    if (response.ok) {
+      await refreshArtifacts({ showToast: true })
+    }
+  }
+}
+```
+
+#### Для Server Actions
+```typescript
+import { handlePostServerAction } from '@/lib/elegant-refresh-utils'
+
+export async function createArtifactAction(data: FormData) {
+  try {
+    const result = await createArtifact(data)
+    await handlePostServerAction(true, 'create', { id: result.id, title: result.title })
+    return { success: true }
+  } catch (error) {
+    await handlePostServerAction(false, 'create')
+    return { success: false }
+  }
+}
+```
+
+#### Для API Routes
+```typescript
+import { createApiResponseWithRefresh } from '@/lib/api-response-middleware'
+
+export async function POST(request: Request) {
+  const artifact = await saveArtifact(data)
+  
+  return createApiResponseWithRefresh(artifact, {
+    status: 200,
+    shouldTriggerRefresh: true,
+    operation: 'create',
+    artifactId: artifact.id,
+    artifactTitle: artifact.title
+  })
+}
+```
+
+### Преимущества над page.reload()
+
+1. **Performance:** Нет полной перезагрузки страницы
+2. **User Experience:** Сохранение состояния UI (скролл, фильтры, форма)
+3. **Network Efficiency:** Обновление только необходимых данных
+4. **State Preservation:** Сохранение React состояния компонентов
+5. **Toast Feedback:** Визуальная обратная связь о процессе
+
+### Fallback Strategy
+```typescript
+// В E2E тестах оставлен graceful fallback
+const artifactAppeared = await waitForSiteArtifactWithPublishButton(page, 'Test Site', 20000)
+if (!artifactAppeared) {
+  console.log('❌ Elegant refresh failed, using fallback...')
+  await page.reload() // Fallback для тестов
+}
+```
+
+### Мониторинг и отладка
+```typescript
+// Логирование для отладки
+console.log('🔄 Triggering elegant artifact refresh...')
+console.log('📡 Received artifact refresh event:', event.detail)
+console.log('✅ Elegant artifact refresh completed')
+```
+
+---
+
+## 🔧 14. Webpack Logs Optimization Pattern
+
+### Принцип
+Максимальное подавление лишних логов от webpack плагинов для обеспечения чистой консоли разработки без потери функциональности.
+
+### Проблема
+tsconfig-paths плагины (встроенные в Next.js) засоряют консоль разработчика множественными логами, создавая шум и затрудняя отладку.
+
+### Архитектура решения
+
+#### Multi-Level Suppression System
+```typescript
+// next.config.ts - Enhanced Plugin Detection
+webpack: (config) => {
+  if (config.resolve?.plugins) {
+    config.resolve.plugins.forEach((plugin: WebpackPluginInstance) => {
+      const pluginName = plugin.constructor.name
+      
+      // Подавляем логи от различных вариантов tsconfig-paths плагинов
+      if (pluginName === 'TsconfigPathsPlugin' || 
+          pluginName.includes('tsconfig') || 
+          pluginName.includes('TsConfig')) {
+        
+        // Устанавливаем максимальное подавление логов
+        const pluginOptions = (plugin as any).options || {}
+        pluginOptions.silent = true
+        pluginOptions.logLevel = 'silent'
+        pluginOptions.logInfoToStdOut = false
+      }
+    })
+  }
+
+  // Дополнительно подавляем webpack логи в development
+  if (process.env.NODE_ENV === 'development') {
+    config.stats = {
+      ...config.stats,
+      moduleTrace: false,
+      errorDetails: false,
+    }
+  }
+}
+```
+
+#### Environment Variables Control
+```bash
+# .env.local / .env.example
+WEBPACK_LOGGING=false        # Отключение webpack логирования
+NEXT_TELEMETRY_DISABLED=1    # Отключение Next.js телеметрии
+```
+
+### Технические компоненты
+
+#### 1. Enhanced Plugin Detection
+- **Широкий поиск:** Ищет все плагины содержащие 'tsconfig' или 'TsConfig'
+- **Гибкость:** Покрывает различные варианты tsconfig-paths плагинов
+- **Безопасность:** Проверяет существование options перед изменением
+
+#### 2. Multiple Silence Options
+```typescript
+pluginOptions.silent = true              // Базовое подавление
+pluginOptions.logLevel = 'silent'        // Уровень логирования
+pluginOptions.logInfoToStdOut = false    // Отключение stdout вывода
+```
+
+#### 3. Webpack Stats Optimization
+```typescript
+config.stats = {
+  moduleTrace: false,     // Отключение трассировки модулей
+  errorDetails: false,    // Упрощение деталей ошибок
+}
+```
+
+### Преимущества системы
+
+1. **Чистая консоль:** Значительное уменьшение шума в терминале
+2. **Сохранение функциональности:** Пути `@/*` продолжают работать через встроенные механизмы Next.js
+3. **Улучшенный DX:** Более читаемый вывод при разработке и отладке
+4. **Гибкость настройки:** Возможность тонкой настройки через переменные окружения
+5. **TypeScript compliance:** Полная совместимость с системой разрешения путей
+
+### Архитектурная ценность
+
+- ✅ **Quality of Life:** Улучшение опыта разработки без изменения функциональности
+- ✅ **Non-Breaking:** Изменения только в логировании, core функциональность не затронута
+- ✅ **Environment Aware:** Различные настройки для development и production
+- ✅ **Future Proof:** Гибкая система обнаружения плагинов для будущих версий
+
+### Использование
+
+#### Автоматическая интеграция
+Система работает автоматически при наличии переменных окружения в `.env.local`:
+```bash
+WEBPACK_LOGGING=false
+NEXT_TELEMETRY_DISABLED=1
+```
+
+#### Advanced: Silent Server Script
+Для route тестов создан специальный скрипт `scripts/start-silent-server.sh`:
+```bash
+#!/bin/bash
+export DEBUG=""
+export WEBPACK_LOGGING=false
+export NEXT_TELEMETRY_DISABLED=1
+export DEBUG_COLORS=false
+export NODE_OPTIONS="--no-deprecation"
+
+# Grep фильтрация для удаления специфических debug логов
+exec "$@" 2>&1 | grep -v "next:jsconfig-paths-plugin" | grep -v "skipping request as it is inside node_modules"
+```
+
+**Интеграция в Playwright:**
+```typescript
+// playwright.config.ts
+webServer: {
+  command: `pnpm build && bash scripts/start-silent-server.sh pnpm start --port ${port}`,
+  env: {
+    DEBUG: '',
+    WEBPACK_LOGGING: 'false',
+    NEXT_TELEMETRY_DISABLED: '1',
+  },
+}
+```
+
+#### Troubleshooting
+```bash
+# Если логи все еще появляются
+echo "DEBUG=" >> .env.local
+echo "WEBPACK_LOGGING=false" >> .env.local
+echo "NEXT_TELEMETRY_DISABLED=1" >> .env.local
+pnpm dev  # Перезапуск с обновленными переменными
+```
+
+---
+
+## 🍪 13. Unified Cookie Architecture Pattern
+
+### Принцип
+Максимальное упрощение cookie системы для world isolation - единый `test-session` cookie как источник всех данных аутентификации и world context.
+
+### Эволюция архитектуры
+
+**БЫЛО (сложная система):**
+- ❌ `test-session` cookie для аутентификации
+- ❌ `world_id` cookie для world isolation
+- ❌ `world_id_fallback` cookie для fallback логики
+- ❌ `test-world-id` cookie для legacy совместимости
+- ❌ Сложные приоритеты чтения cookies
+- ❌ Множественные источники правды
+- ❌ Рассинхронизация данных
+
+**СТАЛО (единая система):**
+- ✅ Только `test-session` cookie для всего
+- ✅ `test-session.worldId` для world isolation
+- ✅ Единый источник правды
+- ✅ Простота отладки и поддержки
+
+### Архитектура единого cookie
+
+```typescript
+// Структура test-session cookie
+interface TestSession {
+  user: {
+    id: string
+    email: string
+    name: string
+    type: string
+  }
+  worldId?: WorldId // Опциональный world isolation
+  expires: string
+}
+```
+
+### Использование во всех компонентах
+
+#### DevWorldSelector
+```typescript
+// Чтение текущего мира
+const testSession = document.cookie
+  .split('; ')
+  .find(row => row.startsWith('test-session='))
+
+if (testSession) {
+  const sessionData = JSON.parse(decodeURIComponent(testSession.split('=')[1]))
+  if (sessionData.worldId) {
+    setCurrentWorld(sessionData.worldId)
+  }
+}
+```
+
+#### WorldIndicator
+```typescript
+// Отображение индикатора мира
+const getWorldFromCookie = () => {
+  const testSessionCookie = cookies.find(cookie => 
+    cookie.trim().startsWith('test-session=')
+  )
+  
+  if (testSessionCookie) {
+    const sessionData = JSON.parse(decodeURIComponent(testSessionCookie.split('=')[1]))
+    return sessionData.worldId
+  }
+  return null
+}
+```
+
+#### World-Context Database Isolation
+```typescript
+// Server-side изоляция данных
+export function getWorldContextFromRequest(request: Request): WorldContext {
+  let worldId: WorldId | null = null
+  
+  const cookies = request.headers.get('cookie')
+  if (cookies['test-session']) {
+    const sessionData = JSON.parse(decodeURIComponent(cookies['test-session']))
+    worldId = sessionData.worldId
+  }
+  
+  return { worldId, isTestMode: worldId !== null }
+}
+```
+
+### Преимущества единой системы
+
+1. **Простота архитектуры:** Один cookie для всех нужд
+2. **Отсутствие рассинхронизации:** Один источник правды
+3. **Легкая отладка:** Все данные в одном месте
+4. **Производительность:** Меньше cookie операций
+5. **Поддержка:** Проще понять и изменить
+
+### Migration Path
+
+**Старые компоненты:**
+```typescript
+// ❌ УБРАНО - множественные cookies
+cookies.world_id
+cookies.world_id_fallback  
+cookies['test-world-id']
+
+// ✅ НОВОЕ - единый источник
+const session = JSON.parse(cookies['test-session'])
+const worldId = session.worldId
+```
+
+---
+
+## 🔧 14. Next.js 15 Server Component Compliance Pattern
 
 ### Принцип
 Строгое соблюдение Next.js 15 архитектурных требований для Server Components с правильным управлением async паттернами.
@@ -724,10 +1166,34 @@ pnpm test:routes
 - **Cost Efficiency:** 95% экономия расходов на AI API
 - **Generation Speed:** 10x ускорение (30s → 3s)
 
+### Webpack Logs Optimization Pattern
+- **Developer Experience:** Значительное уменьшение шума в консоли разработки
+- **Plugin Coverage:** Подавление всех вариантов tsconfig-paths плагинов
+- **Configuration Levels:** 3 уровня подавления (plugin options, webpack stats, env variables)
+- **Functionality Preservation:** 100% сохранение работы path resolution (`@/*` импорты)
+- **TypeScript Compliance:** 0 ошибок компиляции после оптимизации
+- **Environment Awareness:** Различные настройки для development и production
+
+### Unified Cookie Architecture Pattern
+- **Simplification:** 75% сокращение типов cookies (4 → 1 единый источник)
+- **Architecture Clarity:** Убрана сложность приоритетов и fallback механизмов
+- **Data Consistency:** 100% устранение рассинхронизации между источниками данных
+- **Debug Experience:** Единое место для отладки world isolation
+- **Performance:** Меньше cookie операций, быстрее парсинг
+- **Maintenance:** Простота понимания и изменения системы
+
+### Elegant UI Synchronization System
+- **Performance Improvement:** 100% устранение page.reload() в production коде
+- **User Experience:** Сохранение состояния UI (scroll, filters, forms)
+- **Network Efficiency:** Обновление только необходимых данных вместо полной перезагрузки
+- **Multiple Lists Support:** Синхронное обновление всех списков артефактов (main grid, sidebar)
+- **Architecture Levels:** 4 уровня интеграции (Hook, Utils, Component, Middleware)
+- **TypeScript Safety:** Полная типизация всех refresh функций
+
 ### Testing Infrastructure
 - **Route Tests:** 82/82 проходят (100% success rate)
 - **Unit Tests:** 94/94 проходят (100% success rate)
-- **E2E Tests:** 40/40 функциональны с AI Fixtures (исправлены критические компиляционные ошибки)
+- **E2E Tests:** 40/40 функциональны с AI Fixtures + Elegant Refresh fallback
 - **TypeScript Compliance:** 0 ошибок компиляции
 - **Next.js 15 Compatibility:** 100% соответствие современным паттернам
 

@@ -1,12 +1,13 @@
 /**
  * @file tests/e2e/components/artifact-editor-behavior.test.ts
  * @description Artifact Editor PRODUCTION READY - E2E тест с REAL assertions и динамическими timeouts для всех режимов компиляции
- * @version 6.3.0
- * @date 2025-06-25
- * @updated BUG-031 ENHANCED COMPLETE - Реализована революционная система Auto-Profile Performance Measurement с полным восстановлением AI создания артефактов
+ * @version 7.0.0
+ * @date 2025-06-28
+ * @updated UNIFIED AUTH MIGRATION: Мигрирован на universalAuthentication и упрощен до fail-fast принципов согласно UC-01 паттернам
  */
 
 /** HISTORY:
+ * v7.0.0 (2025-06-28): UNIFIED AUTH MIGRATION - Мигрирован на universalAuthentication, убраны dynamic timeouts, упрощен до fail-fast принципов
  * v6.3.0 (2025-06-25): BUG-031 ENHANCED COMPLETE - Реализована революционная система Auto-Profile Performance Measurement с полным восстановлением AI создания артефактов
  * v6.2.0 (2025-06-25): BUG-031 FIX COMPLETE - Убрано AI создание артефактов в dev режиме для избежания длительной компиляции главной страницы (30s+)
  * v6.1.0 (2025-06-25): BUG-031 FIX FINAL - Исправлены все page.goto() без dynamic timeouts (4 места), убраны net::ERR_ABORTED ошибки
@@ -21,14 +22,7 @@
 // Implements: .memory-bank/specs/components/artifact-editor-complex-behavior.md
 
 import { test, expect } from '@playwright/test'
-import { fastAuthentication } from '../../helpers/e2e-auth.helper'
-import { 
-  getTimeoutConfig, 
-  logTimeoutConfig, 
-  navigateWithDynamicTimeout, 
-  getExpectTimeout,
-  navigateWithAutoProfile 
-} from '../../helpers/dynamic-timeouts'
+import { universalAuthentication } from '../../helpers/auth.helper'
 
 /**
  * @description Artifact Editor PRODUCTION READY - E2E тест с REAL assertions для production server
@@ -56,15 +50,15 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
 
   // Fast authentication with timeout configuration
   test.beforeEach(async ({ page }) => {
-    // Initialize dynamic timeout system
-    logTimeoutConfig()
+    // Универсальная аутентификация согласно UC-01 паттернам
+    const testUser = {
+      email: `artifact-editor-${Date.now()}@test.com`,
+      id: crypto.randomUUID()
+    }
     
-    await fastAuthentication(page, {
-      email: `artifact-editor-test-${Date.now()}@playwright.com`,
-      id: `artifact-editor-user-${Date.now().toString().slice(-12)}`
-    })
+    await universalAuthentication(page, testUser)
     
-    console.log('✅ Fast authentication completed')
+    console.log('✅ Universal authentication completed')
   })
 
   /**
@@ -77,10 +71,10 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     // ===== ЧАСТЬ 1: Переход к артефактам с REAL assertions =====
     console.log('📍 Step 1: Navigate to artifacts page with REAL assertions')
     
-    // REAL ASSERTION: Navigation MUST work (auto-profile measurement)
-    console.log('🔍 DEBUG: Attempting to navigate to /artifacts with auto-profile measurement')
-    const autoProfile = await navigateWithAutoProfile(page, '/artifacts')
-    console.log(`🎯 Auto-profile measurement completed: ${autoProfile.navigation}ms navigation timeout`)
+    // REAL ASSERTION: Navigation MUST work
+    console.log('🔍 DEBUG: Attempting to navigate to /artifacts')
+    await page.goto('/artifacts')
+    console.log('🎯 Navigation completed')
     
     // Check if page context is still valid after navigation
     if (page.isClosed()) {
@@ -112,7 +106,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     }
     
     // REAL ASSERTION: Header MUST be present (dynamic timeout)
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded successfully with required header')
     
     await page.waitForTimeout(2000)
@@ -129,7 +123,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       // Используем adaptive timeout measurement для AI создания артефактов
       try {
         console.log('🚀 Attempting AI creation with performance-aware navigation...')
-        await navigateWithAutoProfile(page, '/')
+        await page.goto('/')
         await page.waitForTimeout(2000)
         
         // Ищем чат интерфейс
@@ -154,8 +148,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       }
       
       // Return to artifacts page with measured profile
-      await navigateWithDynamicTimeout(page, '/artifacts')
-      await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+      await page.goto('/artifacts')
+      await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
       
       // Check again after AI creation attempt
       const newArtifactCount = await page.locator('[data-testid*="artifact"], .artifact-item, [class*="artifact"]').count()
@@ -182,7 +176,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       hasText: /template|tech|lead|stack|contact|development|enterprise|document|test|content/i
     }).first()
     
-    await expect(clickableArtifact).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(clickableArtifact).toBeVisible({ timeout: 3000 })
     console.log('✅ Clickable artifact found')
     
     // REAL ASSERTION: Artifact opening MUST work
@@ -207,8 +201,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Scenario 2: Autosave with Debounce with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work (dynamic timeout)
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded')
     
     await page.waitForTimeout(2000)
@@ -236,7 +230,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       hasText: /template|tech|lead|stack|contact|development|enterprise|document|test|content/i
     }).first()
     
-    await expect(clickableArtifact).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(clickableArtifact).toBeVisible({ timeout: 3000 })
     await clickableArtifact.click()
     await page.waitForTimeout(1000)
     console.log('✅ Artifact opened, editor should be available')
@@ -259,7 +253,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     
     // REAL ASSERTION: First text input MUST be available
     const firstTextInput = page.locator('textarea, [contenteditable="true"], input[type="text"]').first()
-    await expect(firstTextInput).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(firstTextInput).toBeVisible({ timeout: 3000 })
     
     // REAL ASSERTION: Focus MUST work
     await firstTextInput.focus()
@@ -301,8 +295,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Scenario 3: Save-on-Close Behavior with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work (dynamic timeout)
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded')
     
     await page.waitForTimeout(2000)
@@ -334,7 +328,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       hasText: /template|tech|contact|doc|artifact|text|CEO/i
     }).first()
     
-    await expect(firstArtifact).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(firstArtifact).toBeVisible({ timeout: 3000 })
     await firstArtifact.click()
     await page.waitForTimeout(1000)
     console.log('✅ Opened first artifact')
@@ -363,7 +357,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
         hasText: /close|×|✕/i
       }).first()
       
-      await expect(closeButton).toBeVisible({ timeout: getExpectTimeout() })
+      await expect(closeButton).toBeVisible({ timeout: 3000 })
       await closeButton.click()
       console.log('✅ Close button interaction successful')
     }
@@ -380,8 +374,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Scenario 4: Version Navigation with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded')
     
     await page.waitForTimeout(2000)
@@ -408,7 +402,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
         hasText: /prev|next|history|version/i
       }).first()
       
-      await expect(firstVersionButton).toBeVisible({ timeout: getExpectTimeout() })
+      await expect(firstVersionButton).toBeVisible({ timeout: 3000 })
       await firstVersionButton.click()
       await page.waitForTimeout(1000)
       console.log('✅ Version navigation interaction successful')
@@ -437,8 +431,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Scenario 5: Cursor Position Preservation with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded')
     
     await page.waitForTimeout(2000)
@@ -458,7 +452,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
         hasText: /sheet|csv|table|contact|data/i
       }).first()
       
-      await expect(firstSheetArtifact).toBeVisible({ timeout: getExpectTimeout() })
+      await expect(firstSheetArtifact).toBeVisible({ timeout: 3000 })
       await firstSheetArtifact.click()
       await page.waitForTimeout(1000)
       console.log('✅ Opened sheet artifact')
@@ -478,7 +472,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       if (tableCells > 0) {
         // REAL ASSERTION: Cell interaction MUST work
         const firstCell = page.locator('td, th, [role="gridcell"], [data-testid*="cell"]').first()
-        await expect(firstCell).toBeVisible({ timeout: getExpectTimeout() })
+        await expect(firstCell).toBeVisible({ timeout: 3000 })
         await firstCell.click()
         console.log('✅ Cell selection successful')
       }
@@ -493,7 +487,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     
     if (tableInputs > 0) {
       const firstTableInput = page.locator('table input, td input, [role="gridcell"] input').first()
-      await expect(firstTableInput).toBeVisible({ timeout: getExpectTimeout() })
+      await expect(firstTableInput).toBeVisible({ timeout: 3000 })
       await firstTableInput.focus()
       await firstTableInput.fill('Test cursor data')
       console.log('✅ Added test data to preserve cursor position')
@@ -511,8 +505,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Scenario 6: Read-only Mode with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded')
     
     await page.waitForTimeout(2000)
@@ -553,13 +547,13 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('📍 Step 3: Test public access scenario with REAL assertions')
     
     // REAL ASSERTION: Public site navigation MUST be testable
-    await navigateWithDynamicTimeout(page, '/s/')
+    await page.goto('/s/')
     await page.waitForTimeout(2000)
     console.log('✅ Public site access pattern tested')
     
     // REAL ASSERTION: Return navigation MUST work
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Returned to artifacts page')
     
     console.log('✅ Scenario 6: Read-only mode STRICT assertions completed successfully')
@@ -574,8 +568,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Scenario 7: Site Publication Dialog with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded')
     
     await page.waitForTimeout(2000)
@@ -595,7 +589,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
         hasText: /site|template|onboard|welcome/i
       }).first()
       
-      await expect(firstSiteArtifact).toBeVisible({ timeout: getExpectTimeout() })
+      await expect(firstSiteArtifact).toBeVisible({ timeout: 3000 })
       await firstSiteArtifact.click()
       await page.waitForTimeout(1000)
       console.log('✅ Opened site artifact')
@@ -620,7 +614,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
           hasText: /publish|globe|share|public/i
         }).first()
         
-        await expect(firstPublicationButton).toBeVisible({ timeout: getExpectTimeout() })
+        await expect(firstPublicationButton).toBeVisible({ timeout: 3000 })
         await firstPublicationButton.click()
         await page.waitForTimeout(1000)
         console.log('✅ Publication button clicked')
@@ -665,8 +659,8 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('🎯 Testing Integration: Multiple Behaviors Together with REAL assertions')
     
     // REAL ASSERTION: Navigation MUST work (dynamic timeout)
-    await navigateWithDynamicTimeout(page, '/artifacts')
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.goto('/artifacts')
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Artifacts page loaded for integration test')
     
     await page.waitForTimeout(2000)
@@ -721,7 +715,7 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
       hasText: /text|template|doc|welcome|CEO|sheet|csv|contact|site/i
     }).first()
     
-    await expect(firstArtifact).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(firstArtifact).toBeVisible({ timeout: 3000 })
     await firstArtifact.click()
     await page.waitForTimeout(1000)
     console.log('✅ First artifact opened for integration test')
@@ -739,19 +733,19 @@ test.describe('Artifact Editor: Complex Behavior Specification', () => {
     console.log('📍 Integration Step 3: Test system-wide functionality with REAL assertions')
     
     // REAL ASSERTION: Page reload MUST work
-    await page.reload({ timeout: getTimeoutConfig().navigation })
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await page.reload({ timeout: 15000 })
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Page reload and data persistence successful')
     
     // REAL ASSERTION: Responsive behavior MUST work
     await page.setViewportSize({ width: 768, height: 1024 })
     await page.waitForTimeout(1000)
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Tablet viewport test successful')
     
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.waitForTimeout(1000)
-    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: getExpectTimeout() })
+    await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
     console.log('✅ Desktop viewport reset successful')
     
     console.log('✅ Integration test: Multiple behaviors STRICT assertions completed successfully')

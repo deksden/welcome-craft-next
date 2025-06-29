@@ -1,11 +1,12 @@
 /**
  * @file app/api/test/auth-signin/route.ts
- * @description Тестовый endpoint для мультидоменной аутентификации в Playwright
- * @version 3.0.0
+ * @description Тестовый endpoint для мультидоменной аутентификации в Playwright + DevWorldSelector
+ * @version 3.1.0
  * @created 2025-06-15
  * @purpose ВРЕМЕННЫЙ - создание сессии для всех доменов архитектуры
  * 
  * ИСТОРИЯ:
+ * v3.1.0 (2025-06-28): Поддержка DevWorldSelector - разрешен доступ в development режиме
  * v3.0.0 (2025-06-15): Исправление мультидоменной архитектуры - cookies для app.localhost и localhost
  * v2.0.0 (2025-06-15): Упрощение подхода - прямое создание сессии
  * v1.0.0 (2025-06-15): Попытка использовать Auth.js JWT encoder
@@ -23,15 +24,17 @@ export async function POST(request: NextRequest) {
   // Проверяем что это тестовое окружение
   const testHeader = request.headers.get('X-Test-Environment');
   const isTestEnv = process.env.NODE_ENV === 'test' || 
+                    process.env.NODE_ENV === 'development' || // Разрешаем в dev режиме
                     process.env.PLAYWRIGHT === 'true' || 
-                    testHeader === 'playwright';
+                    testHeader === 'playwright' ||
+                    testHeader === 'dev-world-selector'; // Разрешаем для DevWorldSelector
   
   if (!isTestEnv) {
     return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
   }
 
   try {
-    const { email, userId, userType } = await request.json();
+    const { email, userId, userType, name, worldId } = await request.json();
 
     // Проверяем что email предоставлен
     if (!email) {
@@ -46,9 +49,10 @@ export async function POST(request: NextRequest) {
       user: {
         id: finalUserId,
         email,
-        name: email,
+        name: name || email,
         type: userType || 'regular'
       },
+      worldId: worldId || null, // Поддержка world ID для dev selector
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 дней
     };
 
@@ -59,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const cookieData = JSON.stringify(sessionData);
     const cookieOptions = {
-      httpOnly: true,
+      httpOnly: false, // ВАЖНО: false для test-session чтобы JavaScript мог читать cookie
       secure: false, // false для localhost в development
       sameSite: 'lax' as const,
       path: '/',
@@ -67,17 +71,19 @@ export async function POST(request: NextRequest) {
     };
 
     // КРИТИЧНО: Устанавливаем cookies для мультидоменной архитектуры
-    // 1. Cookie с .localhost domain - для app.localhost поддомена
+    // 1. Cookie без domain - для текущего точного хоста (primary)
     response.cookies.set('test-session', cookieData, {
-      ...cookieOptions,
-      domain: '.localhost' // поддерживает app.localhost и localhost
+      ...cookieOptions
+      // без domain - устанавливается для текущего хоста (app.localhost:3000)
     });
     
-    // 2. Cookie без domain - для точного хоста (fallback)
+    // 2. Cookie с .localhost domain - для кроссдоменности (fallback)
     response.cookies.set('test-session-fallback', cookieData, {
-      ...cookieOptions
-      // без domain - устанавливается для текущего хоста
+      ...cookieOptions,
+      domain: '.localhost' // поддерживает app.localhost и localhost (если браузер разрешает)
     });
+
+    // worldId уже включен в sessionData, отдельный cookie не нужен
 
     return response;
   } catch (error) {

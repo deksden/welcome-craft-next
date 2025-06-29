@@ -1,9 +1,9 @@
 /**
  * @file lib/artifact-content-utils.ts
  * @description UC-10 COMPATIBILITY LAYER - Временные утилиты для совместимости со старым API во время переходного периода
- * @version 2.0.0
- * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Переведено на новую архитектуру специализированных таблиц, но сохранена совместимость с существующим кодом
+ * @version 2.0.1
+ * @date 2025-06-28
+ * @updated BUG-043 FIX: Улучшен error handling в normalizeArtifactForAPI + добавлена отладочная информация для диагностики undefined kind
  */
 
 import type { Artifact as ArtifactSchema } from '@/lib/db/schema'
@@ -56,10 +56,13 @@ export async function normalizeArtifactForAPI(dbArtifact: ArtifactSchema | Artif
           // Для новых типов артефактов пока возвращаем JSON
           content = typeof loadedContent === 'string' ? loadedContent : JSON.stringify(loadedContent)
       }
+    } else {
+      console.warn(`🔍 BUG-043 DEBUG: No content found for artifact ${dbArtifact.id} (${dbArtifact.kind}), but continuing with empty content`)
+      content = ''
     }
   } catch (error) {
-    console.error('Error loading artifact content:', error)
-    // Fallback: возвращаем пустую строку если не удалось загрузить
+    console.error(`🔍 BUG-043 DEBUG: Error loading artifact content for ${dbArtifact.id} (${dbArtifact.kind}):`, error)
+    // CRITICAL: Fallback с пустым контентом, но ОБЯЗАТЕЛЬНО сохраняем все metadata включая kind
     content = ''
   }
   
@@ -67,7 +70,7 @@ export async function normalizeArtifactForAPI(dbArtifact: ArtifactSchema | Artif
   const worldId = 'worldId' in dbArtifact ? dbArtifact.worldId : (dbArtifact as any).world_id
   const publicationState = 'publicationState' in dbArtifact ? dbArtifact.publicationState : (dbArtifact as any).publication_state || []
   
-  return {
+  const result = {
     id: dbArtifact.id,
     createdAt: dbArtifact.createdAt,
     title: dbArtifact.title,
@@ -80,6 +83,16 @@ export async function normalizeArtifactForAPI(dbArtifact: ArtifactSchema | Artif
     publicationState,
     content
   }
+  
+  console.log(`🔍 BUG-043 DEBUG: normalizeArtifactForAPI returning:`, {
+    id: result.id,
+    title: result.title,
+    kind: result.kind,
+    hasContent: !!result.content,
+    allKeys: Object.keys(result)
+  })
+  
+  return result
 }
 
 /**

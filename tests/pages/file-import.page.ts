@@ -37,12 +37,12 @@ export class FileImportPage {
 
   /** Toast уведомления об импорте */
   get uploadToast(): Locator {
-    return this.page.locator('[data-testid*="toast"]')
+    return this.page.locator('[data-testid="toast"]')
   }
 
-  /** Карточка созданного артефакта */
+  /** Карточка созданного артефакта - в FileImportDemo это результаты импорта */
   get artifactCard(): Locator {
-    return this.page.getByTestId('artifact-card')
+    return this.page.locator('.border.rounded-lg').filter({ hasText: 'sample.' }).first()
   }
 
   /** Панель артефакта с контентом */

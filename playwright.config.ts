@@ -91,7 +91,7 @@ export default (async () => {
 
     // ✅ Интеграция с эфемерной БД
     globalSetup: './tests/global-setup.ts',
-    globalTeardown: 'docker-compose down',
+    globalTeardown: './tests/global-teardown.ts',
 
     use: {
       baseURL: urls.publicBase,
@@ -126,13 +126,23 @@ export default (async () => {
 
     // 2. Безусловный запуск продакшн-сборки для всех тестов
     webServer: {
-      command: `pnpm build && pnpm start --port ${port}`,
+      command: `pnpm build && bash scripts/start-silent-server.sh pnpm start --port ${port}`,
       url: urls.ping,
       // 3. Увеличенный таймаут для сборки
       timeout: 180 * 1000, 
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',
       stderr: 'pipe',
+      // 4. Подавление debug логов от webpack плагинов
+      env: {
+        ...process.env,
+        DEBUG: '',
+        WEBPACK_LOGGING: 'false',
+        NEXT_TELEMETRY_DISABLED: '1',
+        // Специально отключаем jsconfig-paths debug логи
+        'DEBUG_COLORS': 'false',
+        NODE_OPTIONS: '--no-deprecation',
+      },
     },
   });
 })();

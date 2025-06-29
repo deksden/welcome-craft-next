@@ -1,17 +1,19 @@
 /**
  * @file app/api/artifacts/import/route.ts
  * @description UC-10 SCHEMA-DRIVEN CMS - API endpoint для импорта файлов в артефакты.
- * @version 1.0.0
- * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Создан новый API endpoint для автоматического импорта файлов в артефакты с использованием file-import-system.
+ * @version 1.2.0
+ * @date 2025-06-28
+ * @updated Убрана GET функция - перенесена в отдельный supported-types/route.ts
  */
 
 /** HISTORY:
+ * v1.2.0 (2025-06-28): Убрана GET функция - перенесена в отдельный supported-types/route.ts для правильной Next.js маршрутизации
+ * v1.1.0 (2025-06-28): Исправлена аутентификация - переход с auth() на getAuthSession() для поддержки route тестов
  * v1.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Создан API endpoint с интеграцией file-import-system, artifact-tools и генерацией уникальных ID для артефактов.
  */
 
 import { type NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/app/app/(auth)/auth'
+import { getAuthSession } from '@/lib/test-auth'
 import { importFileToArtifact } from '@/lib/file-import-system'
 import { saveArtifact } from '@/artifacts/kinds/artifact-tools'
 import { db } from '@/lib/db'
@@ -31,8 +33,8 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
   
   try {
-    // Проверяем аутентификацию
-    const session = await auth()
+    // Проверяем аутентификацию (unified auth для NextAuth.js + test-session)
+    const session = await getAuthSession()
     if (!session?.user?.id) {
       childLogger.warn('Unauthorized import attempt')
       return NextResponse.json(
@@ -149,27 +151,5 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * @description GET /api/artifacts/import/supported-types - Возвращает поддерживаемые типы файлов
- */
-export async function GET() {
-  const supportedTypes = {
-    documents: [
-      { extension: 'docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', artifactKind: 'text' },
-      { extension: 'doc', mimeType: 'application/msword', artifactKind: 'text' }
-    ],
-    spreadsheets: [
-      { extension: 'xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', artifactKind: 'sheet' },
-      { extension: 'xls', mimeType: 'application/vnd.ms-excel', artifactKind: 'sheet' },
-      { extension: 'csv', mimeType: 'text/csv', artifactKind: 'sheet' }
-    ],
-    text: [
-      { extension: 'txt', mimeType: 'text/plain', artifactKind: 'text' },
-      { extension: 'md', mimeType: 'text/markdown', artifactKind: 'text' }
-    ]
-  }
-  
-  return NextResponse.json(supportedTypes)
-}
 
 // END OF: app/api/artifacts/import/route.ts

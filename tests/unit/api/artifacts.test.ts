@@ -80,7 +80,12 @@ describe('🧪 API Route: /api/artifacts', () => {
         pageSize: 20,
         searchQuery: undefined,
         kind: null,
-        groupByVersions: true // ← Default value
+        groupByVersions: true, // ← Default value
+        worldContext: {
+          worldId: null,
+          isTestMode: false,
+          isolationPrefix: null
+        }
       })
     })
   })
@@ -101,7 +106,12 @@ describe('🧪 API Route: /api/artifacts', () => {
         pageSize: 20,
         searchQuery: undefined,
         kind: null,
-        groupByVersions: true
+        groupByVersions: true,
+        worldContext: {
+          worldId: null,
+          isTestMode: false,
+          isolationPrefix: null
+        }
       })
     })
 
@@ -115,7 +125,12 @@ describe('🧪 API Route: /api/artifacts', () => {
         pageSize: 10,
         searchQuery: undefined,
         kind: null,
-        groupByVersions: true
+        groupByVersions: true,
+        worldContext: {
+          worldId: null,
+          isTestMode: false,
+          isolationPrefix: null
+        }
       })
     })
 
@@ -129,7 +144,12 @@ describe('🧪 API Route: /api/artifacts', () => {
         pageSize: 20,
         searchQuery: 'test',
         kind: 'text',
-        groupByVersions: true
+        groupByVersions: true,
+        worldContext: {
+          worldId: null,
+          isTestMode: false,
+          isolationPrefix: null
+        }
       })
     })
 
@@ -138,21 +158,42 @@ describe('🧪 API Route: /api/artifacts', () => {
       const requestDefault = new NextRequest('http://localhost:3000/api/artifacts')
       await GET(requestDefault)
       expect(mockGetPagedArtifacts).toHaveBeenLastCalledWith(
-        expect.objectContaining({ groupByVersions: true })
+        expect.objectContaining({ 
+          groupByVersions: true,
+          worldContext: {
+            worldId: null,
+            isTestMode: false,
+            isolationPrefix: null
+          }
+        })
       )
 
       // Test explicit true
       const requestTrue = new NextRequest('http://localhost:3000/api/artifacts?groupByVersions=true')
       await GET(requestTrue)
       expect(mockGetPagedArtifacts).toHaveBeenLastCalledWith(
-        expect.objectContaining({ groupByVersions: true })
+        expect.objectContaining({ 
+          groupByVersions: true,
+          worldContext: {
+            worldId: null,
+            isTestMode: false,
+            isolationPrefix: null
+          }
+        })
       )
 
       // Test explicit false
       const requestFalse = new NextRequest('http://localhost:3000/api/artifacts?groupByVersions=false')
       await GET(requestFalse)
       expect(mockGetPagedArtifacts).toHaveBeenLastCalledWith(
-        expect.objectContaining({ groupByVersions: false })
+        expect.objectContaining({ 
+          groupByVersions: false,
+          worldContext: {
+            worldId: null,
+            isTestMode: false,
+            isolationPrefix: null
+          }
+        })
       )
     })
 
@@ -161,14 +202,28 @@ describe('🧪 API Route: /api/artifacts', () => {
       const requestSearch = new NextRequest('http://localhost:3000/api/artifacts?search=query1')
       await GET(requestSearch)
       expect(mockGetPagedArtifacts).toHaveBeenLastCalledWith(
-        expect.objectContaining({ searchQuery: 'query1' })
+        expect.objectContaining({ 
+          searchQuery: 'query1',
+          worldContext: {
+            worldId: null,
+            isTestMode: false,
+            isolationPrefix: null
+          }
+        })
       )
 
       // Test 'searchQuery' parameter (priority)
       const requestSearchQuery = new NextRequest('http://localhost:3000/api/artifacts?searchQuery=query2')
       await GET(requestSearchQuery)
       expect(mockGetPagedArtifacts).toHaveBeenLastCalledWith(
-        expect.objectContaining({ searchQuery: 'query2' })
+        expect.objectContaining({ 
+          searchQuery: 'query2',
+          worldContext: {
+            worldId: null,
+            isTestMode: false,
+            isolationPrefix: null
+          }
+        })
       )
     })
   })
@@ -339,7 +394,14 @@ describe('🧪 API Route: /api/artifacts', () => {
       const response = await GET(request)
 
       expect(mockGetPagedArtifacts).toHaveBeenCalledWith(
-        expect.objectContaining({ groupByVersions: true })
+        expect.objectContaining({ 
+          groupByVersions: true,
+          worldContext: {
+            worldId: null,
+            isTestMode: false,
+            isolationPrefix: null
+          }
+        })
       )
 
       const body = await response.json()

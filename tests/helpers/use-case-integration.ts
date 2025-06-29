@@ -1,12 +1,13 @@
 /**
  * @file tests/helpers/use-case-integration.ts
  * @description Интеграция Use Cases и Worlds с существующей тестовой инфраструктурой
- * @version 1.0.0
- * @date 2025-06-18
- * @updated Интеграционный слой для трехуровневой системы тестирования
+ * @version 1.1.0
+ * @date 2025-06-28
+ * @updated UNIFIED COOKIE ARCHITECTURE - миграция на единый test-session источник для world isolation
  */
 
 /** HISTORY:
+ * v1.1.0 (2025-06-28): UNIFIED COOKIE ARCHITECTURE - убран устаревший test-world-id cookie, все данные теперь в test-session
  * v1.0.0 (2025-06-18): Базовая интеграция для Phase 1
  */
 
@@ -101,19 +102,21 @@ function createUIHelpers(page: Page, world: WorldSetupResult): UseCaseUIHelpers 
       await page.goto('/')
       
       await page.evaluate(({ email, name, testId, worldId, userId }) => {
-        // Устанавливаем world context cookie
-        document.cookie = `test-world-id=${worldId}; path=/; domain=.localhost`
-        
-        // Устанавливаем test-session cookie с реальным DB ID если доступен
+        // UNIFIED COOKIE ARCHITECTURE: используем только test-session с worldId внутри
         const sessionUser = {
           email,
           name,
           id: userId || `test-user-${testId}`
         }
         
-        document.cookie = `test-session=${JSON.stringify({
-          user: sessionUser
-        })}; path=/; domain=.localhost`
+        // Единый test-session cookie содержит и пользователя и world isolation
+        const sessionData = {
+          user: sessionUser,
+          worldId: worldId, // World isolation в составе test-session
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 часа
+        }
+        
+        document.cookie = `test-session=${JSON.stringify(sessionData)}; path=/; domain=.localhost`
       }, {
         email: user.email,
         name: user.name,

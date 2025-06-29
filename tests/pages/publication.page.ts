@@ -1,12 +1,14 @@
 /**
  * @file tests/helpers/publication-page.ts
  * @description Page Object Model для системы публикации сайтов и чатов
- * @version 2.0.0
- * @date 2025-06-23
- * @updated TIMEOUT SAFETY - добавлены timeout и graceful degradation для всех navigation методов
+ * @version 2.1.0
+ * @date 2025-06-28
+ * @updated UNIFIED COOKIE ARCHITECTURE - миграция на единый test-session cookie для анонимного режима
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-06-28): UNIFIED COOKIE ARCHITECTURE - убран устаревший test-world-id cookie в becomeAnonymous()
+ * v2.0.0 (2025-06-23): TIMEOUT SAFETY - добавлены timeout и graceful degradation для всех navigation методов
  * v1.2.0 (2025-06-19): Добавлен verifyActualSiteContent() для проверки реального контента вместо простой проверки загрузки страницы
  * v1.1.0 (2025-06-19): Добавлен getRealPublicationUrl() для реального тестирования URL из диалога публикации
  * v1.0.0 (2025-06-19): Начальная реализация Page Object Model для Publication System
@@ -305,9 +307,9 @@ export class PublicAccessHelpers {
    */
   async becomeAnonymous(): Promise<void> {
     await this.page.evaluate(() => {
-      // Очищаем все auth cookies
+      // UNIFIED COOKIE ARCHITECTURE: очищаем только test-session cookies
       document.cookie = 'test-session=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      document.cookie = 'test-world-id=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'test-session-fallback=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     })
   }
 

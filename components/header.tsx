@@ -1,12 +1,13 @@
 /**
  * @file components/header.tsx
  * @description Глобальный тулбар (шапка) приложения.
- * @version 1.3.0
- * @date 2025-06-17
- * @updated Fixed "New Chat" button to directly create new chat instead of going to homepage.
+ * @version 1.4.0
+ * @date 2025-06-28
+ * @updated Добавлен DevWorldSelector для быстрого переключения между тестовыми мирами в dev режиме
  */
 
 /** HISTORY:
+ * v1.4.0 (2025-06-28): Добавлен DevWorldSelector - dev-only компонент для быстрого входа в тестовые миры и загрузки их данных
  * v1.3.0 (2025-06-17): Fixed "New Chat" button to directly navigate to new chat with generated UUID instead of homepage.
  * v1.2.1 (2025-06-06): Исправлены классы Tailwind.
  * v1.2.0 (2025-06-06): Добавлена подсветка кнопки "Share".
@@ -27,6 +28,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher'
 import { PlusIcon, ShareIcon } from '@/components/icons'
 import { EnhancedShareDialog } from './enhanced-share-dialog'
 import { WorldIndicator } from './world-indicator'
+import { DevWorldSelector } from './dev-world-selector'
 import { useChatPublication } from '@/hooks/use-chat-publication'
 import { isChatPublished } from '@/lib/publication-client-utils'
 import { generateUUID } from '@/lib/utils'
@@ -43,6 +45,37 @@ export function Header () {
   const { data: session } = useSession()
   const { data: activeChatContext } = useSWR<ActiveChatContext | null>('active-chat-context', null, { fallbackData: null })
   const [isShareDialogOpen, setShareDialogOpen] = React.useState(false)
+  const [testSession, setTestSession] = React.useState<any>(null)
+
+  // ПРОСТОЕ РЕШЕНИЕ: Проверка test-session cookies напрямую в header
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const testSessionCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('test-session='))
+      
+      if (testSessionCookie) {
+        try {
+          const cookieValue = decodeURIComponent(testSessionCookie.split('=')[1])
+          const testSessionData = JSON.parse(cookieValue)
+          console.log('🔍 Header: Found test-session for:', testSessionData.user?.email)
+          setTestSession(testSessionData)
+        } catch (error) {
+          console.log('⚠️ Header: Failed to parse test-session cookie:', error)
+        }
+      }
+    }
+  }, [])
+
+  // Используем test-session если доступен, иначе обычную session
+  const effectiveSession = testSession ? {
+    user: {
+      id: testSession.user?.id,
+      email: testSession.user?.email,
+      name: testSession.user?.name,
+      type: testSession.user?.type
+    }
+  } : session
 
   const chatPublicationHook = useChatPublication({
     chatId: activeChatContext?.chatId,
@@ -91,8 +124,9 @@ export function Header () {
             />
           </>
         )}
+        <DevWorldSelector />
         <ThemeSwitcher data-testid="header-theme-selector"/>
-        {session?.user && <SidebarUserNav user={session.user} data-testid="header-user-menu"/>}
+        {effectiveSession?.user && <SidebarUserNav user={effectiveSession.user} data-testid="header-user-menu"/>}
       </div>
     </header>
   )
