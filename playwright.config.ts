@@ -129,7 +129,7 @@ export default (async () => {
       command: `pnpm build && bash scripts/start-silent-server.sh pnpm start --port ${port}`,
       url: urls.ping,
       // 3. Увеличенный таймаут для сборки
-      timeout: 180 * 1000, 
+      timeout: 240 * 1000,
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',
       stderr: 'pipe',

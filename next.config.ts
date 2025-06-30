@@ -2,10 +2,6 @@ import type { NextConfig } from 'next'
 import type { WebpackPluginInstance } from 'webpack'
 
 const nextConfig: NextConfig = {
-  experimental: {
-    // Disable PPR for faster dev server startup during testing
-    ppr: process.env.NODE_ENV === 'production',
-  },
   serverExternalPackages: ['pino'],
   images: {
     remotePatterns: [
@@ -44,6 +40,7 @@ const nextConfig: NextConfig = {
         }
       })
     }
+
 
     // Дополнительно подавляем webpack логи в development
     if (process.env.NODE_ENV === 'development') {

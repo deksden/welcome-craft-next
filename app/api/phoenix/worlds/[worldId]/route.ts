@@ -10,7 +10,7 @@
  * v1.0.0 (2025-06-29): PHOENIX PROJECT Step 3 - CRUD операции для отдельного мира
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { worldMeta } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'

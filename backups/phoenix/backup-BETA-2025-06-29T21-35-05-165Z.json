@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-06-29T21-35-05-165Z",
+  "environment": "BETA",
+  "worlds": [
+    {
+      "id": "BETA_cc0ad833",
+      "name": "Beta Environment World",
+      "description": "Testing environment isolation",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-29T21:35:04.668Z",
+      "updatedAt": "2025-06-29T21:35:04.668Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "BETA",
+      "isolationLevel": "FULL",
+      "tags": [
+        "isolation-test",
+        "beta"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 1,
+    "backupSize": "1.0 KB",
+    "version": "1.0.0"
+  }
+}

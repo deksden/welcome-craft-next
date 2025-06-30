@@ -165,13 +165,13 @@ export function EnvironmentStatusPanel() {
   const getStatusIcon = (status: EnvironmentStatus['status']) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="size-5 text-green-500" />
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-amber-500" />
+        return <AlertCircle className="size-5 text-amber-500" />
       case 'error':
-        return <XCircle className="h-5 w-5 text-red-500" />
+        return <XCircle className="size-5 text-red-500" />
       case 'offline':
-        return <XCircle className="h-5 w-5 text-gray-500" />
+        return <XCircle className="size-5 text-gray-500" />
     }
   }
 
@@ -197,13 +197,13 @@ export function EnvironmentStatusPanel() {
   const getServiceIcon = (service: string) => {
     switch (service) {
       case 'database':
-        return <Database className="h-4 w-4" />
+        return <Database className="size-4" />
       case 'redis':
-        return <Zap className="h-4 w-4" />
+        return <Zap className="size-4" />
       case 'webServer':
-        return <Server className="h-4 w-4" />
+        return <Server className="size-4" />
       default:
-        return <Activity className="h-4 w-4" />
+        return <Activity className="size-4" />
     }
   }
 
@@ -247,7 +247,7 @@ export function EnvironmentStatusPanel() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+              <Activity className="size-5" />
               Environment Status
             </div>
             <div className="flex items-center gap-2">
@@ -257,14 +257,14 @@ export function EnvironmentStatusPanel() {
                 onClick={() => setAutoRefresh(!autoRefresh)}
               >
                 {autoRefresh ? (
-                  <Square className="h-4 w-4 mr-2" />
+                  <Square className="size-4 mr-2" />
                 ) : (
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="size-4 mr-2" />
                 )}
                 Auto-refresh
               </Button>
               <Button variant="outline" size="sm" onClick={loadEnvironmentStatus}>
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="size-4" />
               </Button>
             </div>
           </CardTitle>
@@ -289,7 +289,7 @@ export function EnvironmentStatusPanel() {
                 </Badge>
               </CardTitle>
               <CardDescription className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
+                <Clock className="size-4" />
                 Uptime: {env.uptime}
               </CardDescription>
             </CardHeader>
@@ -321,7 +321,7 @@ export function EnvironmentStatusPanel() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <Cpu className="h-4 w-4" />
+                      <Cpu className="size-4" />
                       CPU
                     </div>
                     <span>{env.metrics.cpuUsage}%</span>
@@ -332,7 +332,7 @@ export function EnvironmentStatusPanel() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4" />
+                      <Activity className="size-4" />
                       Memory
                     </div>
                     <span>{env.metrics.memoryUsage}%</span>
@@ -343,7 +343,7 @@ export function EnvironmentStatusPanel() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <HardDrive className="h-4 w-4" />
+                      <HardDrive className="size-4" />
                       Disk
                     </div>
                     <span>{env.metrics.diskUsage}%</span>
@@ -362,13 +362,13 @@ export function EnvironmentStatusPanel() {
                 {env.url && (
                   <Button variant="outline" size="sm" asChild>
                     <a href={env.url} target="_blank" rel="noopener noreferrer">
-                      <Globe className="h-4 w-4 mr-2" />
+                      <Globe className="size-4 mr-2" />
                       Open
                     </a>
                   </Button>
                 )}
                 <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4" />
+                  <Settings className="size-4" />
                 </Button>
               </div>
             </CardContent>

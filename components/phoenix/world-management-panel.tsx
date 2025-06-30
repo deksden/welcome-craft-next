@@ -26,13 +26,7 @@ import {
   Trash2, 
   Play, 
   Pause, 
-  Eye,
-  Clock,
-  Users,
   FileText,
-  MessageSquare,
-  Tag,
-  Calendar,
   BarChart3,
   RefreshCw
 } from 'lucide-react'
@@ -100,7 +94,7 @@ export function WorldManagementPanel() {
       if (data.success) {
         setWorlds(data.data)
       } else {
-        toast.error('Failed to load worlds: ' + data.error)
+        toast.error(`Failed to load worlds: ${data.error}`)
       }
     } catch (error) {
       toast.error('Error loading worlds')
@@ -156,7 +150,7 @@ export function WorldManagementPanel() {
         setShowCreateDialog(false)
         loadWorlds()
       } else {
-        toast.error('Failed to create world: ' + data.error)
+        toast.error(`Failed to create world: ${data.error}`)
       }
     } catch (error) {
       toast.error('Error creating world')
@@ -181,7 +175,7 @@ export function WorldManagementPanel() {
         toast.success(`World '${world.name}' ${world.isActive ? 'deactivated' : 'activated'}`)
         loadWorlds()
       } else {
-        toast.error('Failed to update world: ' + data.error)
+        toast.error(`Failed to update world: ${data.error}`)
       }
     } catch (error) {
       toast.error('Error updating world')
@@ -208,7 +202,7 @@ export function WorldManagementPanel() {
         toast.success(`World '${world.name}' deleted successfully`)
         loadWorlds()
       } else {
-        toast.error('Failed to delete world: ' + data.error)
+        toast.error(`Failed to delete world: ${data.error}`)
       }
     } catch (error) {
       toast.error('Error deleting world')
@@ -222,7 +216,7 @@ export function WorldManagementPanel() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-center h-32">
-              <RefreshCw className="h-6 w-6 animate-spin" />
+              <RefreshCw className="size-6 animate-spin" />
               <span className="ml-2">Loading worlds...</span>
             </div>
           </CardContent>
@@ -237,7 +231,7 @@ export function WorldManagementPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
+            <Globe className="size-5" />
             World Management
           </CardTitle>
           <CardDescription>
@@ -290,13 +284,13 @@ export function WorldManagementPanel() {
 
             <div className="flex items-end gap-2">
               <Button onClick={loadWorlds} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="size-4" />
               </Button>
               
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="size-4 mr-2" />
                     Create World
                   </Button>
                 </DialogTrigger>
@@ -318,7 +312,7 @@ export function WorldManagementPanel() {
                 <p className="text-sm font-medium text-muted-foreground">Total Worlds</p>
                 <p className="text-2xl font-bold">{worlds.length}</p>
               </div>
-              <Globe className="h-4 w-4 text-muted-foreground" />
+              <Globe className="size-4 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -330,7 +324,7 @@ export function WorldManagementPanel() {
                 <p className="text-sm font-medium text-muted-foreground">Active Worlds</p>
                 <p className="text-2xl font-bold">{worlds.filter(w => w.isActive).length}</p>
               </div>
-              <Play className="h-4 w-4 text-green-500" />
+              <Play className="size-4 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -342,7 +336,7 @@ export function WorldManagementPanel() {
                 <p className="text-sm font-medium text-muted-foreground">Templates</p>
                 <p className="text-2xl font-bold">{worlds.filter(w => w.isTemplate).length}</p>
               </div>
-              <FileText className="h-4 w-4 text-blue-500" />
+              <FileText className="size-4 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -354,7 +348,7 @@ export function WorldManagementPanel() {
                 <p className="text-sm font-medium text-muted-foreground">Total Usage</p>
                 <p className="text-2xl font-bold">{worlds.reduce((sum, w) => sum + w.usageCount, 0)}</p>
               </div>
-              <BarChart3 className="h-4 w-4 text-purple-500" />
+              <BarChart3 className="size-4 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -424,9 +418,9 @@ export function WorldManagementPanel() {
                           onClick={() => toggleWorldActive(world)}
                         >
                           {world.isActive ? (
-                            <Pause className="h-4 w-4" />
+                            <Pause className="size-4" />
                           ) : (
-                            <Play className="h-4 w-4" />
+                            <Play className="size-4" />
                           )}
                         </Button>
                         
@@ -438,7 +432,7 @@ export function WorldManagementPanel() {
                             setShowEditDialog(true)
                           }}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="size-4" />
                         </Button>
                         
                         <Button
@@ -446,7 +440,7 @@ export function WorldManagementPanel() {
                           size="sm"
                           onClick={() => deleteWorld(world)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="size-4" />
                         </Button>
                       </div>
                     </TableCell>

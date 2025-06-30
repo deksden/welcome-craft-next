@@ -26,7 +26,6 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  Clock
 } from 'lucide-react'
 import Link from 'next/link'
 import { WorldManagementPanel } from '@/components/phoenix/world-management-panel'
@@ -61,7 +60,7 @@ export default async function PhoenixAdminPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <AlertCircle className="size-5 text-amber-500" />
               Authentication Required
             </CardTitle>
             <CardDescription>
@@ -88,7 +87,7 @@ export default async function PhoenixAdminPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <Flame className="h-8 w-8 text-orange-500" />
+            <Flame className="size-8 text-orange-500" />
             <h1 className="text-3xl font-bold">PHOENIX Admin Dashboard</h1>
             <Badge variant={isDevEnvironment ? "secondary" : "default"} className="ml-2">
               {currentEnvironment}
@@ -101,11 +100,11 @@ export default async function PhoenixAdminPage() {
         
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="size-4 mr-2" />
             Refresh
           </Button>
           <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="size-4 mr-2" />
             Create World
           </Button>
         </div>
@@ -116,7 +115,7 @@ export default async function PhoenixAdminPage() {
         <Card className="border-amber-200 bg-amber-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-amber-700">
-              <AlertCircle className="h-5 w-5" />
+              <AlertCircle className="size-5" />
               Production Environment
             </CardTitle>
             <CardDescription className="text-amber-600">
@@ -130,19 +129,19 @@ export default async function PhoenixAdminPage() {
       <Tabs defaultValue="worlds" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="worlds" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
+            <Globe className="size-4" />
             Worlds
           </TabsTrigger>
           <TabsTrigger value="environments" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
+            <Database className="size-4" />
             Environments
           </TabsTrigger>
           <TabsTrigger value="metrics" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
+            <Activity className="size-4" />
             Metrics
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+            <Settings className="size-4" />
             Settings
           </TabsTrigger>
         </TabsList>
@@ -184,7 +183,7 @@ export default async function PhoenixAdminPage() {
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{currentEnvironment}</Badge>
                     {isDevEnvironment && (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <CheckCircle className="size-4 text-green-500" />
                     )}
                   </div>
                 </div>

@@ -28,14 +28,8 @@ import {
   FileText,
   MessageSquare,
   TrendingUp,
-  TrendingDown,
-  Calendar,
-  Clock,
   RefreshCw,
   Download,
-  Filter,
-  Eye,
-  Zap
 } from 'lucide-react'
 
 interface SystemMetrics {
@@ -230,7 +224,7 @@ export function SystemMetricsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart3 className="size-5" />
               System Metrics & Analytics
             </div>
             <div className="flex items-center gap-2">
@@ -248,12 +242,12 @@ export function SystemMetricsPanel() {
               </Select>
               
               <Button variant="outline" size="sm" onClick={exportMetrics}>
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="size-4 mr-2" />
                 Export
               </Button>
               
               <Button variant="outline" size="sm" onClick={loadSystemMetrics}>
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="size-4" />
               </Button>
             </div>
           </CardTitle>
@@ -272,11 +266,11 @@ export function SystemMetricsPanel() {
                 <p className="text-sm font-medium text-muted-foreground">Total Users</p>
                 <p className="text-2xl font-bold">{metrics.overview.totalUsers.toLocaleString()}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
+                  <TrendingUp className="size-3 mr-1" />
                   +{metrics.overview.activeUsers24h} active (24h)
                 </p>
               </div>
-              <Users className="h-4 w-4 text-blue-500" />
+              <Users className="size-4 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -291,7 +285,7 @@ export function SystemMetricsPanel() {
                   Size: {metrics.storage.totalArtifactSize}
                 </p>
               </div>
-              <FileText className="h-4 w-4 text-green-500" />
+              <FileText className="size-4 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -306,7 +300,7 @@ export function SystemMetricsPanel() {
                   Interactive sessions
                 </p>
               </div>
-              <MessageSquare className="h-4 w-4 text-purple-500" />
+              <MessageSquare className="size-4 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -321,7 +315,7 @@ export function SystemMetricsPanel() {
                   Test environments
                 </p>
               </div>
-              <Globe className="h-4 w-4 text-orange-500" />
+              <Globe className="size-4 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -331,7 +325,7 @@ export function SystemMetricsPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
+            <Activity className="size-5" />
             Performance Metrics
           </CardTitle>
         </CardHeader>
@@ -380,7 +374,7 @@ export function SystemMetricsPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart3 className="size-5" />
               Top Artifact Types
             </CardTitle>
           </CardHeader>
@@ -407,7 +401,7 @@ export function SystemMetricsPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
+              <Globe className="size-5" />
               World Usage Statistics
             </CardTitle>
           </CardHeader>
@@ -436,7 +430,7 @@ export function SystemMetricsPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
+            <Database className="size-5" />
             Storage & System Information
           </CardTitle>
         </CardHeader>
@@ -471,7 +465,7 @@ export function SystemMetricsPanel() {
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="size-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-xs text-muted-foreground">Live</span>
               </div>
             </div>

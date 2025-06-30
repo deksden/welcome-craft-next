@@ -19,7 +19,7 @@ export default function LandingPage () {
         <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
           WelcomeCraft 🚀
         </h1>
-        <p className="max-w-screen-toast-mobile text-muted-foreground md:text-xl">
+        <p className="max-w-2xl text-muted-foreground md:text-xl">
           Добро пожаловать в проект!
         </p>
         {/*<p className="text-sm text-muted-foreground">*/}

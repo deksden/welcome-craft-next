@@ -33,6 +33,7 @@
     "repomix:working": "repomix -c repomix.working.config.json",
     "repomix:all": "repomix",
     "setup": "bash ./setup.sh",
+
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx lib/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
@@ -40,6 +41,7 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
+
     "test": "playwright test",
     "test:unit": "vitest run",
     "test:routes": "playwright test --project=routes",
@@ -47,14 +49,18 @@
     "test:ui": "playwright test --ui",
     "test:ci": "playwright test",
     "test:validate-worlds": "node scripts/validate-worlds.js",
+
     "world:load": "npx tsx scripts/load-world.ts",
     "world:list": "npx tsx scripts/load-world.ts --list",
+
     "test:db-up": "docker-compose up -d --wait",
     "test:db-down": "docker-compose down",
     "test:db-setup": "pnpm exec tsx scripts/setup-test-db.ts",
+
     "env:local": "cp .env.example .env.local && echo 'LOCAL environment configured'",
     "env:beta": "cp .env.beta .env.local && echo 'BETA environment configured'",
     "env:prod": "cp .env.prod .env.local && echo 'PROD environment configured'",
+
     "db:local:up": "docker-compose -f docker-compose.dev.yml up -d --wait",
     "db:local:down": "docker-compose -f docker-compose.dev.yml down",
     "db:local:logs": "docker-compose -f docker-compose.dev.yml logs -f",
@@ -70,7 +76,28 @@
     "phoenix:cleanup": "docker-compose -f docker-compose.dev.yml down && docker-compose -f docker-compose.beta.yml down && docker-compose down && echo 'All PHOENIX environments stopped'",
     "phoenix:migrate-worlds": "npx tsx scripts/migrate-worlds-to-db.ts",
     "phoenix:test-api": "curl -s http://localhost:3000/api/phoenix/worlds | jq",
-    "phoenix:init": "pnpm phoenix:local && pnpm db:migrate && pnpm phoenix:migrate-worlds && echo 'PHOENIX PROJECT fully initialized!'"
+    "phoenix:init": "pnpm phoenix:local && pnpm db:migrate && pnpm phoenix:migrate-worlds && echo 'PHOENIX PROJECT fully initialized!'",
+    "phoenix:data-transfer": "npx tsx scripts/phoenix-data-transfer.ts",
+    "phoenix:backup": "npx tsx scripts/phoenix-data-transfer.ts backup",
+    "phoenix:backup:local": "npx tsx scripts/phoenix-data-transfer.ts backup LOCAL",
+    "phoenix:backup:beta": "npx tsx scripts/phoenix-data-transfer.ts backup BETA",
+    "phoenix:backup:prod": "npx tsx scripts/phoenix-data-transfer.ts backup PROD",
+    "phoenix:transfer": "npx tsx scripts/phoenix-data-transfer.ts transfer",
+    "phoenix:full-migration": "npx tsx scripts/phoenix-data-transfer.ts full-migration",
+    "phoenix:seed": "npx tsx scripts/phoenix-seed-database.ts seed",
+    "phoenix:seed:local": "npx tsx scripts/phoenix-seed-database.ts seed LOCAL",
+    "phoenix:seed:beta": "npx tsx scripts/phoenix-seed-database.ts seed BETA",
+    "phoenix:seed:prod": "npx tsx scripts/phoenix-seed-database.ts seed PROD",
+    "phoenix:reset": "npx tsx scripts/phoenix-seed-database.ts reset",
+    "phoenix:reset:local": "npx tsx scripts/phoenix-seed-database.ts reset LOCAL",
+    "phoenix:reset:beta": "npx tsx scripts/phoenix-seed-database.ts reset BETA",
+    "phoenix:validate": "npx tsx scripts/phoenix-seed-database.ts validate",
+    "phoenix:health": "npx tsx scripts/phoenix-health-check.ts check",
+    "phoenix:health:local": "npx tsx scripts/phoenix-health-check.ts check LOCAL",
+    "phoenix:health:beta": "npx tsx scripts/phoenix-health-check.ts check BETA",
+    "phoenix:health:prod": "npx tsx scripts/phoenix-health-check.ts check PROD",
+    "phoenix:monitor": "npx tsx scripts/phoenix-health-check.ts monitor",
+    "phoenix:monitor:prod": "npx tsx scripts/phoenix-health-check.ts monitor PROD 10"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",

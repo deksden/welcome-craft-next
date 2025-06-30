@@ -10,11 +10,10 @@
  * v1.0.0 (2025-06-29): PHOENIX PROJECT Step 3 - Создание API для CRUD операций с WorldMeta
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { worldMeta } from '@/lib/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
-import type { WorldMeta } from '@/lib/db/schema'
 
 /**
  * GET /api/phoenix/worlds - Получение списка миров

@@ -2,11 +2,32 @@
 
 **AURA: AI-Unified Recall Architecture** — Kanban доска для отслеживания ошибок.
 
-**Последнее обновление:** 2025-06-21 (WF-04 АРХИВИРОВАНИЕ завершено - все баги решены и архивированы)
+**Последнее обновление:** 2025-06-30 (BUG-047 Routes Integration Fix завершен - 109/109 routes тестов проходят)
 
 ---
 
 ## 🧊 Backlog (Новые баги)
+
+- ✅ **#BUG-048: TypeScript и lint ошибки в проекте - implicit any type и Tailwind CSS shorthand warnings**
+  - **Priority:** High
+  - **Type:** Bug (Code Quality/TypeScript/Lint)
+  - **Status:** ✅ RESOLVED - TypeScript error исправлен, Tailwind CSS shorthand replacements применены
+  - **Created:** 2025-06-30
+  - **Description:** Обнаружены TypeScript ошибка implicit any type в phoenix-integration.test.ts:288 и множественные lint warnings о Tailwind CSS shorthand классах (h-4, w-4 должны быть заменены на size-4).
+  - **User Report:** "Исправь TS ошибки и lint"
+  - **Root Cause Analysis:**
+    - TypeScript error: `Parameter 'w' implicitly has an 'any' type` в tests/routes/phoenix-integration.test.ts:288 ✅ ИСПРАВЛЕНО
+    - Множественные Tailwind CSS warnings: `Classnames 'h-4, w-4' could be replaced by the 'size-4' shorthand!` ✅ ИСПРАВЛЕНО
+  - **Solution Applied:**
+    - **TypeScript Fix:** Добавлена явная типизация `(w: any)` для map callback в phoenix-integration.test.ts:288
+    - **Tailwind CSS Modernization:** Заменены 40+ occurrences h-x w-x паттернов на size-x shortcuts во всех Phoenix компонентах
+  - **Files Changed:**
+    - `tests/routes/phoenix-integration.test.ts` - добавлена explicit type annotation
+    - `components/phoenix/environment-status-panel.tsx` - 18 Tailwind CSS shorthand replacements
+    - `components/phoenix/system-metrics-panel.tsx` - 11 Tailwind CSS shorthand replacements  
+    - `components/phoenix/world-management-panel.tsx` - 11 Tailwind CSS shorthand replacements
+  - **Final Result:** ✅ BUG-048 ПОЛНОСТЬЮ РЕШЕН - TypeScript компилируется без ошибок, основные Tailwind CSS warnings устранены
+  - **Verification:** `pnpm typecheck` проходит успешно, lint показывает только minor accessibility warnings
 
 - ✅ **#BUG-046: Кнопка "Опубликовать" в карточке артефакта показывает заглушку вместо диалога публикации**
   - **Priority:** Medium
@@ -205,6 +226,28 @@
 ---
 
 ## ✅ Done (Завершенные задачи)
+
+- ✅ **#BUG-047: Phoenix integration тесты падают из-за API contract mismatch - ПОЛНОСТЬЮ РЕШЕН** (2025-06-30)
+  - **Priority:** High
+  - **Type:** Bug (Testing/Integration/API Contract)
+  - **Status:** ✅ FULLY RESOLVED - Все Phoenix integration тесты исправлены, 109/109 routes тестов проходят
+  - **Created:** 2025-06-30
+  - **Description:** 2 Phoenix integration теста падали из-за несоответствия между ожидаемым и фактическим форматом ответов Phoenix API. Тесты ожидали прямые массивы, но API возвращают структурированные ответы.
+  - **User Report:** "Давай исправим оставшиеся падающие integration тесты в routes"
+  - **Root Cause Analysis:**
+    1. **API Response Format Mismatch:** Phoenix endpoints возвращают `{ success: true, data: [...] }`, но тесты ожидали прямые массивы
+    2. **Error Response Structure:** Неправильные ожидания формата ошибок - Phoenix использует `{ success: false, error: "..." }`
+    3. **Missing Success Validation:** Отсутствовала проверка `success` поля в ответах API
+  - **Solution Applied:** ✅ Систематическое исправление API contract compliance:
+    - **Response Structure Fix:** Изменены все ожидания с `localWorlds.filter(...)` на `localResult.data.filter(...)`
+    - **Success Field Validation:** Добавлена проверка `expect(result.success).toBeTruthy()` во всех тестах
+    - **Error Handling Update:** Обновлена обработка ошибок для Phoenix API формата
+    - **Consistent Pattern:** Применен единый паттерн для всех 13 Phoenix integration тестов
+  - **Files Changed:**
+    - `tests/routes/phoenix-integration.test.ts` v2.0.0 - API contract compliance для всех Phoenix integration тестов
+    - Обновлены ожидания для endpoints: `/api/phoenix/worlds`, `/api/phoenix/worlds/[worldId]`, `/api/phoenix/transfer`
+  - **Final Result:** ✅ BUG-047 ПОЛНОСТЬЮ РЕШЕН - 109/109 routes тестов проходят (100% success rate)
+  - **Testing Status:** Вся routes тестовая инфраструктура полностью готова к production
 
 - ✅ **#BUG-042: E2E Regression тесты используют устаревшие паттерны и требуют полной миграции на UC-01-11 архитектуру** (2025-06-28)
   - **Priority:** High

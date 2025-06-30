@@ -135,7 +135,7 @@ export async function getDynamicWorldContext(
  */
 export async function getAvailableWorlds(
   category?: string,
-  activeOnly: boolean = true
+  activeOnly = true
 ): Promise<WorldMeta[]> {
   try {
     const stage = process.env.APP_STAGE || 'PROD'
