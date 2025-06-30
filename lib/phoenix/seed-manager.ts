@@ -56,7 +56,7 @@ export interface ConflictAnalysis {
   missingBlobs: string[]
 }
 
-export type ConflictResolution = 'replace' | 'merge' | 'skip'
+export type ConflictResolution = 'replace' | 'merge' | 'skip' | 'overwrite' | 'rename'
 export type ConflictStrategy = {
   world: ConflictResolution
   users: ConflictResolution | 'overwrite' | 'rename'
@@ -103,12 +103,8 @@ export class PhoenixSeedManager {
   /**
    * Экспорт мира в seed формат
    */
-  async exportWorld(worldId: string, options: {
-    environment?: 'LOCAL' | 'BETA' | 'PROD'
-    includeBlobs?: boolean
-    outputPath?: string
-  } = {}): Promise<string> {
-    const { environment = 'LOCAL', includeBlobs = true, outputPath } = options
+  async exportWorld(worldId: string, seedName: string, includeBlobs = true): Promise<string> {
+    const environment = 'LOCAL'; // Assuming LOCAL for now, can be parameterized later
 
     try {
       // Получаем метаданные мира
@@ -126,7 +122,7 @@ export class PhoenixSeedManager {
 
       // Создаем seed директорию
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-      const seedName = outputPath || `${worldId}_${environment}_${timestamp}`
+      
       const seedPath = join(this.seedsDirectory, seedName)
       const blobPath = join(seedPath, 'blob')
 
@@ -177,9 +173,9 @@ export class PhoenixSeedManager {
             version: world.version || '1.0.0',
             createdBy: world.createdBy || null
           },
-          users: world.users || [],
-          artifacts: world.artifacts || [],
-          chats: world.chats || [],
+          users: Array.isArray(world.users) ? world.users : [],
+          artifacts: Array.isArray(world.artifacts) ? world.artifacts : [],
+          chats: Array.isArray(world.chats) ? world.chats : [],
           blobs: blobReferences
         }
       }
@@ -241,20 +237,20 @@ export class PhoenixSeedManager {
       const existing = existingWorld[0]
       
       // Конфликты пользователей
-      const existingUserIds = (existing.users || []).map((u: any) => u.id)
-      analysis.conflictingUsers = world.users
+      const existingUserIds = (existing.users as any[] || []).map((u: any) => u.id)
+      analysis.conflictingUsers = (world.users as any[])
         .map((u: any) => u.id)
         .filter((id: string) => existingUserIds.includes(id))
 
       // Конфликты артефактов
-      const existingArtifactIds = (existing.artifacts || []).map((a: any) => a.id)
-      analysis.conflictingArtifacts = world.artifacts
+      const existingArtifactIds = (existing.artifacts as any[] || []).map((a: any) => a.id)
+      analysis.conflictingArtifacts = (world.artifacts as any[])
         .map((a: any) => a.id)
         .filter((id: string) => existingArtifactIds.includes(id))
 
       // Конфликты чатов
-      const existingChatIds = (existing.chats || []).map((c: any) => c.id)
-      analysis.conflictingChats = world.chats
+      const existingChatIds = (existing.chats as any[] || []).map((c: any) => c.id)
+      analysis.conflictingChats = (world.chats as any[])
         .map((c: any) => c.id)
         .filter((id: string) => existingChatIds.includes(id))
     }
@@ -323,8 +319,8 @@ export class PhoenixSeedManager {
 
       // Собираем все blob references из миров
       for (const world of allWorlds) {
-        const artifacts = world.artifacts || []
-        const chats = world.chats || []
+        const artifacts = Array.isArray(world.artifacts) ? world.artifacts : []
+        const chats = Array.isArray(world.chats) ? world.chats : []
         
         // Извлекаем blob references из артефактов
         for (const artifact of artifacts) {
@@ -334,7 +330,7 @@ export class PhoenixSeedManager {
 
         // Извлекаем blob references из чатов
         for (const chat of chats) {
-          const messages = chat.messages || []
+          const messages = Array.isArray(chat.messages) ? chat.messages : []
           for (const message of messages) {
             const blobIds = this.extractBlobIdsFromContent(message.content || '')
             blobIds.forEach(id => allBlobRefs.add(id))
@@ -375,11 +371,13 @@ export class PhoenixSeedManager {
       ]
 
       for (const pattern of blobPatterns) {
-        let match
-        while ((match = pattern.exec(content)) !== null) {
+        let match: RegExpExecArray | null
+        match = pattern.exec(content)
+        while (match !== null) {
           if (match[1] && !blobIds.includes(match[1])) {
             blobIds.push(match[1])
           }
+          match = pattern.exec(content)
         }
       }
 
@@ -557,26 +555,29 @@ export class PhoenixSeedManager {
 
     const existing = existingWorld[0]
     
-    // Merge users
+    const existingUsers = (existing.users || []) as any[];
+    const existingArtifacts = (existing.artifacts || []) as any[];
+    const existingChats = (existing.chats || []) as any[];
+
     const mergedUsers = this.mergeArrayData(
-      existing.users || [], 
-      seedData.world.users, 
+      existingUsers,
+      (seedData.world.users as any[]),
       strategy.users,
       'id'
     )
 
     // Merge artifacts
     const mergedArtifacts = this.mergeArrayData(
-      existing.artifacts || [], 
-      seedData.world.artifacts, 
+      existingArtifacts,
+      (seedData.world.artifacts as any[]),
       strategy.artifacts,
       'id'
     )
 
     // Merge chats
     const mergedChats = this.mergeArrayData(
-      existing.chats || [], 
-      seedData.world.chats, 
+      existingChats,
+      (seedData.world.chats as any[]),
       strategy.chats,
       'id'
     )
@@ -590,17 +591,17 @@ export class PhoenixSeedManager {
         users: mergedUsers,
         artifacts: mergedArtifacts,
         chats: mergedChats,
-        settings: { ...existing.settings, ...metadata.settings },
-        tags: [...new Set([...(existing.tags || []), ...(metadata.tags || [])])], // Merge tags
-        dependencies: [...new Set([...(existing.dependencies || []), ...(metadata.dependencies || [])])],
+        settings: { ...(existing.settings as object), ...(metadata.settings as object) },
+        tags: [...new Set([...((existing.tags as any[]) || []), ...((metadata.tags as any[]) || [])])], // Merge tags
+        dependencies: [...new Set([...((existing.dependencies as any[]) || []), ...((metadata.dependencies as any[]) || [])])],
         updatedAt: new Date()
       })
       .where(eq(worldMeta.id, metadata.id))
 
     console.log(`✅ World '${metadata.id}' merged successfully`)
-    console.log(`   Users: ${existing.users?.length || 0} + ${seedData.world.users.length} = ${mergedUsers.length}`)
-    console.log(`   Artifacts: ${existing.artifacts?.length || 0} + ${seedData.world.artifacts.length} = ${mergedArtifacts.length}`)
-    console.log(`   Chats: ${existing.chats?.length || 0} + ${seedData.world.chats.length} = ${mergedChats.length}`)
+    console.log(`   Users: ${((existing.users as any[])?.length || 0)} + ${seedData.world.users.length} = ${mergedUsers.length}`)
+    console.log(`   Artifacts: ${((existing.artifacts as any[])?.length || 0)} + ${seedData.world.artifacts.length} = ${mergedArtifacts.length}`)
+    console.log(`   Chats: ${((existing.chats as any[])?.length || 0)} + ${seedData.world.chats.length} = ${mergedChats.length}`)
   }
 
   private async createNewWorld(seedData: SeedData): Promise<void> {

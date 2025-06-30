@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
+import { toast } from '@/components/toast'
 import { 
   BarChart3,
   Activity,
@@ -168,7 +168,7 @@ export function SystemMetricsPanel() {
 
       setMetrics(mockMetrics)
     } catch (error) {
-      toast.error('Failed to load system metrics')
+      toast({ type: 'error', description: 'Failed to load system metrics' })
       console.error('Error loading system metrics:', error)
     } finally {
       setLoading(false)
@@ -201,7 +201,7 @@ export function SystemMetricsPanel() {
     a.download = `system-metrics-${timeRange}-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     
-    toast.success('Metrics exported successfully')
+    toast({ type: 'success', description: 'Metrics exported successfully' })
   }
 
   if (loading || !metrics) {

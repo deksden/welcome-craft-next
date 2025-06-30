@@ -12,7 +12,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -71,11 +71,7 @@ export function QuickLoginPanel() {
   
   const { toast } = useToast()
 
-  useEffect(() => {
-    initializePanel()
-  }, [])
-
-  const initializePanel = async () => {
+  const initializePanel = useCallback(async () => {
     // Проверяем доступность Quick Login
     const available = quickLoginHelper.isAvailable()
     setIsAvailable(available)
@@ -97,7 +93,11 @@ export function QuickLoginPanel() {
     if (lastUser) {
       setSelectedUserId(lastUser.id)
     }
-  }
+  }, [quickLoginHelper])
+
+  useEffect(() => {
+    initializePanel()
+  }, [initializePanel])
 
   const handleQuickLogin = async () => {
     const selectedUser = users.find(u => u.id === selectedUserId)

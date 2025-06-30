@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
+import { toast } from '@/components/toast'
 import { 
   Globe, 
   Plus, 
@@ -102,10 +102,10 @@ export function WorldManagementPanel() {
       if (data.success) {
         setWorlds(data.data)
       } else {
-        toast.error(`Failed to load worlds: ${data.error}`)
+        toast({ type: 'error', description: `Failed to load worlds: ${data.error}` })
       }
     } catch (error) {
-      toast.error('Error loading worlds')
+      toast({ type: 'error', description: 'Error loading worlds' })
       console.error('Error loading worlds:', error)
     } finally {
       setLoading(false)
@@ -159,14 +159,14 @@ export function WorldManagementPanel() {
       const data = await response.json()
       
       if (data.success) {
-        toast.success(`World '${data.data.name}' created successfully`)
+        toast({ type: 'success', description: `World '${data.data.name}' created successfully` })
         setShowCreateDialog(false)
         loadWorlds()
       } else {
-        toast.error(`Failed to create world: ${data.error}`)
+        toast({ type: 'error', description: `Failed to create world: ${data.error}` })
       }
     } catch (error) {
-      toast.error('Error creating world')
+      toast({ type: 'error', description: 'Error creating world' })
       console.error('Error creating world:', error)
     }
   }
@@ -185,13 +185,13 @@ export function WorldManagementPanel() {
       const data = await response.json()
       
       if (data.success) {
-        toast.success(`World '${world.name}' ${world.isActive ? 'deactivated' : 'activated'}`)
+        toast({ type: 'success', description: `World '${world.name}' ${world.isActive ? 'deactivated' : 'activated'}` })
         loadWorlds()
       } else {
-        toast.error(`Failed to update world: ${data.error}`)
+        toast({ type: 'error', description: `Failed to update world: ${data.error}` })
       }
     } catch (error) {
-      toast.error('Error updating world')
+      toast({ type: 'error', description: 'Error updating world' })
       console.error('Error updating world:', error)
     }
   }
@@ -212,13 +212,13 @@ export function WorldManagementPanel() {
       const data = await response.json()
       
       if (data.success) {
-        toast.success(`World '${world.name}' deleted successfully`)
+        toast({ type: 'success', description: `World '${world.name}' deleted successfully` })
         loadWorlds()
       } else {
-        toast.error(`Failed to delete world: ${data.error}`)
+        toast({ type: 'error', description: `Failed to delete world: ${data.error}` })
       }
     } catch (error) {
-      toast.error('Error deleting world')
+      toast({ type: 'error', description: 'Error deleting world' })
       console.error('Error deleting world:', error)
     }
   }
@@ -530,7 +530,7 @@ function CreateWorldDialog({ onSubmit }: { onSubmit: (data: WorldFormData) => vo
     e.preventDefault()
     
     if (!formData.id || !formData.name || !formData.description) {
-      toast.error('Please fill in all required fields')
+      toast({ type: 'error', description: 'Please fill in all required fields' })
       return
     }
 

@@ -18,13 +18,6 @@ import { Button } from '@/components/ui/button'
 import { 
   Flame, 
   AlertCircle,
-  CheckCircle,
-  Globe,
-  Users,
-  Activity,
-  Shield,
-  Download,
-  Upload
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -127,146 +120,15 @@ export default async function PhoenixAdminPage() {
         </Card>
       )}
 
-      {/* Quick Access Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Dev Tools Section - только для LOCAL/BETA */}
-        {isDevEnvironment && (
-          <>
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="size-5 text-blue-500" />
-                  World Management
-                </CardTitle>
-                <CardDescription>
-                  Manage dynamic test worlds and environments
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link href="/phoenix/worlds">Open World Manager</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="size-5 text-green-500" />
-                  Seed Import
-                </CardTitle>
-                <CardDescription>
-                  Import seed data from various sources
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link href="/phoenix/seed-import">Import Seeds</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="size-5 text-purple-500" />
-                  Seed Export
-                </CardTitle>
-                <CardDescription>
-                  Export data from any database source
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link href="/phoenix/seed-export">Export Seeds</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* Admin Tools Section - для всех окружений */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="size-5 text-orange-500" />
-              User Management
-            </CardTitle>
-            <CardDescription>
-              Manage system users and permissions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/phoenix/users">Manage Users</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="size-5 text-red-500" />
-              System Metrics
-            </CardTitle>
-            <CardDescription>
-              Monitor system performance and health
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/phoenix/metrics">View Metrics</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* System Status Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>System Status</CardTitle>
+          <CardTitle>Welcome to PHOENIX</CardTitle>
           <CardDescription>
-            Current environment configuration and status
+            Use the sidebar to navigate to the different admin sections.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Environment</div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{currentEnvironment}</Badge>
-                {isDevEnvironment && (
-                  <CheckCircle className="size-4 text-green-500" />
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="text-sm font-medium">World Isolation</div>
-              <div className="flex items-center gap-2">
-                <Badge variant={isDevEnvironment ? "secondary" : "outline"}>
-                  {isDevEnvironment ? "Enabled" : "Disabled"}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Admin Role</div>
-              <div className="flex items-center gap-2">
-                <Badge variant="default">
-                  <Shield className="size-3 mr-1" />
-                  Active
-                </Badge>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-medium">User</div>
-              <div className="text-sm text-muted-foreground">
-                {session.user?.email}
-              </div>
-            </div>
-          </div>
+        <CardContent>
+          <p>This is the central dashboard for all administrative tasks.</p>
         </CardContent>
       </Card>
     </div>

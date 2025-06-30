@@ -18,7 +18,7 @@ import { readFile, } from 'node:fs/promises'
 
 // Мокаем file system operations
 vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal() as any
   return {
     ...actual,
     existsSync: vi.fn()
@@ -26,7 +26,7 @@ vi.mock('node:fs', async (importOriginal) => {
 })
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal() as any
   return {
     ...actual,
     readFile: vi.fn(),
@@ -246,7 +246,9 @@ describe('PhoenixSeedManager', () => {
             cleanupAfterHours: 24,
             isolationLevel: 'FULL',
             usageCount: 0,
-            lastUsedAt: null
+            lastUsedAt: null,
+            version: '1.0.0',
+            createdBy: 'test-user'
           },
           users: [],
           artifacts: [],
@@ -255,10 +257,11 @@ describe('PhoenixSeedManager', () => {
         }
       }
 
-      // Mock existsSync для основного seed файла и blob директории
+      // Mock existsSync для возврата true для seed файлов в тесте
       vi.mocked(existsSync).mockImplementation((path: any) => {
         const pathStr = path.toString()
-        return pathStr.includes('seed.json') || pathStr.includes('test-seeds/TEST_001')
+        // Возвращаем true для всех seed.json файлов
+        return pathStr.includes('seed.json')
       })
       vi.mocked(readFile).mockResolvedValue(JSON.stringify(mockSeedData))
 
@@ -313,7 +316,9 @@ describe('PhoenixSeedManager', () => {
             cleanupAfterHours: 24,
             isolationLevel: 'FULL',
             usageCount: 0,
-            lastUsedAt: null
+            lastUsedAt: null,
+            version: '1.0.0',
+            createdBy: 'test-user'
           },
           users: [{ id: 'user1' }],
           artifacts: [{ id: 'artifact1' }, { id: 'artifact2' }],

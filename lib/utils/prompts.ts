@@ -37,12 +37,6 @@ export async function prompts(questions: PromptOptions | PromptOptions[]): Promi
 
   try {
     for (const question of questionList) {
-      // Пропускаем вопросы с условиями
-      if (typeof question.type === 'function') {
-        const shouldAsk = question.type(results[questionList[questionList.indexOf(question) - 1]?.name])
-        if (!shouldAsk) continue
-      }
-
       let answer: any
 
       switch (question.type) {

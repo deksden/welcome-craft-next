@@ -205,11 +205,14 @@ pnpm phoenix:seed:validate    # Валидация seed структуры
 pnpm phoenix:seed:list        # Список доступных seed директорий
 pnpm phoenix:seed:cleanup-orphaned  # Обнаружение и очистка orphaned blob файлов
 
-# Phoenix Admin Dashboard GUI (✅ ЗАВЕРШЕНА GUI ИНТЕГРАЦИЯ)
-# WorldManagementPanel теперь включает:
-# - Вкладка "World Management" - управление динамическими мирами
-# - Вкладка "Seed Data Import" - полноценный GUI для импорта seed данных
-# - API endpoints: /api/phoenix/seed/list, /analyze, /import, /validate
+# Phoenix Admin Dashboard GUI
+# GUI для управления пользователями и экспорта seed данных реализован.
+
+# User Management (CLI интерфейс)
+pnpm phoenix:users:set-admin <email> --db-url=<URL> # Назначение прав администратора
+pnpm phoenix:users:list --db-url=<URL>      # Список всех пользователей
+pnpm phoenix:users:add <email> <name> <password> <type> --db-url=<URL> # Добавление нового пользователя
+pnpm phoenix:users:delete <id> --db-url=<URL>    # Удаление пользователя
 
 # Примеры использования World Manager CLI:
 pnpm phoenix:worlds:list LOCAL           # Список миров в LOCAL окружении

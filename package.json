@@ -27,17 +27,12 @@
     "dev": "pnpm db:migrate && next dev",
     "build": "next build",
     "start": "next start",
-
     "lint": "next lint && biome lint --write --unsafe",
     "lint:fix": "next lint --fix && biome lint --write --unsafe",
-
     "typecheck": "tsc --noEmit -p tsconfig.json",
-
     "repomix:working": "repomix -c repomix.working.config.json",
     "repomix:all": "repomix",
-
     "setup": "bash ./setup.sh",
-
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx lib/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
@@ -45,28 +40,25 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
-
-    "test": "playwright test",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:routes && pnpm test:e2e",
     "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:routes": "playwright test --project=routes",
     "test:e2e": "playwright test --project=e2e",
     "test:ui": "playwright test --ui",
     "test:ci": "playwright test",
     "test:validate-worlds": "node scripts/validate-worlds.js",
-
+    "test:db:start": "docker-compose up -d --wait && pnpm exec tsx scripts/setup-test-db.ts",
     "test:db:up": "docker-compose up -d --wait",
     "test:db:down": "docker-compose down",
     "test:db:setup": "pnpm exec tsx scripts/setup-test-db.ts",
-
     "env:local": "cp .env.local.example .env.local && echo 'LOCAL environment configured'",
     "env:beta": "cp .env.beta.example .env.local && echo 'BETA environment configured'",
     "env:prod": "cp .env.prod.example .env.local && echo 'PROD environment configured'",
-
     "local:db:up": "docker-compose -f docker-compose.local.yml up -d --wait",
     "local:db:down": "docker-compose -f docker-compose.local.yml down",
     "local:db:logs": "docker-compose -f docker-compose.local.yml logs -f",
     "local:db:reset": "docker-compose -f docker-compose.local.yml down -v && docker-compose -f docker-compose.local.yml up -d --wait",
-
     "phoenix:local": "pnpm env:local && pnpm local:db:up && pnpm db:migrate && echo 'LOCAL environment ready!'",
     "phoenix:dev": "pnpm phoenix:local && pnpm dev",
     "phoenix:status": "echo 'PHOENIX PROJECT - Environment Status:' && docker ps --filter 'name=welcomecraft' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'",
@@ -156,6 +148,7 @@
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "codemirror": "^6.0.1",
+    "commander": "^14.0.0",
     "date-fns": "^4.1.0",
     "diff-match-patch": "^1.0.5",
     "dotenv": "^16.4.5",
@@ -209,6 +202,7 @@
     "@playwright/test": "^1.50.1",
     "@tailwindcss/typography": "^0.5.15",
     "@types/bcryptjs": "^3.0.0",
+    "@types/commander": "^2.12.5",
     "@types/d3-scale": "^4.0.8",
     "@types/node": "^22.8.6",
     "@types/papaparse": "^5.3.15",

@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
+import { toast } from '@/components/toast'
 import { 
   Database,
   Server,
@@ -152,7 +152,7 @@ export function EnvironmentStatusPanel() {
 
       setEnvironments(mockEnvironments)
     } catch (error) {
-      toast.error('Failed to load environment status')
+      toast({ type: 'error', description: 'Failed to load environment status' })
       console.error('Error loading environment status:', error)
     } finally {
       setLoading(false)

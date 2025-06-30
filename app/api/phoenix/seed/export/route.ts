@@ -1,88 +1,31 @@
-/**
- * @file app/api/phoenix/seed/export/route.ts
- * @description PHOENIX PROJECT - Seed Export API endpoint
- * @version 1.0.0
- * @date 2025-06-30
- * @updated Enterprise Admin Interface - Export seeds from любой БД
- */
+import { type NextRequest, NextResponse } from 'next/server';
+import { getAuthSession } from '@/lib/test-auth';
+import { PhoenixSeedManager } from '@/lib/phoenix/seed-manager';
 
-/** HISTORY:
- * v1.0.0 (2025-06-30): Enterprise Admin Interface - создан API для seed export
- */
+export async function POST(req: NextRequest) {
+  const session = await getAuthSession();
 
-import { type NextRequest, NextResponse } from 'next/server'
-import { getAuthSession } from '@/lib/test-auth'
+  if (process.env.APP_STAGE !== 'LOCAL') {
+    return NextResponse.json({ error: 'This feature is only available in the LOCAL environment.' }, { status: 403 });
+  }
 
-/**
- * POST /api/phoenix/seed/export
- * 
- * Экспорт seed данных из указанной БД
- * Только для LOCAL окружения + admin права
- */
-export async function POST(request: NextRequest) {
+  if (!session || session.user?.type !== 'admin') {
+    return NextResponse.json({ error: 'Access Denied' }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { worldId, sourceDbUrl, includeBlobs, seedName } = body;
+
+  if (!worldId || !sourceDbUrl || !seedName) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
   try {
-    // Безопасность: только LOCAL окружение
-    const currentEnvironment = process.env.APP_STAGE || 'PROD'
-    if (currentEnvironment !== 'LOCAL') {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Seed export is only available in LOCAL environment for security reasons' 
-      }, { status: 403 })
-    }
-
-    // Проверяем аутентификацию
-    const session = await getAuthSession()
-    if (!session) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Authentication required' 
-      }, { status: 401 })
-    }
-
-    // Проверяем admin права
-    if (session.user?.type !== 'admin') {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Admin privileges required' 
-      }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { worldId, sourceDbUrl, includeBlobs = false, seedName } = body
-
-    // Валидация
-    if (!worldId || !sourceDbUrl || !seedName) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'worldId, sourceDbUrl and seedName are required' 
-      }, { status: 400 })
-    }
-
-    // TODO: Реализовать экспорт через PhoenixSeedManager
-    // Здесь должна быть логика создания экземпляра PhoenixSeedManager
-    // с указанным sourceDbUrl и вызов exportWorld()
-    
-    // Пока что mock реализация для демонстрации
-    const seedPath = `./seeds/${seedName}`
-    
-    // Симуляция процесса экспорта
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    return NextResponse.json({
-      success: true,
-      seedPath,
-      worldId,
-      includeBlobs,
-      message: `World ${worldId} exported successfully`
-    })
-
+    const seedManager = new PhoenixSeedManager(sourceDbUrl);
+    const exportPath = await seedManager.exportWorld(worldId, seedName, includeBlobs);
+    return NextResponse.json({ success: true, path: exportPath });
   } catch (error) {
-    console.error('Error exporting seed:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to export seed' 
-    }, { status: 500 })
+    console.error('Seed export failed:', error);
+    return NextResponse.json({ error: 'Seed export failed.' }, { status: 500 });
   }
 }
-
-// END OF: app/api/phoenix/seed/export/route.ts

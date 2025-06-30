@@ -126,10 +126,6 @@ export function SeedImportTab() {
   
   const { toast } = useToast()
 
-  useEffect(() => {
-    loadAvailableSeeds()
-  }, [])
-
   const loadAvailableSeeds = useCallback(async () => {
     setIsLoading(true)
     
@@ -157,6 +153,10 @@ export function SeedImportTab() {
       setIsLoading(false)
     }
   }, [toast])
+
+  useEffect(() => {
+    loadAvailableSeeds()
+  }, [loadAvailableSeeds])
 
   const handleAnalyzeConflicts = async () => {
     if (!selectedSeed) {
@@ -382,10 +382,18 @@ export function SeedImportTab() {
               {availableSeeds.map((seed) => (
                 <div 
                   key={seed.name}
+                  role="button"
+                  tabIndex={0}
                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                     selectedSeed === seed.name ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
                   }`}
                   onClick={() => setSelectedSeed(seed.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setSelectedSeed(seed.name)
+                    }
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -432,7 +440,7 @@ export function SeedImportTab() {
                         {seed.chats}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Image className="size-3" />
+                        <Image className="size-3" aria-label="Blob files count" />
                         {seed.blobs}
                       </span>
                     </div>

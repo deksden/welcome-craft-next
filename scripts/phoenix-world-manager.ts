@@ -135,7 +135,7 @@ class PhoenixWorldManager {
           world.id.padEnd(20) + 
           world.name.padEnd(25) + 
           world.environment.padEnd(8) + 
-          world.category.padEnd(12) + 
+          (world.category || 'N/A').padEnd(12) + 
           status.padEnd(10) + 
           usage
         )
@@ -208,16 +208,22 @@ class PhoenixWorldManager {
           name: 'autoCleanup',
           message: 'Enable auto-cleanup?',
           initial: true
-        },
-        {
-          type: (prev: boolean) => prev ? 'number' : null,
+        }
+      ])
+
+      // Если включена автоочистка, спросим про часы
+      let cleanupAfterHours = null
+      if (answers.autoCleanup) {
+        const cleanupAnswers = await prompts([{
+          type: 'number',
           name: 'cleanupAfterHours',
           message: 'Cleanup after hours:',
           initial: 24,
           min: 1,
           max: 168 // 1 week
-        }
-      ])
+        }])
+        cleanupAfterHours = cleanupAnswers?.cleanupAfterHours || 24
+      }
 
       if (Object.keys(answers).length === 0) {
         console.log('❌ Operation cancelled')
@@ -246,7 +252,7 @@ class PhoenixWorldManager {
         chats: [],
         settings: {
           autoCleanup: answers.autoCleanup,
-          cleanupAfterHours: answers.cleanupAfterHours || 24
+          cleanupAfterHours: cleanupAfterHours || 24
         },
         dependencies: [],
         environment: answers.environment,
@@ -254,7 +260,7 @@ class PhoenixWorldManager {
         tags: [],
         isTemplate: false,
         autoCleanup: answers.autoCleanup,
-        cleanupAfterHours: answers.cleanupAfterHours || 24,
+        cleanupAfterHours: cleanupAfterHours || 24,
       }
 
       const [createdWorld] = await db
@@ -498,7 +504,8 @@ class PhoenixWorldManager {
     console.log(`📦 PHOENIX: Exporting world ${worldId} to seed format...`)
     
     try {
-      const seedPath = await this.seedManager.exportWorld(worldId, options)
+      const seedName = `${worldId}_${options.environment || 'LOCAL'}_${new Date().toISOString().split('T')[0]}`
+      const seedPath = await this.seedManager.exportWorld(worldId, seedName, options.includeBlobs || false)
       console.log(`✅ World exported to seed: ${seedPath}`)
       
     } catch (error) {

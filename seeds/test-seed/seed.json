@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2025-06-30T19:41:38.233Z",
+  "source": {
+    "worldId": "world1",
+    "environment": "LOCAL",
+    "databaseUrl": "localhost"
+  },
+  "world": {
+    "metadata": {
+      "id": "world1",
+      "name": "Test World 1",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {},
+      "dependencies": [],
+      "environment": "LOCAL",
+      "category": "test",
+      "tags": [],
+      "isTemplate": false,
+      "isActive": true,
+      "autoCleanup": false,
+      "cleanupAfterHours": 0,
+      "isolationLevel": "FULL",
+      "version": "1.0.0",
+      "createdBy": null
+    },
+    "users": [],
+    "artifacts": [],
+    "chats": [],
+    "blobs": []
+  }
+}

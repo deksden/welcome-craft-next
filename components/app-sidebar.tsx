@@ -298,79 +298,71 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
           </SidebarGroup>
         )}
 
-        {/* Dev Tools Section - только для админов в LOCAL/BETA */}
         {isAdmin && isDevEnv && (
           <SidebarGroup data-testid="sidebar-dev-tools-section">
+            <SidebarMenuButton
+              tooltip={{ children: 'Dev Tools', side: 'right' }}
+              className="pointer-events-none justify-start"
+            >
+              <Flame className="size-5" />
+              {sidebarState === 'expanded' && <span className="ml-2 font-semibold">Dev Tools</span>}
+            </SidebarMenuButton>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip={{ children: 'Dev Tools', side: 'right' }}>
-                  <Flame className="size-5" />
-                  {sidebarState === 'expanded' && <span>Dev Tools</span>}
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/worlds" onClick={() => setOpenMobile(false)}>
+                    <Globe className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>World Management</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/seed-import" onClick={() => setOpenMobile(false)}>
+                    <Download className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>Seed Import</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/seed-export" onClick={() => setOpenMobile(false)}>
+                    <Upload className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>Seed Export</span>}
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-            {sidebarState === 'expanded' && (
-              <SidebarMenu className="ml-4">
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/phoenix/worlds" onClick={() => setOpenMobile(false)}>
-                      <Globe className="size-4 mr-2" />
-                      <span>World Management</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/phoenix/seed-import" onClick={() => setOpenMobile(false)}>
-                      <Download className="size-4 mr-2" />
-                      <span>Seed Import</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/phoenix/seed-export" onClick={() => setOpenMobile(false)}>
-                      <Upload className="size-4 mr-2" />
-                      <span>Seed Export</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            )}
           </SidebarGroup>
         )}
 
-        {/* Admin Section - для админов в любом окружении */}
         {isAdmin && (
           <SidebarGroup data-testid="sidebar-admin-section">
+            <SidebarMenuButton
+              tooltip={{ children: 'Admin', side: 'right' }}
+              className="pointer-events-none justify-start"
+            >
+              <Shield className="size-5" />
+              {sidebarState === 'expanded' && <span className="ml-2 font-semibold">Admin</span>}
+            </SidebarMenuButton>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip={{ children: 'Admin', side: 'right' }}>
-                  <Shield className="size-5" />
-                  {sidebarState === 'expanded' && <span>Admin</span>}
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/users" onClick={() => setOpenMobile(false)}>
+                    <Users className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>User Management</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/metrics" onClick={() => setOpenMobile(false)}>
+                    <BarChart3 className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>System Metrics</span>}
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-            {sidebarState === 'expanded' && (
-              <SidebarMenu className="ml-4">
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/phoenix/users" onClick={() => setOpenMobile(false)}>
-                      <Users className="size-4 mr-2" />
-                      <span>User Management</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/phoenix/metrics" onClick={() => setOpenMobile(false)}>
-                      <BarChart3 className="size-4 mr-2" />
-                      <span>System Metrics</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            )}
           </SidebarGroup>
         )}
       </SidebarContent>
