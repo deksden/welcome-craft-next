@@ -81,6 +81,13 @@
 
 ### 🎯 Недавние исправления (2025-06-28 - 2025-06-30)
 
+- ✅ **#BUG-052: Build fix - next/headers в client components** `Priority: High` `Status: Completed` `Type: Build Infrastructure` (2025-06-30)
+  - **Description:** Исправлена ошибка build из-за импорта next/headers в client components Phoenix pages
+  - **Result:** ✅ COMPLETED - Production build работает без ошибок
+  - **Achievement:** ✓ Compiled successfully, 0 lint warnings, 0 TypeScript errors
+  - **Technical Fix:** Заменен `getAuthSession` на `useSession` в Phoenix seed-export page для client-side совместимости
+  - > **Детали:** Исправлен Next.js 15 server/client boundary issue в Phoenix admin interface
+
 - ✅ **#BUG-051: Все юнит тесты исправлены до 100% прохождения** `Priority: High` `Status: Completed` `Type: Testing Infrastructure` (2025-06-30)
   - **Description:** Полное исправление всех проблемных юнит тестов - seed-manager, user-manager, world-validator
   - **Result:** ✅ COMPLETED - 225/225 юнит тестов проходят (100% SUCCESS RATE)

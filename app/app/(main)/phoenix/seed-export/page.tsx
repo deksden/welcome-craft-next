@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuthSession } from '@/lib/test-auth';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ interface WorldMeta {
 }
 
 export default function SeedExportPage() {
-  const [session, setSession] = useState<any>(null);
+  const { data: session } = useSession();
   const [isLocal, setIsLocal] = useState(false);
   const [worlds, setWorlds] = useState<WorldMeta[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<string>("");
@@ -30,12 +30,10 @@ export default function SeedExportPage() {
 
   useEffect(() => {
     async function checkSessionAndEnv() {
-      const authSession = await getAuthSession();
-      setSession(authSession);
       const appStage = process.env.NEXT_PUBLIC_APP_STAGE || 'PROD';
       setIsLocal(appStage === 'LOCAL');
 
-      if (authSession?.user?.type === 'admin' && appStage === 'LOCAL') {
+      if (session?.user?.type === 'admin' && appStage === 'LOCAL') {
         // Fetch worlds from current LOCAL DB
         try {
           const response = await fetch("/api/phoenix/worlds"); // Assuming an API to list worlds
@@ -55,7 +53,7 @@ export default function SeedExportPage() {
       }
     }
     checkSessionAndEnv();
-  }, []);
+  }, [session]);
 
   const getSourceDbUrl = () => {
     switch (sourceDb) {
