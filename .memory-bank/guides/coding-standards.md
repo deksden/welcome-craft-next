@@ -1,9 +1,9 @@
 # 📋 WelcomeCraft Coding Standards
 
-**Версия:** 2.3.0  
-**Дата:** 2025-06-28  
-**Источники:** dev-rules.md, docs/RULEZZ.md
-**Обновлено:** Документированы unified cookie patterns - переход к единому test-session источнику для world isolation
+**Версия:** 3.0.0  
+**Дата:** 2025-06-30  
+**Статус:** ✅ АКТУАЛЬНЫЕ СТАНДАРТЫ - Current development practices and testing patterns
+**Обновлено:** Guides reorganization - consolidated current standards, убраны устаревшие паттерны
 
 ---
 

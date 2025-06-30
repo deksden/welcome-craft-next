@@ -21,8 +21,21 @@
 
 import type { User } from 'next-auth'
 import { usePathname, useRouter } from 'next/navigation'
-import { BoxIcon, ChevronDownIcon, ChevronLeftIcon, MessageCircleIcon, } from '@/components/icons'
+import { 
+  BoxIcon, 
+  ChevronDownIcon, 
+  ChevronLeftIcon, 
+  MessageCircleIcon,
+  Flame,
+  Globe,
+  Download,
+  Upload,
+  Users,
+  BarChart3,
+  Shield
+} from '@/components/icons'
 import { SidebarHistory } from '@/components/sidebar-history'
+import Link from 'next/link'
 import {
   Sidebar,
   SidebarContent,
@@ -85,6 +98,10 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
   const router = useRouter()
   const pathname = usePathname()
   const { setOpenMobile, state: sidebarState } = useSidebar()
+
+  // Admin checks
+  const isAdmin = user?.type === 'admin'
+  const isDevEnv = process.env.NEXT_PUBLIC_APP_STAGE === 'LOCAL' || process.env.NEXT_PUBLIC_APP_STAGE === 'BETA'
 
   const [isChatSectionCollapsed, setIsChatSectionCollapsed] = useLocalStorage(
     'sidebar:isChatSectionCollapsed',
@@ -274,6 +291,82 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                     className="w-full justify-center"
                   >
                     <span>Все артефакты</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            )}
+          </SidebarGroup>
+        )}
+
+        {/* Dev Tools Section - только для админов в LOCAL/BETA */}
+        {isAdmin && isDevEnv && (
+          <SidebarGroup data-testid="sidebar-dev-tools-section">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={{ children: 'Dev Tools', side: 'right' }}>
+                  <Flame className="size-5" />
+                  {sidebarState === 'expanded' && <span>Dev Tools</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+            {sidebarState === 'expanded' && (
+              <SidebarMenu className="ml-4">
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/phoenix/worlds" onClick={() => setOpenMobile(false)}>
+                      <Globe className="size-4 mr-2" />
+                      <span>World Management</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/phoenix/seed-import" onClick={() => setOpenMobile(false)}>
+                      <Download className="size-4 mr-2" />
+                      <span>Seed Import</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/phoenix/seed-export" onClick={() => setOpenMobile(false)}>
+                      <Upload className="size-4 mr-2" />
+                      <span>Seed Export</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            )}
+          </SidebarGroup>
+        )}
+
+        {/* Admin Section - для админов в любом окружении */}
+        {isAdmin && (
+          <SidebarGroup data-testid="sidebar-admin-section">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={{ children: 'Admin', side: 'right' }}>
+                  <Shield className="size-5" />
+                  {sidebarState === 'expanded' && <span>Admin</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+            {sidebarState === 'expanded' && (
+              <SidebarMenu className="ml-4">
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/phoenix/users" onClick={() => setOpenMobile(false)}>
+                      <Users className="size-4 mr-2" />
+                      <span>User Management</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/phoenix/metrics" onClick={() => setOpenMobile(false)}>
+                      <BarChart3 className="size-4 mr-2" />
+                      <span>System Metrics</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

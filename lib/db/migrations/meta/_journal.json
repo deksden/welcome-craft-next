@@ -64,6 +64,13 @@
       "when": 1751222393851,
       "tag": "0008_tranquil_liz_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1751299089244,
+      "tag": "0009_goofy_secret_warriors",
+      "breakpoints": true
     }
   ]
 }

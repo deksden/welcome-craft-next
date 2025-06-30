@@ -29,6 +29,9 @@ export const user = pgTable('User', {
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
   name: text('name'), // Имя пользователя для UI
+  type: varchar('type', { length: 16 }).notNull().default('user'), // Роль пользователя: user | admin
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   // Phase 2: Поле для изоляции тестовых миров
   // NULL = production user, 'WORLD_ID' = test user в конкретном мире
   world_id: varchar('world_id', { length: 64 }),

@@ -1,9 +1,14 @@
 /**
  * @file components/phoenix/world-management-panel.tsx
  * @description PHOENIX PROJECT - World Management Panel для управления динамическими мирами
- * @version 1.0.0
- * @date 2025-06-29
- * @updated PHOENIX PROJECT Step 4 - Dynamic World Management UI
+ * @version 2.0.0
+ * @date 2025-06-30
+ * @updated Phase 3: Добавлена интеграция SeedImportTab для полной GUI seed data функциональности
+ */
+
+/** HISTORY:
+ * v2.0.0 (2025-06-30): Интегрирован SeedImportTab - добавлена табовая система для seed data import GUI
+ * v1.0.0 (2025-06-29): Создан основной WorldManagementPanel с динамическим управлением мирами
  */
 
 'use client'
@@ -18,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { 
   Globe, 
@@ -28,9 +34,12 @@ import {
   Pause, 
   FileText,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Settings
 } from 'lucide-react'
 import type { WorldMeta } from '@/lib/db/schema'
+import { SeedImportTab } from './seed-import-tab'
 
 interface WorldFormData {
   id: string
@@ -44,7 +53,7 @@ interface WorldFormData {
 }
 
 /**
- * World Management Panel - главный компонент для управления мирами
+ * World Management Panel - главный компонент для управления мирами с табовой системой
  * 
  * Функциональность:
  * - Список всех миров с фильтрацией и поиском
@@ -53,8 +62,11 @@ interface WorldFormData {
  * - Активация/деактивация миров
  * - Статистика использования
  * - Bulk operations (массовые операции)
+ * - Seed Data Import - GUI интерфейс для импорта seed данных
  * 
- * @feature PHOENIX PROJECT Step 4 - Dynamic World Management
+ * @feature PHOENIX PROJECT Phase 3 - Complete World Management with Seed Import
+ * @feature Tabbed interface для разделения функциональности
+ * @feature SeedImportTab integration для полной GUI функциональности
  * @feature Real-time updates и статистика
  * @feature Environment-aware filtering
  */
@@ -67,6 +79,7 @@ export function WorldManagementPanel() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [selectedWorld, setSelectedWorld] = useState<WorldMeta | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState('worlds')
 
   /**
    * Загрузка списка миров с фильтрацией
@@ -227,7 +240,7 @@ export function WorldManagementPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header с фильтрами */}
+      {/* Header */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -235,9 +248,37 @@ export function WorldManagementPanel() {
             World Management
           </CardTitle>
           <CardDescription>
-            Create, manage and monitor dynamic test worlds across environments
+            Complete world management system with dynamic worlds and seed data import
           </CardDescription>
         </CardHeader>
+      </Card>
+
+      {/* Tabs для разных функций */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="worlds" className="flex items-center gap-2">
+            <Settings className="size-4" />
+            World Management
+          </TabsTrigger>
+          <TabsTrigger value="seed-import" className="flex items-center gap-2">
+            <Download className="size-4" />
+            Seed Data Import
+          </TabsTrigger>
+        </TabsList>
+
+        {/* World Management Tab */}
+        <TabsContent value="worlds" className="space-y-6">
+          {/* Фильтры и контролы */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="size-5" />
+                Dynamic Worlds
+              </CardTitle>
+              <CardDescription>
+                Create, manage and monitor dynamic test worlds across environments
+              </CardDescription>
+            </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
@@ -300,11 +341,11 @@ export function WorldManagementPanel() {
               </Dialog>
             </div>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Статистика */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -351,11 +392,11 @@ export function WorldManagementPanel() {
               <BarChart3 className="size-4 text-purple-500" />
             </div>
           </CardContent>
-        </Card>
-      </div>
+          </Card>
+          </div>
 
-      {/* Таблица миров */}
-      <Card>
+          {/* Таблица миров */}
+          <Card>
         <CardHeader>
           <CardTitle>Worlds ({filteredWorlds.length})</CardTitle>
         </CardHeader>
@@ -456,9 +497,16 @@ export function WorldManagementPanel() {
                 )}
               </TableBody>
             </Table>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Seed Import Tab */}
+        <TabsContent value="seed-import" className="space-y-6">
+          <SeedImportTab />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

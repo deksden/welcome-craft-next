@@ -1,26 +1,22 @@
-/**
- * @file docker-compose.dev.yml
- * @description LOCAL development environment infrastructure - PHOENIX PROJECT
- * @version 1.0.0
- * @date 2025-06-29
- * @updated PHOENIX PROJECT Step 2 - трехуровневая архитектура окружений
- */
+# docker-compose.local.yml
+# LOCAL development environment infrastructure - PHOENIX PROJECT
+# @version 1.1.0
+# @date 2025-06-30
+# @updated Переименован из docker-compose.dev.yml для консистентности
 
-/**
- * PHOENIX PROJECT - LOCAL Environment Infrastructure
- * 
- * Назначение: Полная изоляция development среды с собственными:
- * - PostgreSQL база данных на порту 5434 
- * - Redis cache для session management
- * - Persistent volumes для development данных
- * 
- * Особенности LOCAL среды:
- * - APP_STAGE=LOCAL
- * - test-session поддержка ВКЛЮЧЕНА
- * - World isolation поддержка ВКЛЮЧЕНА
- * - Persistent volumes для сохранения данных между рестартами
- * - Отдельные порты для избежания конфликтов с BETA/PROD
- */
+# PHOENIX PROJECT - LOCAL Environment Infrastructure
+# 
+# Назначение: Полная изоляция development среды с собственными:
+# - PostgreSQL база данных на порту 5434 
+# - Redis cache для session management
+# - Persistent volumes для development данных
+# 
+# Особенности LOCAL среды:
+# - APP_STAGE=LOCAL
+# - test-session поддержка ВКЛЮЧЕНА
+# - World isolation поддержка ВКЛЮЧЕНА
+# - Persistent volumes для сохранения данных между рестартами
+# - Отдельные порты для избежания конфликтов с BETA/PROD
 
 version: '3.8'
 
@@ -82,4 +78,4 @@ networks:
     driver: bridge
     name: welcomecraft_local_network
 
-# END OF: docker-compose.dev.yml
+# END OF: docker-compose.local.yml

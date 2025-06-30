@@ -2,9 +2,9 @@
 
 **Назначение:** Помочь новому разработчику (или ИИ) быстро запустить проект.
 
-**Версия:** 4.1.0  
-**Дата:** 2025-06-29  
-**Статус:** VERCEL-CENTRIC EDITION - Добавлен Vercel-управляемый подход к переменным окружения + PHOENIX PROJECT инструменты
+**Версия:** 6.0.0  
+**Дата:** 2025-06-30  
+**Статус:** SEED DATA SYSTEM COMPLETE - Реализована полная система управления seed данными с JSON+blob архитектурой, conflict resolution и Quick Login интеграцией
 
 ---
 
@@ -33,36 +33,45 @@
 - **pnpm** (установить: `npm install -g pnpm`)
 - **Git**
 
-### 🎯 Рекомендуемая установка (Vercel-centric)
+### 🎯 Рекомендуемая установка (Phoenix Project)
 ```bash
 # 1. Клонировать репозиторий
 git clone <repository-url>
 cd welcome-craft-next
 
-# 2. Установить зависимости
+# 2. Автоматическая настройка Phoenix Project
+bash ./setup.sh
+
+# 3. Настроить Phoenix LOCAL окружение
+pnpm phoenix:dev
+```
+
+### 🔧 Ручная установка (пошагово)
+```bash
+# 1. Установить зависимости
 pnpm install
 
-# 3. Настроить Vercel CLI и получить переменные окружения
-npm install -g vercel
-vercel login
-vercel link
-vercel env pull .env.local
+# 2. Поднять локальную БД для разработки
+pnpm local:db:up
 
-# 4. Применить миграции БД
+# 3. Настроить переменные окружения
+cp .env.example .env.local
+# Заполнить .env.local с Phoenix LOCAL конфигурацией
+
+# 4. Применить миграции к локальной БД
 pnpm db:migrate
 
 # 5. Запустить dev-сервер
 pnpm dev
 ```
 
-### 🔧 Legacy установка (без Vercel CLI)
+### 🚀 Альтернативный способ (Vercel-managed)
 ```bash
-# 1-2. То же что выше
-# 3. Ручная настройка переменных окружения
-cp .env.example .env.local
-# Заполнить .env.local необходимыми значениями вручную
-
-# 4-5. То же что выше
+# Для команд с доступом к Vercel проекту
+vercel login
+vercel link
+vercel env pull .env.local
+# Затем настроить локальную БД через Phoenix команды
 ```
 
 ### 🌍 Режимы работы (Three-Mode Environment)
@@ -88,34 +97,51 @@ cp .env.example .env.local
 
 ## 🔧 Ключевые команды
 
-### Разработка
+### 🚀 Phoenix Project (рекомендуемые)
 ```bash
-pnpm dev              # Запуск сервера разработки
+pnpm phoenix:dev      # Полная настройка LOCAL + запуск dev сервера
+pnpm phoenix:local    # Настроить LOCAL окружение
+pnpm phoenix:status   # Статус всех Phoenix контейнеров
+pnpm phoenix:health   # Health check системы
+pnpm phoenix:cleanup  # Остановить все Phoenix окружения
+```
+
+### 🔧 Разработка
+```bash
+pnpm dev              # Запуск сервера разработки (требует поднятую БД)
 pnpm build            # Сборка production-версии
 pnpm start            # Запуск production сервера
 ```
 
-### Качество кода
+### 🔍 Качество кода
 ```bash
 pnpm lint             # Проверка линтером
 pnpm format           # Автоматическое форматирование
 pnpm typecheck        # Проверка TypeScript
 ```
 
-### База данных
+### 💾 База данных (локальная БД для разработки)
 ```bash
+pnpm local:db:up      # Поднять локальную БД разработки
+pnpm local:db:down    # Остановить локальную БД
+pnpm local:db:reset   # Сбросить локальную БД (удалить все данные)
+pnpm local:db:logs    # Посмотреть логи локальной БД
 pnpm db:generate      # Генерация миграций (после изменения schema.ts)
-pnpm db:migrate       # Применение миграций
+pnpm db:migrate       # Применение миграций к текущей БД
 pnpm db:studio        # Drizzle Studio для работы с БД
-pnpm db:reset         # Сброс БД (осторожно!)
 ```
 
-### Тестирование
+### 🧪 Тестирование (эфемерная БД управляется автоматически)
 ```bash
-pnpm test             # Все E2E тесты (routes + e2e)
-pnpm test:routes      # API/интеграционные тесты (82 теста)
-pnpm test:e2e         # End-to-End тесты (16 тестов)
-pnpm test:unit        # Юнит-тесты (94 теста)
+pnpm test             # Все E2E тесты (routes + e2e) с эфемерной БД
+pnpm test:routes      # API/интеграционные тесты (109 тестов)
+pnpm test:e2e         # End-to-End тесты (40+ тестов)
+pnpm test:unit        # Юнит-тесты (269+ тестов)
+
+# ⚠️ ТОЛЬКО ДЛЯ ОТЛАДКИ (обычно управляется автоматически)
+pnpm test:db:up       # Запустить эфемерную БД
+pnpm test:db:down     # Остановить эфемерную БД
+pnpm test:db:setup    # Накатить миграции и данные в эфемерную БД
 ```
 
 ### UI компоненты
@@ -145,7 +171,7 @@ vercel logs                          # Просмотр логов deployment
 vercel inspect                       # Детальная информация о deployment
 ```
 
-### 🚀 Phoenix System Management (NEW)
+### 🚀 Phoenix System Management (PRODUCTION-READY)
 ```bash
 # Health Monitoring & System Status
 pnpm phoenix:health           # Проверка состояния системы
@@ -153,20 +179,51 @@ pnpm phoenix:health:detail    # Детальный health check
 pnpm phoenix:health:watch     # Мониторинг в реальном времени
 
 # Environment Management
-pnpm phoenix:env:status       # Статус всех окружений (LOCAL/BETA/PROD)
-pnpm phoenix:env:switch LOCAL # Переключение на LOCAL окружение
-pnpm phoenix:env:setup        # Настройка нового окружения
+pnpm phoenix:status           # Статус всех Phoenix контейнеров
+pnpm phoenix:local            # Настроить LOCAL окружение
+pnpm phoenix:dev              # Настроить LOCAL + запустить dev сервер
+pnpm phoenix:cleanup          # Остановить все Phoenix окружения
 
 # Data Transfer & Backup
 pnpm phoenix:backup:local     # Создание backup LOCAL окружения
 pnpm phoenix:backup:beta      # Создание backup BETA окружения
 pnpm phoenix:transfer         # Миграция данных между окружениями
 
-# World Management
+# World Management (CLI интерфейс)
 pnpm phoenix:worlds:list      # Список всех тестовых миров
-pnpm phoenix:worlds:create    # Создание нового мира
+pnpm phoenix:worlds:create    # Создание нового мира (интерактивно)
 pnpm phoenix:worlds:cleanup   # Очистка неактивных миров
 pnpm phoenix:worlds:seed      # Заполнение мира тестовыми данными
+pnpm phoenix:worlds:copy      # Копирование мира между окружениями
+pnpm phoenix:worlds:export    # Экспорт конфигурации миров
+pnpm phoenix:worlds:help      # Справка по командам миров
+
+# Seed Data Management (✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО Phase 3)
+pnpm phoenix:seed:export      # Экспорт мира в seed формат
+pnpm phoenix:seed:import      # Импорт seed данных с conflict resolution
+pnpm phoenix:seed:validate    # Валидация seed структуры
+pnpm phoenix:seed:list        # Список доступных seed директорий
+pnpm phoenix:seed:cleanup-orphaned  # Обнаружение и очистка orphaned blob файлов
+
+# Phoenix Admin Dashboard GUI (✅ ЗАВЕРШЕНА GUI ИНТЕГРАЦИЯ)
+# WorldManagementPanel теперь включает:
+# - Вкладка "World Management" - управление динамическими мирами
+# - Вкладка "Seed Data Import" - полноценный GUI для импорта seed данных
+# - API endpoints: /api/phoenix/seed/list, /analyze, /import, /validate
+
+# Примеры использования World Manager CLI:
+pnpm phoenix:worlds:list LOCAL           # Список миров в LOCAL окружении
+pnpm phoenix:worlds:create               # Интерактивное создание мира
+pnpm phoenix:worlds:cleanup LOCAL        # Очистка неактивных миров LOCAL
+pnpm phoenix:worlds:seed GENERAL_001     # Заполнить мир тестовыми данными
+pnpm phoenix:worlds:copy UC_TESTING LOCAL BETA  # Копировать мир UC_TESTING из LOCAL в BETA
+
+# Примеры Seed Data Management:
+pnpm phoenix:seed:export UC_001 LOCAL --include-blobs  # Экспорт мира с blob файлами
+pnpm phoenix:seed:import ./seeds/UC_001_LOCAL_2025-06-30  # Импорт с conflict resolution
+pnpm phoenix:seed:validate ./seeds/UC_001_LOCAL_2025-06-30  # Валидация seed структуры
+pnpm phoenix:seed:list                    # Список всех доступных seeds
+pnpm phoenix:seed:cleanup-orphaned       # Очистка orphaned blob файлов
 
 # Database Seeding
 pnpm phoenix:seed:local       # Заполнение LOCAL БД
@@ -213,7 +270,8 @@ NEXT_TELEMETRY_DISABLED=1    # Отключение Next.js телеметрии
 ├── scripts/               # 🚀 Phoenix CLI Scripts
 │   ├── phoenix-health-check.ts       # Health monitoring system
 │   ├── phoenix-data-transfer.ts      # Backup/restore/migration
-│   └── phoenix-database-seeder.ts    # Database seeding
+│   ├── phoenix-database-seeder.ts    # Database seeding
+│   └── phoenix-world-manager.ts      # ✅ World management CLI
 ├── lib/
 │   ├── ai/                # AI логика и промпты
 │   ├── db/                # База данных (Drizzle)
@@ -421,11 +479,31 @@ pnpm phoenix:transfer         # Миграция данных между окр�
 pnpm phoenix:seed:local       # Заполнение БД тестовыми данными
 ```
 
-**World Management:**
+**World Management CLI (✅ РЕАЛИЗОВАНО):**
 ```bash
-pnpm phoenix:worlds:list      # Список активных миров
-pnpm phoenix:worlds:cleanup   # Очистка неактивных миров
+# Основные команды
+pnpm phoenix:worlds:list [environment]        # Список миров с фильтрацией
+pnpm phoenix:worlds:create                    # Интерактивное создание мира
+pnpm phoenix:worlds:cleanup [environment]     # Очистка неактивных миров
+pnpm phoenix:worlds:seed <worldId>           # Заполнить мир тестовыми данными
+pnpm phoenix:worlds:copy <id> <from> <to>    # Копировать между окружениями
+pnpm phoenix:worlds:export [json|csv]        # Экспорт конфигурации
+pnpm phoenix:worlds:help                     # Справка по командам
+
+# Примеры использования
+pnpm phoenix:worlds:list LOCAL               # Миры в LOCAL окружении
+pnpm phoenix:worlds:cleanup LOCAL            # Очистка LOCAL миров
+pnpm phoenix:worlds:seed UC_TESTING_001      # Заполнить мир данными
+pnpm phoenix:worlds:copy UC_001 LOCAL BETA   # Копировать UC_001 из LOCAL в BETA
 ```
+
+**Архитектура CLI:**
+- **Interactive prompts** — Удобный ввод данных через CLI
+- **Environment filtering** — Фильтрация по LOCAL/BETA/PROD
+- **Database integration** — Прямая работа с WorldMeta таблицей
+- **Error handling** — Robust обработка ошибок и валидация
+
+> **📚 CLI Implementation:** Полнофункциональный CLI реализован в `scripts/phoenix-world-manager.ts` с использованием существующей API логики из WorldManagementPanel GUI компонента.
 
 ### Phoenix API Endpoints
 
