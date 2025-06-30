@@ -179,7 +179,7 @@ export default async function PhoenixAdminPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Current Environment</label>
+                  <div className="text-sm font-medium">Current Environment</div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{currentEnvironment}</Badge>
                     {isDevEnvironment && (
@@ -189,7 +189,7 @@ export default async function PhoenixAdminPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">World Isolation</label>
+                  <div className="text-sm font-medium">World Isolation</div>
                   <div className="flex items-center gap-2">
                     <Badge variant={isDevEnvironment ? "secondary" : "outline"}>
                       {isDevEnvironment ? "Enabled" : "Disabled"}

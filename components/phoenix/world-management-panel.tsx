@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -68,15 +68,10 @@ export function WorldManagementPanel() {
   const [selectedWorld, setSelectedWorld] = useState<WorldMeta | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
 
-  // Загрузка миров при инициализации
-  useEffect(() => {
-    loadWorlds()
-  }, [environmentFilter, categoryFilter])
-
   /**
    * Загрузка списка миров с фильтрацией
    */
-  const loadWorlds = async () => {
+  const loadWorlds = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -102,7 +97,12 @@ export function WorldManagementPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [environmentFilter, categoryFilter])
+
+  // Загрузка миров при инициализации
+  useEffect(() => {
+    loadWorlds()
+  }, [loadWorlds])
 
   /**
    * Фильтрация миров по поисковому запросу
