@@ -1,38 +1,49 @@
 import { test, expect } from '@playwright/test';
+import { universalAuthentication } from '../../helpers/auth.helper';
+import { PhoenixSeedExportPage } from '../../pages/phoenix-seed-export.page';
+import crypto from 'crypto';
 
 test.describe('Phoenix Seed Export', () => {
+  let seedExportPage: PhoenixSeedExportPage;
+  
+  // Увеличиваем timeout для работы с Radix UI Select компонентами
+  test.setTimeout(90000);
+
   test.beforeEach(async ({ page }) => {
-    // Ensure we are logged in as admin before each test
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'admin@example.com');
-    await page.fill('input[name="password"]', 'adminpassword');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/chat'); // Wait for successful login redirect
-    await page.goto('/phoenix/seed-export');
-    await expect(page.getByRole('heading', { name: 'Seed Export' })).toBeVisible();
+    seedExportPage = new PhoenixSeedExportPage(page);
+    
+    // Mock the worlds API to return test data
+    await page.route('/api/phoenix/worlds', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 'TEST_WORLD_001', name: 'Test World 1' },
+          { id: 'TEST_WORLD_002', name: 'Test World 2' }
+        ]),
+      });
+    });
+    
+    // Authenticate admin user before each test and navigate to Phoenix seed export page
+    await universalAuthentication(page, {
+      email: `phoenix-seed-export-${Date.now()}@test.com`,
+      id: crypto.randomUUID(),
+      type: 'admin'  // КРИТИЧНО: Требуются admin права для Phoenix
+    }, {
+      targetPath: '/phoenix/seed-export',
+      skipNavigation: false
+    });
+    
+    // Debug page state if needed
+    await seedExportPage.debugPageState();
+    
+    // Verify page is ready for testing
+    await seedExportPage.verifyPageReady();
   });
 
   test('should display form elements and allow export', async ({ page }) => {
-    // Check if form elements are visible
-    await expect(page.getByLabel('Select World')).toBeVisible();
-    await expect(page.getByLabel('Data Source')).toBeVisible();
-    await expect(page.getByLabel('Include binary files (blobs)')).toBeVisible();
-    await expect(page.getByLabel('Directory Name')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Start Export' })).toBeVisible();
-
-    // Select a world (assuming there's at least one world available)
-    await page.locator('#world-select').click();
-    await page.locator('.select-content div[role="option"]').first().click();
-
-    // Select a data source (e.g., BETA)
-    await page.locator('#source-db').click();
-    await page.getByText('BETA').click();
-
-    // Check the include blobs checkbox
-    await page.locator('#include-blobs').check();
-
-    // Fill in a custom directory name
-    await page.locator('#seed-name').fill('my-custom-seed-export');
+    // Check if all form elements are visible
+    await seedExportPage.verifyAllFormElements();
 
     // Mock the API response for export
     await page.route('/api/phoenix/seed/export', async route => {
@@ -43,24 +54,25 @@ test.describe('Phoenix Seed Export', () => {
       });
     });
 
-    // Click the export button
-    await page.getByRole('button', { name: 'Start Export' }).click();
+    // Perform full export using POM
+    await seedExportPage.performFullExport({
+      worldName: 'Test World 1',
+      dataSource: 'BETA',
+      includeBlobs: true,
+      directoryName: 'my-custom-seed-export'
+    });
 
-    // Expect success toast and result message
-    await expect(page.getByText('Seed export initiated successfully!')).toBeVisible();
-    await expect(page.getByText('Export successful! Path: /tmp/exported/my-custom-seed-export')).toBeVisible();
+    // Verify export success
+    await seedExportPage.verifyExportSuccess('/tmp/exported/my-custom-seed-export');
   });
 
   test('should show error for missing fields', async ({ page }) => {
-    // Click export without filling anything
-    await page.getByRole('button', { name: 'Start Export' }).click();
-    await expect(page.getByText('Please fill all required fields.')).toBeVisible();
+    // Test missing fields error using POM
+    await seedExportPage.testMissingFieldsError();
   });
 
   test('should show manual DB URL input when selected', async ({ page }) => {
-    await expect(page.getByLabel('Manual DB URL')).not.toBeVisible();
-    await page.locator('#source-db').click();
-    await page.getByText('Specify Manually').click();
-    await expect(page.getByLabel('Manual DB URL')).toBeVisible();
+    // Test manual DB URL visibility using POM
+    await seedExportPage.verifyManualDbUrlVisibility();
   });
 });

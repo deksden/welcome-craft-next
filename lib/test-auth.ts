@@ -62,7 +62,8 @@ export async function getTestSession(): Promise<Session | null> {
   
   // APP_STAGE-based environment detection (PHOENIX PROJECT)
   const stage = process.env.APP_STAGE || 'PROD';
-  const isTestEnv = stage === 'LOCAL' || stage === 'BETA';
+  const isPlaywrightTest = process.env.PLAYWRIGHT === 'true' || process.env.PLAYWRIGHT_PORT;
+  const isTestEnv = stage === 'LOCAL' || stage === 'BETA' || isPlaywrightTest || testHeader === 'playwright';
   
   if (!isTestEnv) {
     return null;

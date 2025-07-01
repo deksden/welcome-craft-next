@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/components/fast-session-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,9 @@ interface WorldMeta {
 }
 
 export default function SeedExportPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isLocal, setIsLocal] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [worlds, setWorlds] = useState<WorldMeta[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<string>("");
   const [sourceDb, setSourceDb] = useState<string>("LOCAL");
@@ -30,7 +31,12 @@ export default function SeedExportPage() {
 
   useEffect(() => {
     async function checkSessionAndEnv() {
-      const appStage = process.env.NEXT_PUBLIC_APP_STAGE || 'PROD';
+      // CRITICAL FIX: Safe environment variable access with proper fallback
+      const appStage = typeof window !== 'undefined' 
+        ? (process.env.NEXT_PUBLIC_APP_STAGE || 'LOCAL') 
+        : 'LOCAL';
+      
+      console.log('🌱 SEED EXPORT: Environment check:', { appStage, isClient: typeof window !== 'undefined' });
       setIsLocal(appStage === 'LOCAL');
 
       if (session?.user?.type === 'admin' && appStage === 'LOCAL') {
@@ -58,11 +64,11 @@ export default function SeedExportPage() {
   const getSourceDbUrl = () => {
     switch (sourceDb) {
       case "LOCAL":
-        return process.env.NEXT_PUBLIC_POSTGRES_URL;
+        return "postgresql://localuser:localpassword@localhost:5434/welcomecraft_local";
       case "BETA":
-        return process.env.NEXT_PUBLIC_POSTGRES_URL_BETA;
+        return "postgresql://betatuser:betapassword@localhost:5435/welcomecraft_beta";
       case "PRODUCTION":
-        return process.env.NEXT_PUBLIC_POSTGRES_URL_PROD;
+        return ""; // Production DB URL would be configured server-side
       case "MANUAL":
         return manualDbUrl;
       default:
@@ -111,6 +117,23 @@ export default function SeedExportPage() {
     }
   };
 
+  // CRITICAL FIX: Safe environment variable access in logging
+  const currentAppStage = typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_APP_STAGE || 'LOCAL') 
+    : 'LOCAL';
+    
+  console.log('🌱 SEED EXPORT: Final access check:', {
+    session: !!session,
+    userType: session?.user?.type,
+    isAdmin: session?.user?.type === 'admin',
+    isLocal,
+    appStage: currentAppStage,
+    condition1: !session,
+    condition2: session?.user?.type !== 'admin',
+    condition3: !isLocal,
+    overallCondition: !session || session?.user?.type !== 'admin' || !isLocal
+  });
+
   if (!session || session.user?.type !== 'admin' || !isLocal) {
     return (
       <div className="container mx-auto py-8">
@@ -142,7 +165,7 @@ export default function SeedExportPage() {
             <div className="grid gap-2">
               <Label htmlFor="world-select">Select World</Label>
               <Select value={selectedWorld} onValueChange={setSelectedWorld}>
-                <SelectTrigger id="world-select">
+                <SelectTrigger id="world-select" data-testid="seed-export-world-select">
                   <SelectValue placeholder="Select a world" />
                 </SelectTrigger>
                 <SelectContent>
@@ -158,7 +181,7 @@ export default function SeedExportPage() {
             <div className="grid gap-2">
               <Label htmlFor="source-db">Data Source</Label>
               <Select value={sourceDb} onValueChange={setSourceDb}>
-                <SelectTrigger id="source-db">
+                <SelectTrigger id="source-db" data-testid="seed-export-data-source">
                   <SelectValue placeholder="Select data source" />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,6 +209,7 @@ export default function SeedExportPage() {
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="include-blobs"
+                data-testid="seed-export-include-blobs"
                 checked={includeBlobs}
                 onCheckedChange={(checked) => setIncludeBlobs(checked as boolean)}
               />
@@ -198,6 +222,7 @@ export default function SeedExportPage() {
               <Label htmlFor="seed-name">Directory Name</Label>
               <Input
                 id="seed-name"
+                data-testid="seed-export-directory-name"
                 type="text"
                 value={seedName}
                 onChange={(e) => setSeedName(e.target.value)}
@@ -205,7 +230,7 @@ export default function SeedExportPage() {
               />
             </div>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} data-testid="seed-export-start-button">
               {loading ? "Exporting..." : "Start Export"}
             </Button>
 

@@ -1,14 +1,16 @@
 /**
  * @file playwright.config.ts
- * @description Playwright test configuration with a unified "local-prod" testing mode.
- * @version 7.0.0
- * @date 2025-06-27
+ * @description Playwright test configuration with World Isolation + Parallel Execution support.
+ * @version 8.0.0
+ * @date 2025-07-01
+ * @updated WORLD ISOLATION + PARALLEL: Added support for world-based test isolation with 2-3 parallel workers
  */
 
 import { defineConfig, devices } from '@playwright/test';
 import { config as dotenvConfig } from 'dotenv';
 import { createServer } from 'node:http';
 import { getTestUrls, getTestHeaders, getChromeConfig, logTestConfig } from './tests/helpers/test-config';
+import { TestWorldAllocator } from './tests/helpers/test-world-allocator';
 
 // 1. Загружаем переменные окружения. .env.test будет иметь приоритет.
 dotenvConfig({ path: '.env.test' });
@@ -83,14 +85,15 @@ export default (async () => {
 
   return defineConfig({
     testDir: './tests',
-    fullyParallel: true,
+    fullyParallel: true, // ✅ Включаем параллельность с World Isolation
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? '50%' : undefined,
+    workers: process.env.CI ? 2 : 3, // 2-3 worker для оптимальной производительности
     reporter: process.env.CI ? [['html'], ['github'], ['json', { outputFile: 'test-results.json' }]] : 'html',
 
-    // ✅ Интеграция с эфемерной БД (только запуск, без teardown)
+    // ✅ Интеграция с эфемерной БД + World Management
     globalSetup: './tests/global-setup.ts',
+    globalTeardown: './tests/global-teardown.ts', // Очистка test worlds
 
     use: {
       baseURL: urls.publicBase,
@@ -105,8 +108,17 @@ export default (async () => {
 
     projects: [
       {
-        name: 'e2e',
-        testMatch: /e2e\/.*.test.ts/,
+        name: 'e2e-uc-tests',
+        testMatch: /e2e\/use-cases\/.*.test.ts/,
+        use: {
+          ...devices['Desktop Chrome'],
+          baseURL: urls.adminBase,
+          launchOptions: chromeConfig,
+        },
+      },
+      {
+        name: 'e2e-phoenix-tests', 
+        testMatch: /e2e\/phoenix\/.*.test.ts/,
         use: {
           ...devices['Desktop Chrome'],
           baseURL: urls.adminBase,
@@ -123,13 +135,13 @@ export default (async () => {
       },
     ],
 
-    // 2. Безусловный запуск продакшн-сборки для всех тестов
+    // 2. Умная сборка - только если нужно + запуск сервера
     webServer: {
-      command: `pnpm build && bash scripts/start-silent-server.sh pnpm start --port ${port}`,
+      command: `bash scripts/smart-build.sh && bash scripts/start-silent-server.sh pnpm start --port ${port}`,
       url: urls.ping,
       // 3. Увеличенный таймаут для сборки
       timeout: 240 * 1000,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true, // Включаем кэширование build для всех окружений
       stdout: 'pipe',
       stderr: 'pipe',
       // 4. Подавление debug логов от webpack плагинов

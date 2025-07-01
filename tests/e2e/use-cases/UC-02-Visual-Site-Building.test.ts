@@ -18,6 +18,7 @@
 import { test, expect } from '@playwright/test'
 import { SiteEditorPage } from '../../pages/site-editor.page'
 import { universalAuthentication } from '../../helpers/auth.helper'
+import { getTestWorldId } from '../../helpers/test-world-allocator'
 
 /**
  * @description UC-02: Visual Site Building - полная реализация согласно спецификации UC-02 v2.0
@@ -31,14 +32,25 @@ import { universalAuthentication } from '../../helpers/auth.helper'
  * @feature Детальное логирование каждого шага для отладки
  */
 test.describe('UC-02: Visual Site Building (Complete Implementation)', () => {
-  test.beforeEach(async ({ page }) => {
-    // Универсальная аутентификация согласно UC-01 паттернам
+  test.beforeEach(async ({ page }, testInfo) => {
+    console.log('🚀 UC-02: Starting authentication with world isolation')
+    
+    // World Isolation: получаем уникальный world для этого worker
+    const workerId = testInfo.parallelIndex.toString()
+    const worldId = await getTestWorldId(workerId, 'UC-02-Visual-Site-Building.test.ts')
+    
+    console.log(`🌍 UC-02: Using isolated world ${worldId} for worker ${workerId}`)
+    
+    // Универсальная аутентификация с world isolation
     const testUser = {
       email: `uc02-${Date.now()}@test.com`,
       id: crypto.randomUUID()
     }
     
-    await universalAuthentication(page, testUser)
+    await universalAuthentication(page, testUser, {
+      worldId,
+      workerId
+    })
     
     console.log('✅ Universal authentication completed')
   })

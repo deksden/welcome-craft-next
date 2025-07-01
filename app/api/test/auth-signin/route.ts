@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         id: finalUserId,
         email,
         name: name || email,
-        type: userType || 'regular'
+        type: userType || 'user'
       },
       worldId: worldId || null, // Поддержка world ID для dev selector
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 дней

@@ -68,6 +68,8 @@ function useTestSessionBridge(): Session | null {
         const testSessionData = JSON.parse(cookieValue)
         
         console.log('🔍 Fast Session Provider: Found test-session cookie for:', testSessionData.user?.email)
+        console.log('🔍 Fast Session Provider: Test session data:', testSessionData)
+        console.log('🔍 Fast Session Provider: User type from cookie:', testSessionData.user?.type)
         
         // Create Auth.js compatible session object
         const bridgeSession: Session = {
@@ -75,12 +77,14 @@ function useTestSessionBridge(): Session | null {
             id: testSessionData.user?.id || 'fast-bridge-user',
             email: testSessionData.user?.email || 'test@fast-bridge.com',
             name: testSessionData.user?.name || 'Fast Bridge User',
-            type: testSessionData.user?.type || 'regular'
+            type: testSessionData.user?.type || 'user'
           },
           expires: testSessionData.expires || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
         }
         
         console.log('✅ Fast Session Provider: Created bridge session for:', bridgeSession.user.email)
+        console.log('✅ Fast Session Provider: Bridge session user type:', bridgeSession.user.type)
+        console.log('✅ Fast Session Provider: Complete bridge session object:', JSON.stringify(bridgeSession, null, 2))
         setTestSession(bridgeSession)
         
       } catch (error) {
@@ -99,15 +103,23 @@ function useTestSessionBridge(): Session | null {
 
 // Custom useSession hook that overrides NextAuth useSession in test environments
 function useCustomSession() {
+  console.log('🔥 useCustomSession: HOOK CALLED - Function invoked')
+  
   const testSession = useContext(TestSessionContext)
   const nextAuthSession = useSession()
   
   console.log('🚀 useCustomSession: testSession from context:', !!testSession, testSession ? `(${testSession.user.email})` : '(null)')
   console.log('🚀 useCustomSession: nextAuthSession status:', nextAuthSession.status, nextAuthSession.data ? `(${nextAuthSession.data.user?.email})` : '(no data)')
+  console.log('🔥 useCustomSession: TestSessionContext available:', !!TestSessionContext)
   
   // If we have a test session, use it. Otherwise, fall back to NextAuth
   if (testSession) {
     console.log('🚀 useCustomSession: Returning test session for:', testSession.user.email)
+    console.log('🚀 useCustomSession: Test session user type:', testSession.user.type)
+    console.log('🚀 useCustomSession: Full test session return object:', JSON.stringify({
+      data: testSession,
+      status: 'authenticated'
+    }, null, 2))
     return {
       data: testSession,
       status: 'authenticated' as const,
@@ -117,6 +129,7 @@ function useCustomSession() {
   
   // For non-test environments, use standard NextAuth session
   console.log('🚀 useCustomSession: Returning NextAuth session, status:', nextAuthSession.status)
+  console.log('🚀 useCustomSession: NextAuth session data:', nextAuthSession.data)
   return nextAuthSession
 }
 

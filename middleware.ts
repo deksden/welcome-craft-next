@@ -111,8 +111,9 @@ export async function middleware (request: NextRequest) {
     // Если пользователь уже идет на страницу входа или регистрации,
     // просто показываем ему ее, не проверяя токен.
     if (url.pathname === '/login' || url.pathname === '/register') {
-      url.pathname = `/app${url.pathname}`
-      return NextResponse.rewrite(url)
+      // ИСПРАВЛЕНИЕ: НЕ переписываем пути, используем нативную Next.js структуру
+      console.log('🔧 MIDDLEWARE: Allowing auth page without rewrite:', url.pathname)
+      return NextResponse.next()
     }
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
@@ -191,7 +192,12 @@ export async function middleware (request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Переписываем путь на директорию app для мультидоменной архитектуры
+    // ИСПРАВЛЕНО: Переписываем пути для app домена в правильную структуру
+    // Phoenix файлы находятся в /app/app/(main)/* поэтому нужно переписать пути
+    // /phoenix -> /app/phoenix
+    // /artifacts -> /app/artifacts  
+    // / -> /app/
+    console.log('🔧 MIDDLEWARE: Rewriting app domain path:', url.pathname, '-> /app' + url.pathname)
     url.pathname = `/app${url.pathname}`
     return NextResponse.rewrite(url)
   }

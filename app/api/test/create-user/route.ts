@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { id, email, password } = await request.json();
+    const { id, email, password, type, worldId } = await request.json();
     
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
@@ -37,11 +37,20 @@ export async function POST(request: NextRequest) {
       const existingUser = await db.select().from(userTable).where(eq(userTable.id, id)).limit(1);
       
       if (existingUser.length > 0) {
+        // Обновляем существующего пользователя, если передан новый тип
+        if (type && existingUser[0].type !== type) {
+          await db.update(userTable).set({ 
+            type: type,
+            world_id: worldId || existingUser[0].world_id
+          }).where(eq(userTable.id, id));
+        }
+        
         return NextResponse.json({
           success: true,
-          message: 'User already exists',
+          message: 'User already exists and updated',
           email: existingUser[0].email,
-          userId: existingUser[0].id
+          userId: existingUser[0].id,
+          type: type || existingUser[0].type
         });
       }
 
@@ -49,17 +58,21 @@ export async function POST(request: NextRequest) {
       const [user] = await db.insert(userTable).values({
         id,
         email,
-        password // В тестах храним простой пароль
+        password, // В тестах храним простой пароль
+        type: type || 'user', // Поддержка admin типа
+        world_id: worldId || null // Поддержка world isolation
       }).returning({
         id: userTable.id,
-        email: userTable.email
+        email: userTable.email,
+        type: userTable.type
       });
 
       return NextResponse.json({ 
         success: true, 
         message: 'User created with specific ID',
         email: user.email,
-        userId: user.id 
+        userId: user.id,
+        type: user.type
       });
     } else {
       // Используем стандартную функцию создания пользователя
