@@ -1,12 +1,13 @@
 /**
  * @file lib/db/schema.ts
  * @description Определения таблиц базы данных с использованием Drizzle ORM.
- * @version 3.0.0
- * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Добавлены специализированные таблицы артефактов и новые типы.
+ * @version 4.0.0
+ * @date 2025-06-29
+ * @updated PHOENIX PROJECT Step 3 - Добавлена WorldMeta таблица для динамического управления тестовыми мирами
  */
 
 /** HISTORY:
+ * v4.0.0 (2025-06-29): PHOENIX PROJECT Step 3 - Добавлена WorldMeta таблица для database-driven управления тестовыми мирами с поддержкой автоочистки, версионирования и окружений
  * v3.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены специализированные таблицы A_Text, A_Image, A_Person, A_Address, A_FaqItem, A_Link, A_SetDefinition, A_SetItems, A_Site. Обновлен ArtifactKind enum с новыми типами.
  * v2.5.0 (2025-06-20): PHASE1 UC-08 CLEANUP - Удалены поля интеллектуального поиска: metadata, quality_score, last_analyzed_at, search_vector.
  * v2.4.0 (2025-06-20): Добавлены поля для интеллектуального поиска артефактов (UC-08 Intelligent Artifact Search).
@@ -28,6 +29,9 @@ export const user = pgTable('User', {
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
   name: text('name'), // Имя пользователя для UI
+  type: varchar('type', { length: 16 }).notNull().default('user'), // Роль пользователя: user | admin
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   // Phase 2: Поле для изоляции тестовых миров
   // NULL = production user, 'WORLD_ID' = test user в конкретном мире
   world_id: varchar('world_id', { length: 64 }),
@@ -329,5 +333,59 @@ export const artifactSite = pgTable('A_Site', {
 }))
 
 export type ArtifactSite = InferSelectModel<typeof artifactSite>;
+
+// =============================================================================
+// PHOENIX PROJECT: WorldMeta - Dynamic Test World Management System
+// =============================================================================
+
+/**
+ * WorldMeta таблица для динамического управления тестовыми мирами
+ * Заменяет статическую конфигурацию tests/helpers/worlds.config.ts
+ * 
+ * PHOENIX PROJECT Step 3: Миграция от статических файлов к database-driven миров
+ */
+export const worldMeta = pgTable('WorldMeta', {
+  // Уникальный идентификатор мира
+  id: varchar('id', { length: 64 }).primaryKey().notNull(),
+  
+  // Основная информация
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  
+  // Конфигурация мира в JSON формате
+  users: jsonb('users').notNull(), // WorldUser[]
+  artifacts: jsonb('artifacts').notNull(), // WorldArtifact[]
+  chats: jsonb('chats').notNull(), // WorldChat[]
+  settings: jsonb('settings').notNull(), // WorldSettings
+  
+  // Метаданные управления
+  dependencies: jsonb('dependencies').default([]), // WorldId[]
+  isActive: boolean('isActive').notNull().default(true),
+  isTemplate: boolean('isTemplate').notNull().default(false), // Шаблон для создания новых миров
+  
+  // Автоочистка и TTL
+  autoCleanup: boolean('autoCleanup').notNull().default(true),
+  cleanupAfterHours: integer('cleanupAfterHours').default(24), // Автоочистка через N часов
+  
+  // Аудит и управление версиями
+  version: varchar('version', { length: 20 }).notNull().default('1.0.0'),
+  createdBy: uuid('createdBy').references(() => user.id), // Кто создал мир
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  lastUsedAt: timestamp('lastUsedAt'), // Последнее использование в тестах
+  
+  // Статистика использования
+  usageCount: integer('usageCount').notNull().default(0), // Количество использований
+  
+  // Окружение и изоляция
+  environment: varchar('environment', { length: 20 }).notNull().default('LOCAL'), // LOCAL, BETA, PROD
+  isolationLevel: varchar('isolationLevel', { length: 20 }).notNull().default('FULL'), // FULL, PARTIAL, SHARED
+  
+  // Дополнительные теги и категоризация
+  tags: jsonb('tags').default([]), // string[] для категоризации миров
+  category: varchar('category', { length: 50 }).default('GENERAL'), // UC, REGRESSION, PERFORMANCE, etc.
+})
+
+export type WorldMeta = InferSelectModel<typeof worldMeta>;
 
 // END OF: lib/db/schema.ts

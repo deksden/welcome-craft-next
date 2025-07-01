@@ -1,0 +1,84 @@
+{
+  "timestamp": "2025-06-30T03-57-10-316Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "INTEGRATION_3d0e57d3",
+      "name": "Integration Test World",
+      "description": "Testing environment transitions",
+      "users": [
+        {
+          "name": "Integration User",
+          "type": "user",
+          "email": "integration@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T03:57:10.286Z",
+      "updatedAt": "2025-06-30T03:57:10.286Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "integration-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "CONSISTENCY_e53c72c2",
+      "name": "Consistency Test World",
+      "description": "Testing data consistency",
+      "users": [
+        {
+          "name": "Test User",
+          "type": "user",
+          "email": "consistency@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T03:57:10.296Z",
+      "updatedAt": "2025-06-30T03:57:10.296Z",
+      "lastUsedAt": "2025-06-30T03:57:10.313Z",
+      "usageCount": 1,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "consistency-test"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 2,
+    "backupSize": "2.0 KB",
+    "version": "1.0.0"
+  }
+}

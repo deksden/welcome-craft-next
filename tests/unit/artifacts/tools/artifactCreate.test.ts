@@ -73,7 +73,7 @@ vi.mock('@/lib/ai/content-generators', () => ({
 
 describe('AI Tool - artifactCreate', () => {
   const mockSession: Session = {
-    user: { id: 'test-user-123', email: 'test@test.com', type: 'regular' },
+    user: { id: 'test-user-123', email: 'test@test.com', type: 'user' },
     expires: new Date(Date.now() + 86400 * 1000).toISOString(),
   }
 

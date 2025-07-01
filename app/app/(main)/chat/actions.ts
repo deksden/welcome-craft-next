@@ -15,7 +15,7 @@
 'use server'
 
 import { generateText, type UIMessage } from 'ai'
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers.js'
 import { revalidatePath } from 'next/cache'
 import { eq, sql } from 'drizzle-orm'
 import {

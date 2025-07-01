@@ -14,8 +14,8 @@
  * v1.2.0 (2025-06-11): Добавлено логирование.
  * v1.1.0 (2025-06-09): Удален компонент DataStreamHandler.
  */
-import { cookies } from 'next/headers'
-import { notFound, redirect } from 'next/navigation'
+import { cookies } from 'next/headers.js'
+import { notFound, redirect } from 'next/navigation.js'
 
 import { getAuthSession } from '@/lib/test-auth'
 import { Chat } from '@/components/chat'

@@ -1,0 +1,1 @@
+ALTER TABLE "WorldMeta" ALTER COLUMN "usageCount" SET NOT NULL;

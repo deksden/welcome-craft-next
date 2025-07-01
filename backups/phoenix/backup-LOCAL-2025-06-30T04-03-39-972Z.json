@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-06-30T04-03-39-972Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "API_TEST_04c7dcdf",
+      "name": "API Test World",
+      "description": "Created by API test",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T04:03:39.807Z",
+      "updatedAt": "2025-06-30T04:03:39.807Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "api-test"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 1,
+    "backupSize": "1.0 KB",
+    "version": "1.0.0"
+  }
+}

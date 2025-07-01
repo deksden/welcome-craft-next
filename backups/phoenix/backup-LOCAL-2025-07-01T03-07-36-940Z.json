@@ -1,0 +1,86 @@
+{
+  "timestamp": "2025-07-01T03-07-36-940Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "ENVIRONMENT_TRANSITION_T1751339256819_4c5c2d22",
+      "name": "ENVIRONMENT_TRANSITION World (T1751339256819_4c5c2d22)",
+      "description": "Testing environment transitions",
+      "users": [
+        {
+          "name": "Integration User",
+          "type": "user",
+          "email": "integration@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:36.928Z",
+      "updatedAt": "2025-07-01T03:07:36.928Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256819_4c5c2d22",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "DATA_CONSISTENCY_T1751339256831_5eb669db",
+      "name": "DATA_CONSISTENCY World (T1751339256831_5eb669db)",
+      "description": "Testing data consistency",
+      "users": [
+        {
+          "name": "Test User",
+          "type": "user",
+          "email": "consistency@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:36.928Z",
+      "updatedAt": "2025-07-01T03:07:36.928Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256831_5eb669db",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 2,
+    "backupSize": "2.0 KB",
+    "version": "1.0.0"
+  }
+}

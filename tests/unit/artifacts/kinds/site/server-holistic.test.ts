@@ -23,7 +23,7 @@ vi.mock('@/lib/ai/holistic-generator', () => ({
 
 describe('UC-09 Holistic Site Generation', () => {
   const mockSession = {
-    user: { id: 'test-user-123', email: 'test@example.com', type: 'regular' as const },
+    user: { id: 'test-user-123', email: 'test@example.com', type: 'user' as const },
     expires: '2025-12-31'
   }
 

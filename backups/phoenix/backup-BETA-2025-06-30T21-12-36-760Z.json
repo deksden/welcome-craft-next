@@ -1,0 +1,134 @@
+{
+  "timestamp": "2025-06-30T21-12-36-760Z",
+  "environment": "BETA",
+  "worlds": [
+    {
+      "id": "BETA_895d6da5",
+      "name": "Beta Environment World",
+      "description": "Testing environment isolation",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T20:55:53.808Z",
+      "updatedAt": "2025-06-30T20:55:53.808Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "BETA",
+      "isolationLevel": "FULL",
+      "tags": [
+        "isolation-test",
+        "beta"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "BETA_99cff2fa",
+      "name": "Beta Environment World",
+      "description": "Testing environment isolation",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T21:01:58.403Z",
+      "updatedAt": "2025-06-30T21:01:58.403Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "BETA",
+      "isolationLevel": "FULL",
+      "tags": [
+        "isolation-test",
+        "beta"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "BETA_f1cc3fd4",
+      "name": "Beta Environment World",
+      "description": "Testing environment isolation",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T21:03:20.265Z",
+      "updatedAt": "2025-06-30T21:03:20.265Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "BETA",
+      "isolationLevel": "FULL",
+      "tags": [
+        "isolation-test",
+        "beta"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "BETA_73d4cf38",
+      "name": "Beta Environment World",
+      "description": "Testing environment isolation",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-06-30T21:12:35.997Z",
+      "updatedAt": "2025-06-30T21:12:35.997Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "BETA",
+      "isolationLevel": "FULL",
+      "tags": [
+        "isolation-test",
+        "beta"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 4,
+    "backupSize": "3.9 KB",
+    "version": "1.0.0"
+  }
+}

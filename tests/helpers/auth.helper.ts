@@ -14,17 +14,20 @@
 
 import type { Page, APIRequestContext } from '@playwright/test';
 import { getTestUrls } from './test-config';
+import { getTestWorldId, getTestConfig } from './test-world-allocator';
 
 export interface AuthUser {
   email: string;
   id?: string;
   name?: string;
-  type?: 'regular' | 'admin';
+  type?: 'user' | 'admin';
 }
 
 export interface AuthOptions {
   targetPath?: string;
   skipNavigation?: boolean;
+  worldId?: string; // Поддержка World Isolation
+  workerId?: string; // Playwright Worker ID
 }
 
 export interface AuthCookieData {
@@ -48,10 +51,21 @@ export async function universalAuthentication(
   user: AuthUser,
   options: AuthOptions = {}
 ): Promise<void> {
-  const { targetPath = '/artifacts', skipNavigation = false } = options;
+  const { targetPath = '/artifacts', skipNavigation = false, worldId, workerId } = options;
   const isE2E = 'goto' in context; // Page has goto method, APIRequestContext doesn't
   
+  // World Isolation Support
+  let finalWorldId = worldId;
+  if (workerId && !worldId) {
+    // Автоматическое определение world ID на основе worker ID
+    const testFileName = options.targetPath?.includes('phoenix') ? 'phoenix-user-management.test.ts' : 'UC-01-AI-First-Site-Creation.test.ts';
+    finalWorldId = await getTestWorldId(workerId, testFileName);
+  }
+
   console.log(`🚀 UNIVERSAL AUTH: Setting up session for ${user.email} (${isE2E ? 'E2E' : 'API'} mode)`);
+  if (finalWorldId) {
+    console.log(`🌍 World Isolation: Using world ${finalWorldId}`);
+  }
 
   try {
     // ШАГ 1: Создаем пользователя в БД (если не существует)
@@ -66,7 +80,9 @@ export async function universalAuthentication(
           data: {
             id: user.id || crypto.randomUUID(),
             email: user.email,
-            password: 'test-password'
+            password: 'test-password',
+            type: user.type || 'user',
+            worldId: finalWorldId
           }
         })
       : (context as APIRequestContext).post('/api/test/create-user', {
@@ -77,7 +93,9 @@ export async function universalAuthentication(
           data: {
             id: user.id || crypto.randomUUID(),
             email: user.email,
-            password: 'test-password'
+            password: 'test-password',
+            type: user.type || 'user',
+            worldId: finalWorldId
           }
         })
     );
@@ -106,7 +124,7 @@ export async function universalAuthentication(
       await page.goto('http://app.localhost:3000/artifacts');
       
       // Выполняем auth через browser fetch для получения real cookies
-      const authResult = await page.evaluate(async ({ email, userId, userType }) => {
+      const authResult = await page.evaluate(async ({ email, userId, userType, worldId }) => {
         try {
           const response = await fetch('/api/test/auth-signin', {
             method: 'POST',
@@ -117,7 +135,8 @@ export async function universalAuthentication(
             body: JSON.stringify({
               email,
               userId,
-              userType: userType || 'regular'
+              userType: userType || 'user',
+              worldId
             }),
             credentials: 'same-origin' // КРИТИЧНО: включает cookies
           });
@@ -138,7 +157,8 @@ export async function universalAuthentication(
       }, {
         email: user.email,
         userId: user.id,
-        userType: user.type || 'regular'
+        userType: user.type || 'user',
+        worldId: finalWorldId
       });
       
       if (!authResult.success) {
@@ -164,7 +184,8 @@ export async function universalAuthentication(
         data: {
           email: user.email,
           userId: user.id,
-          userType: user.type || 'regular'
+          userType: user.type || 'user',
+          worldId: finalWorldId
         }
       });
 

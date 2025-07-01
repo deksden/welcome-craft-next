@@ -1,0 +1,81 @@
+# docker-compose.local.yml
+# LOCAL development environment infrastructure - PHOENIX PROJECT
+# @version 1.1.0
+# @date 2025-06-30
+# @updated Переименован из docker-compose.dev.yml для консистентности
+
+# PHOENIX PROJECT - LOCAL Environment Infrastructure
+# 
+# Назначение: Полная изоляция development среды с собственными:
+# - PostgreSQL база данных на порту 5434 
+# - Redis cache для session management
+# - Persistent volumes для development данных
+# 
+# Особенности LOCAL среды:
+# - APP_STAGE=LOCAL
+# - test-session поддержка ВКЛЮЧЕНА
+# - World isolation поддержка ВКЛЮЧЕНА
+# - Persistent volumes для сохранения данных между рестартами
+# - Отдельные порты для избежания конфликтов с BETA/PROD
+
+version: '3.8'
+
+services:
+  # PostgreSQL для LOCAL разработки
+  postgres_local:
+    image: postgres:16-alpine
+    container_name: welcomecraft_postgres_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: localuser
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: welcomecraft_local
+      # Настройка производительности для development
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
+    ports:
+      - '5434:5432'  # Уникальный порт для LOCAL среды
+    volumes:
+      # Persistent volume для development данных
+      - postgres_local_data:/var/lib/postgresql/data
+      - ./scripts/db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U localuser -d welcomecraft_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - welcomecraft_local
+
+  # Redis для LOCAL session management и caching
+  redis_local:
+    image: redis:7-alpine
+    container_name: welcomecraft_redis_local
+    restart: unless-stopped
+    command: redis-server --appendonly yes --appendfsync everysec
+    ports:
+      - '6380:6379'  # Уникальный порт для LOCAL среды
+    volumes:
+      - redis_local_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - welcomecraft_local
+
+volumes:
+  # Persistent volumes для LOCAL development данных
+  postgres_local_data:
+    driver: local
+  redis_local_data:
+    driver: local
+
+networks:
+  welcomecraft_local:
+    driver: bridge
+    name: welcomecraft_local_network
+
+# END OF: docker-compose.local.yml

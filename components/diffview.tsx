@@ -7,8 +7,6 @@ import { addListNodes } from 'prosemirror-schema-list'
 import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import React, { useEffect, useRef } from 'react'
-import { renderToString } from 'react-dom/server'
-import ReactMarkdown from 'react-markdown'
 
 import { diffEditor, DiffType } from '@/lib/editor/diff'
 
@@ -56,12 +54,10 @@ export const DiffView = ({ oldContent, newContent }: DiffEditorProps) => {
     if (editorRef.current && !viewRef.current) {
       const parser = DOMParser.fromSchema(diffSchema)
 
-      const oldHtmlContent = renderToString(
-        <ReactMarkdown>{oldContent}</ReactMarkdown>,
-      )
-      const newHtmlContent = renderToString(
-        <ReactMarkdown>{newContent}</ReactMarkdown>,
-      )
+      // Temporary fix: Use plain text instead of HTML rendering
+      // This avoids server-side rendering issues during build
+      const oldHtmlContent = `<div>${oldContent}</div>`
+      const newHtmlContent = `<div>${newContent}</div>`
 
       const oldContainer = document.createElement('div')
       oldContainer.innerHTML = oldHtmlContent

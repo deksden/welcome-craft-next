@@ -16,7 +16,7 @@
 'use client'
 
 import { isToday, isYesterday, subMonths, subWeeks } from 'date-fns'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation.js'
 import type { User } from 'next-auth'
 import { useState } from 'react'
 import { motion } from 'framer-motion'

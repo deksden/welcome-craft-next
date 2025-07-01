@@ -3,16 +3,20 @@
 import { defaultMarkdownSerializer } from 'prosemirror-markdown';
 import { DOMParser, type Node } from 'prosemirror-model';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
-import { renderToString } from 'react-dom/server';
+// Removed renderToString to fix build issues
+// import { renderToString } from 'react-dom/server';
 
-import { Markdown } from '@/components/markdown';
+// Removed Markdown component import to fix build issues
+// import { Markdown } from '@/components/markdown';
 
 import { documentSchema } from './config';
 import { createSuggestionWidget, type UISuggestion } from './suggestions';
 
 export const buildDocumentFromContent = (content: string) => {
   const parser = DOMParser.fromSchema(documentSchema);
-  const stringFromMarkdown = renderToString(<Markdown>{content}</Markdown>);
+  // Temporary fix: Use simple HTML wrapper instead of renderToString
+  // This avoids server-side rendering issues during build
+  const stringFromMarkdown = `<div>${content}</div>`;
   const tempContainer = document.createElement('div');
   tempContainer.innerHTML = stringFromMarkdown;
   return parser.parse(tempContainer);

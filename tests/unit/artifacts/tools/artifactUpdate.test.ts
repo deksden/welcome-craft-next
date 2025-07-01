@@ -49,7 +49,7 @@ vi.mock('@/artifacts/kinds/artifact-tools', () => ({
 
 describe('AI Tool - artifactUpdate', () => {
   const mockSession: Session = {
-    user: { id: 'test-user-123', email: 'test@test.com', type: 'regular' },
+    user: { id: 'test-user-123', email: 'test@test.com', type: 'user' },
     expires: new Date(Date.now() + 86400 * 1000).toISOString(),
   }
 

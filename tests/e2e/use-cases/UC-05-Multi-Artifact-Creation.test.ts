@@ -21,6 +21,7 @@
 
 import { test, expect } from '@playwright/test'
 import { universalAuthentication } from '../../helpers/auth.helper'
+import { getTestWorldId } from '../../helpers/test-world-allocator'
 
 /**
  * @description UC-05: Комплексное создание нескольких артефактов с unified authentication и fail-fast принципами
@@ -33,17 +34,29 @@ import { universalAuthentication } from '../../helpers/auth.helper'
  * @feature CHAT-FOCUSED TESTING - упрощенное тестирование через chat interface как UC-04
  */
 test.describe('UC-05: Multi-Artifact Creation - Production Server', () => {
+  
+  // Увеличиваем таймаут для комплексного сценария создания множественных артефактов
+  test.setTimeout(80 * 1000) // 80 секунд для длинного workflow
 
-  test.beforeEach(async ({ page }) => {
-    console.log('🚀 UC-05: Starting unified authentication')
+  test.beforeEach(async ({ page }, testInfo) => {
+    console.log('🚀 UC-05: Starting unified authentication with world isolation')
     
-    // Универсальная аутентификация согласно UC-01, UC-02, UC-03, UC-04 паттернов
+    // World Isolation: получаем уникальный world для этого worker
+    const workerId = testInfo.parallelIndex.toString()
+    const worldId = await getTestWorldId(workerId, 'UC-05-Multi-Artifact-Creation.test.ts')
+    
+    console.log(`🌍 UC-05: Using isolated world ${worldId} for worker ${workerId}`)
+    
+    // Универсальная аутентификация с поддержкой world isolation
     const testUser = {
       email: `uc05-${Date.now()}@test.com`,
       id: crypto.randomUUID()
     }
     
-    await universalAuthentication(page, testUser)
+    await universalAuthentication(page, testUser, {
+      worldId,
+      workerId
+    })
     
     // FAIL-FAST: Проверяем что мы аутентифицированы
     await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })

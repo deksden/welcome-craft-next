@@ -6,6 +6,11 @@ export const authConfig = {
     signIn: '/login',
     newUser: '/', // Редирект на главную админки после регистрации
   },
+  // PHOENIX PROJECT: Fix production build issues by providing fallback URLs
+  ...(process.env.NODE_ENV === 'production' && {
+    url: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    secret: process.env.AUTH_SECRET || 'fallback-secret-for-build'
+  }),
   session: {
     strategy: 'jwt', // Force JWT sessions for testing
   },

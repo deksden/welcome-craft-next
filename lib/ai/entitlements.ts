@@ -10,8 +10,15 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
   /*
    * For users with an account
    */
-  regular: {
+  user: {
     maxMessagesPerDay: 500,
+    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+  },
+  /*
+   * For admin users
+   */
+  admin: {
+    maxMessagesPerDay: 1000,
     availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
   }
 };

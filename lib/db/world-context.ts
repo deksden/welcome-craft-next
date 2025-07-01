@@ -1,18 +1,19 @@
 /**
  * @file lib/db/world-context.ts
  * @description Контекст тестового мира для автоматической изоляции данных в БД
- * @version 1.2.0
- * @date 2025-06-28
- * @updated UNIFIED COOKIE ARCHITECTURE - только test-session как источник world isolation данных
+ * @version 1.3.0
+ * @date 2025-06-29
+ * @updated PHOENIX PROJECT Step 1 - APP_STAGE унификация для определения test environment
  */
 
 /** HISTORY:
+ * v1.3.0 (2025-06-29): PHOENIX PROJECT Step 1 - Замена NODE_ENV логики на APP_STAGE (LOCAL/BETA/PROD) в getWorldContextFromRequest
  * v1.2.0 (2025-06-28): UNIFIED COOKIE ARCHITECTURE - максимальное упрощение, убрана сложность множественных cookies
  * v1.1.0 (2025-06-28): УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - унифицированный порядок приоритета cookies (test-session → world_id → world_id_fallback → test-world-id)
  * v1.0.0 (2025-06-18): Начальная реализация world context для автоматической изоляции данных
  */
 
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers.js'
 import type { WorldId } from '@/tests/helpers/worlds.config'
 
 /**
@@ -64,8 +65,9 @@ export async function getCurrentWorldContext(): Promise<WorldContext> {
   let worldId: WorldId | null = null
   
   try {
-    // Проверяем cookie только в тестовом окружении
-    if (process.env.NODE_ENV === 'test' || process.env.PLAYWRIGHT_TEST === 'true') {
+    // APP_STAGE-based environment detection (PHOENIX PROJECT)
+    const stage = process.env.APP_STAGE || 'PROD'
+    if (stage === 'LOCAL' || stage === 'BETA') {
       const cookieStore = await cookies()
       const worldCookie = cookieStore.get(WORLD_COOKIE_KEY)
       
@@ -183,18 +185,27 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
   try {
     // Извлекаем world_id из cookie в заголовке
     const cookieHeader = request.headers.get('cookie')
-    const isDev = process.env.NODE_ENV === 'development'
+    
+    // Enhanced test environment detection to match middleware
+    const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT
+    const stage = process.env.APP_STAGE || 'PROD'
+    const isTestEnv = process.env.NODE_ENV === 'test' || 
+                      process.env.PLAYWRIGHT === 'true' || 
+                      hasPlaywrightPort ||
+                      stage === 'LOCAL' || 
+                      stage === 'BETA'
     const isWorldUIEnabled = process.env.ENABLE_TEST_WORLDS_UI === 'true'
     
     console.log('🌍 getWorldContextFromRequest DEBUG:', {
       hasCookieHeader: !!cookieHeader,
-      isDev,
+      stage,
+      isTestEnv,
       isWorldUIEnabled,
-      NODE_ENV: process.env.NODE_ENV,
+      APP_STAGE: process.env.APP_STAGE,
       ENABLE_TEST_WORLDS_UI: process.env.ENABLE_TEST_WORLDS_UI
     })
     
-    if (cookieHeader && (isDev || isWorldUIEnabled)) {
+    if (cookieHeader && (isTestEnv || isWorldUIEnabled)) {
       const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=')
         acc[key] = value

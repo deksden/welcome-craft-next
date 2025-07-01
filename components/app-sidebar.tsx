@@ -20,9 +20,22 @@
 'use client'
 
 import type { User } from 'next-auth'
-import { usePathname, useRouter } from 'next/navigation'
-import { BoxIcon, ChevronDownIcon, ChevronLeftIcon, MessageCircleIcon, } from '@/components/icons'
+import { usePathname, useRouter } from 'next/navigation.js'
+import { 
+  BoxIcon, 
+  ChevronDownIcon, 
+  ChevronLeftIcon, 
+  MessageCircleIcon,
+  Flame,
+  Globe,
+  Download,
+  Upload,
+  Users,
+  BarChart3,
+  Shield
+} from '@/components/icons'
 import { SidebarHistory } from '@/components/sidebar-history'
+import Link from 'next/link'
 import {
   Sidebar,
   SidebarContent,
@@ -85,6 +98,10 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
   const router = useRouter()
   const pathname = usePathname()
   const { setOpenMobile, state: sidebarState } = useSidebar()
+
+  // Admin checks
+  const isAdmin = user?.type === 'admin'
+  const isDevEnv = process.env.NEXT_PUBLIC_APP_STAGE === 'LOCAL' || process.env.NEXT_PUBLIC_APP_STAGE === 'BETA'
 
   const [isChatSectionCollapsed, setIsChatSectionCollapsed] = useLocalStorage(
     'sidebar:isChatSectionCollapsed',
@@ -278,6 +295,74 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                 </SidebarMenuItem>
               </SidebarMenu>
             )}
+          </SidebarGroup>
+        )}
+
+        {isAdmin && isDevEnv && (
+          <SidebarGroup data-testid="sidebar-dev-tools-section">
+            <SidebarMenuButton
+              tooltip={{ children: 'Dev Tools', side: 'right' }}
+              className="pointer-events-none justify-start"
+            >
+              <Flame className="size-5" />
+              {sidebarState === 'expanded' && <span className="ml-2 font-semibold">Dev Tools</span>}
+            </SidebarMenuButton>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/worlds" onClick={() => setOpenMobile(false)}>
+                    <Globe className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>World Management</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/seed-import" onClick={() => setOpenMobile(false)}>
+                    <Download className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>Seed Import</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/seed-export" onClick={() => setOpenMobile(false)}>
+                    <Upload className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>Seed Export</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
+
+        {isAdmin && (
+          <SidebarGroup data-testid="sidebar-admin-section">
+            <SidebarMenuButton
+              tooltip={{ children: 'Admin', side: 'right' }}
+              className="pointer-events-none justify-start"
+            >
+              <Shield className="size-5" />
+              {sidebarState === 'expanded' && <span className="ml-2 font-semibold">Admin</span>}
+            </SidebarMenuButton>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/users" onClick={() => setOpenMobile(false)}>
+                    <Users className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>User Management</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/phoenix/metrics" onClick={() => setOpenMobile(false)}>
+                    <BarChart3 className="size-4 mr-2" />
+                    {sidebarState === 'expanded' && <span>System Metrics</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroup>
         )}
       </SidebarContent>
