@@ -15,7 +15,7 @@
  */
 
 import { Suspense } from 'react'
-import { redirect } from 'next/navigation'
+import { redirect } from 'next/navigation.js'
 import { getAuthSession } from '@/lib/test-auth'
 import { ArtifactGridClientWrapper } from '@/components/artifact-grid-client-wrapper'
 import { FileImportDemo } from '@/components/file-import-demo'

@@ -10,7 +10,7 @@
  * v1.0.0 (2025-06-29): PHOENIX PROJECT Step 3 - Создание API для CRUD операций с WorldMeta
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { db } from '@/lib/db'
 import { worldMeta } from '@/lib/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
@@ -106,7 +106,11 @@ export async function GET(request: NextRequest) {
  *   settings: WorldSettings,
  *   environment?: 'LOCAL' | 'BETA' | 'PROD',
  *   category?: string,
- *   tags?: string[]
+ *   tags?: string[],
+ *   isActive?: boolean,
+ *   isTemplate?: boolean,
+ *   autoCleanup?: boolean,
+ *   cleanupAfterHours?: number
  * }
  * 
  * @feature PHOENIX PROJECT - Dynamic World Creation
@@ -160,6 +164,7 @@ export async function POST(request: NextRequest) {
       environment: body.environment || 'LOCAL',
       category: body.category || 'GENERAL',
       tags: body.tags || [],
+      isActive: body.isActive !== false, // Default true, but respect false
       isTemplate: body.isTemplate || false,
       autoCleanup: body.autoCleanup !== false, // Default true
       cleanupAfterHours: body.cleanupAfterHours || 24,
@@ -173,7 +178,9 @@ export async function POST(request: NextRequest) {
     console.log(`🌍 PHOENIX API: Created new world '${createdWorld.id}'`, {
       name: createdWorld.name,
       environment: createdWorld.environment,
-      category: createdWorld.category
+      category: createdWorld.category,
+      isActive: createdWorld.isActive,
+      isTemplate: createdWorld.isTemplate
     })
 
     return NextResponse.json({

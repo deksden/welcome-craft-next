@@ -20,7 +20,7 @@
 // Удалены неиспользуемые импорты после изменения логики на прямой редирект
 import { generateUUID } from '@/lib/utils';
 import { getAuthSession } from '@/lib/test-auth';
-import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation.js';
 
 export default async function Page() {
   console.log('🔍 DEBUG: app/(main)/page.tsx - Starting page render');

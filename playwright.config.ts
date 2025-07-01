@@ -89,9 +89,8 @@ export default (async () => {
     workers: process.env.CI ? '50%' : undefined,
     reporter: process.env.CI ? [['html'], ['github'], ['json', { outputFile: 'test-results.json' }]] : 'html',
 
-    // ✅ Интеграция с эфемерной БД
+    // ✅ Интеграция с эфемерной БД (только запуск, без teardown)
     globalSetup: './tests/global-setup.ts',
-    globalTeardown: './tests/global-teardown.ts',
 
     use: {
       baseURL: urls.publicBase,

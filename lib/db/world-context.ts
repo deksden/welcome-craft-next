@@ -13,7 +13,7 @@
  * v1.0.0 (2025-06-18): Начальная реализация world context для автоматической изоляции данных
  */
 
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers.js'
 import type { WorldId } from '@/tests/helpers/worlds.config'
 
 /**
@@ -186,9 +186,14 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
     // Извлекаем world_id из cookie в заголовке
     const cookieHeader = request.headers.get('cookie')
     
-    // APP_STAGE-based environment detection (PHOENIX PROJECT)
+    // Enhanced test environment detection to match middleware
+    const hasPlaywrightPort = !!process.env.PLAYWRIGHT_PORT
     const stage = process.env.APP_STAGE || 'PROD'
-    const isTestEnv = stage === 'LOCAL' || stage === 'BETA'
+    const isTestEnv = process.env.NODE_ENV === 'test' || 
+                      process.env.PLAYWRIGHT === 'true' || 
+                      hasPlaywrightPort ||
+                      stage === 'LOCAL' || 
+                      stage === 'BETA'
     const isWorldUIEnabled = process.env.ENABLE_TEST_WORLDS_UI === 'true'
     
     console.log('🌍 getWorldContextFromRequest DEBUG:', {

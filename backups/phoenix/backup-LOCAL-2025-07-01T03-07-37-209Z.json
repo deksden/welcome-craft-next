@@ -1,0 +1,302 @@
+{
+  "timestamp": "2025-07-01T03-07-37-209Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "BULK_PERF_4_T1751339256819_4c5c2d22_4",
+      "name": "BULK_PERF_4 World (T1751339256819_4c5c2d22)",
+      "description": "Isolated performance testing world 5",
+      "users": [
+        {
+          "name": "Perf User 4",
+          "type": "user",
+          "email": "perf-4@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.054Z",
+      "updatedAt": "2025-07-01T03:07:37.054Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256819_4c5c2d22",
+        "isolated-test"
+      ],
+      "category": "PERFORMANCE"
+    },
+    {
+      "id": "VALIDATION_1_T1751339256832_dd540acf_1",
+      "name": "VALIDATION_1 World (T1751339256832_dd540acf)",
+      "description": "Isolated validation testing 2",
+      "users": [
+        {
+          "name": "Validation User 1",
+          "type": "user",
+          "email": "validation-1@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.016Z",
+      "updatedAt": "2025-07-01T03:07:37.016Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256832_dd540acf",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_2_T1751339256832_dd540acf_2",
+      "name": "VALIDATION_2 World (T1751339256832_dd540acf)",
+      "description": "Isolated validation testing 3",
+      "users": [
+        {
+          "name": "Validation User 2",
+          "type": "user",
+          "email": "validation-2@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": true,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.032Z",
+      "updatedAt": "2025-07-01T03:07:37.032Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256832_dd540acf",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "DATA_CONSISTENCY_T1751339256831_5eb669db",
+      "name": "Updated DATA_CONSISTENCY World (T1751339256831_5eb669db)",
+      "description": "Updated description",
+      "users": [
+        {
+          "name": "Test User",
+          "type": "user",
+          "email": "consistency@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:36.928Z",
+      "updatedAt": "2025-07-01T03:07:37.088Z",
+      "lastUsedAt": "2025-07-01T03:07:37.054Z",
+      "usageCount": 1,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256831_5eb669db",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_0_T1751339256832_dd540acf_0",
+      "name": "VALIDATION_0 World (T1751339256832_dd540acf)",
+      "description": "Isolated validation testing 1",
+      "users": [
+        {
+          "name": "Validation User 0",
+          "type": "user",
+          "email": "validation-0@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.003Z",
+      "updatedAt": "2025-07-01T03:07:37.003Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256832_dd540acf",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "BULK_PERF_0_T1751339256819_4c5c2d22_0",
+      "name": "BULK_PERF_0 World (T1751339256819_4c5c2d22)",
+      "description": "Isolated performance testing world 1",
+      "users": [
+        {
+          "name": "Perf User 0",
+          "type": "user",
+          "email": "perf-0@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.031Z",
+      "updatedAt": "2025-07-01T03:07:37.031Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256819_4c5c2d22",
+        "isolated-test"
+      ],
+      "category": "PERFORMANCE"
+    },
+    {
+      "id": "BULK_PERF_1_T1751339256819_4c5c2d22_1",
+      "name": "BULK_PERF_1 World (T1751339256819_4c5c2d22)",
+      "description": "Isolated performance testing world 2",
+      "users": [
+        {
+          "name": "Perf User 1",
+          "type": "user",
+          "email": "perf-1@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.050Z",
+      "updatedAt": "2025-07-01T03:07:37.050Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256819_4c5c2d22",
+        "isolated-test"
+      ],
+      "category": "PERFORMANCE"
+    },
+    {
+      "id": "BULK_PERF_5_T1751339256819_4c5c2d22_5",
+      "name": "BULK_PERF_5 World (T1751339256819_4c5c2d22)",
+      "description": "Isolated performance testing world 6",
+      "users": [
+        {
+          "name": "Perf User 5",
+          "type": "user",
+          "email": "perf-5@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T03:07:37.054Z",
+      "updatedAt": "2025-07-01T03:07:37.054Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751339256819_4c5c2d22",
+        "isolated-test"
+      ],
+      "category": "PERFORMANCE"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 8,
+    "backupSize": "7.8 KB",
+    "version": "1.0.0"
+  }
+}

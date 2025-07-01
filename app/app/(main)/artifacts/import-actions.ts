@@ -20,7 +20,7 @@ import { artifact } from '@/lib/db/schema'
 import { generateUUID } from '@/lib/utils'
 import { createLogger } from '@fab33/fab-logger'
 import type { ArtifactMetadata } from '@/lib/types'
-import { redirect } from 'next/navigation'
+import { redirect } from 'next/navigation.js'
 
 const logger = createLogger('server-actions:artifacts:import')
 

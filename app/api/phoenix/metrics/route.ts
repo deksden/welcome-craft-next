@@ -6,7 +6,7 @@
  * @updated PHOENIX PROJECT Step 5 - System metrics API
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { db } from '@/lib/db'
 import { worldMeta } from '@/lib/db/schema'
 import { eq, } from 'drizzle-orm'

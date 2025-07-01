@@ -14,7 +14,7 @@
 import type { Chat } from '@/lib/db/types'
 import { SidebarMenuButton, SidebarMenuItem, } from './ui/sidebar'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation.js'
 import {
   DropdownMenu,
   DropdownMenuContent,

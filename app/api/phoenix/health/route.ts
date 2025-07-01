@@ -6,7 +6,7 @@
  * @updated PHOENIX PROJECT Step 5 - Health monitoring API
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { phoenixHealthMonitor } from '@/scripts/phoenix-health-check'
 
 export async function GET(request: NextRequest) {

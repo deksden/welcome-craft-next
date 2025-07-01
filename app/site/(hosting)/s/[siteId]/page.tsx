@@ -13,7 +13,7 @@
  * v1.0.0 (2025-06-12): Начальная версия.
  */
 
-import { notFound } from 'next/navigation'
+import { notFound } from 'next/navigation.js'
 import { eq, desc, } from 'drizzle-orm'
 import { artifact } from '@/lib/db/schema'
 import { db } from '@/lib/db'

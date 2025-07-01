@@ -15,7 +15,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation.js'
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from '@/components/toast'
 

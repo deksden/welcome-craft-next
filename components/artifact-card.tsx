@@ -42,7 +42,7 @@ import {
 } from '@/components/icons'
 import { deleteArtifact } from '@/app/app/(main)/artifacts/actions'
 import { toast } from '@/components/toast'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation.js'
 import { Skeleton } from './ui/skeleton'
 import { SitePublicationDialog } from './site-publication-dialog'
 import type { ArtifactApiResponse } from '@/lib/types'

@@ -10,7 +10,7 @@
  * v1.0.0 (2025-06-30): Создан API endpoint для списка seed данных
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { PhoenixSeedManager } from '@/lib/phoenix/seed-manager'
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'

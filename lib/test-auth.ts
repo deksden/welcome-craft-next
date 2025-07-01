@@ -16,9 +16,20 @@
  * v1.0.0 (2025-06-15): Создание custom auth для тестов
  */
 
-import { cookies, headers } from 'next/headers';
-import { auth } from '@/app/app/(auth)/auth';
+import { cookies, headers } from 'next/headers.js';
 import type { Session } from 'next-auth';
+
+// Conditional NextAuth import only for production
+let auth: any = null;
+try {
+  // APP_STAGE-based detection: только в PROD окружении
+  const stage = process.env.APP_STAGE || 'PROD';
+  if (stage === 'PROD' && !process.env.PLAYWRIGHT_PORT) {
+    auth = require('@/app/app/(auth)/auth').auth;
+  }
+} catch (error) {
+  console.log('NextAuth auth not available - using test-session only');
+}
 
 /**
  * Универсальная функция для получения auth session
@@ -33,8 +44,12 @@ export async function getAuthSession(): Promise<Session | null> {
     return testSession;
   }
   
-  // Fallback на стандартную NextAuth session
-  return await auth();
+  // Fallback на стандартную NextAuth session (только в production)
+  if (auth) {
+    return await auth();
+  }
+  
+  return null;
 }
 
 /**

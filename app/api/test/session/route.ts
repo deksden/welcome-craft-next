@@ -6,7 +6,7 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { cookies } from 'next/headers.js';
 import { auth } from '@/app/app/(auth)/auth';
 
 export async function GET(request: NextRequest) {

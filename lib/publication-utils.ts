@@ -13,7 +13,7 @@
  */
 
 import 'server-only'
-import { notFound } from 'next/navigation'
+import { notFound } from 'next/navigation.js'
 import { inArray, eq } from 'drizzle-orm'
 import type { Artifact, Chat } from '@/lib/db/schema'
 import type { PublicationInfo } from '@/lib/types'

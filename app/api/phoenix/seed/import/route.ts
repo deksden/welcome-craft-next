@@ -10,7 +10,7 @@
  * v1.0.0 (2025-06-30): Создан API endpoint для импорта seed данных
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { PhoenixSeedManager, type ConflictStrategy } from '@/lib/phoenix/seed-manager'
 
 /**

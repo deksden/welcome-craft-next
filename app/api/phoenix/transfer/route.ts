@@ -6,7 +6,7 @@
  * @updated PHOENIX PROJECT Step 5 - Data transfer management API
  */
 
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server.js'
 import { phoenixDataTransfer } from '@/scripts/phoenix-data-transfer'
 
 export async function POST(request: NextRequest) {

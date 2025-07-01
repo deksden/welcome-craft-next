@@ -20,7 +20,7 @@
 'use client'
 
 import type { User } from 'next-auth'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation.js'
 import { 
   BoxIcon, 
   ChevronDownIcon, 

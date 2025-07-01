@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server.js';
 import { getAuthSession } from '@/lib/test-auth';
 import { PhoenixSeedManager } from '@/lib/phoenix/seed-manager';
 
