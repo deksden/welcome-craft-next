@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-07-01T04-10-14-716Z",
+  "environment": "BETA",
+  "worlds": [
+    {
+      "id": "BETA_ENV_T1751343014350_2832fe03",
+      "name": "BETA_ENV World (T1751343014350_2832fe03)",
+      "description": "Isolated testing environment isolation BETA",
+      "users": [
+        {
+          "name": "Beta User",
+          "type": "user",
+          "email": "beta@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-01T04:10:14.672Z",
+      "updatedAt": "2025-07-01T04:10:14.672Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "BETA",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751343014350_2832fe03",
+        "isolated-test",
+        "beta"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 1,
+    "backupSize": "1.0 KB",
+    "version": "1.0.0"
+  }
+}

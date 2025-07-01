@@ -438,7 +438,6 @@ class PhoenixDataTransfer {
         .select()
         .from(worldMeta)
         .where(eq(worldMeta.id, world.id))
-        .limit(1)
 
       if (existing.length > 0 && overwrite) {
         await db

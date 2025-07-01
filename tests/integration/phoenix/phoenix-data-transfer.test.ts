@@ -172,18 +172,18 @@ describe('PhoenixDataTransfer', () => {
         metadata: { totalRecords: 1, backupSize: '1KB', version: '1.0.0' }
       }))
 
-      // Test behavior: should complete without throwing
+      // Test behavior: should complete successfully
       await expect(phoenixDataTransfer.restoreBackup('/path/to/backup.json', 'BETA'))
-        .resolves.not.toThrow()
+        .resolves.toBeUndefined()
     })
 
     it('should handle missing backup file', async () => {
       const { existsSync } = await import('node:fs')
       vi.mocked(existsSync).mockReturnValue(false)
 
-      // Test behavior: function should complete gracefully (with error handling)
+      // Test behavior: function should throw error for missing file
       await expect(phoenixDataTransfer.restoreBackup('/nonexistent.json', 'LOCAL'))
-        .resolves.not.toThrow()
+        .rejects.toThrow('Backup file not found: /nonexistent.json')
     })
 
     it('should handle invalid backup data format', async () => {
@@ -193,9 +193,9 @@ describe('PhoenixDataTransfer', () => {
       vi.mocked(existsSync).mockReturnValue(true)
       vi.mocked(readFile).mockResolvedValue('{"invalid": "format"}')
 
-      // Test behavior: function should complete gracefully (with error handling)
+      // Test behavior: function should throw error for invalid data
       await expect(phoenixDataTransfer.restoreBackup('/invalid.json', 'LOCAL'))
-        .resolves.not.toThrow()
+        .rejects.toThrow('Invalid backup data format')
     })
   })
 
