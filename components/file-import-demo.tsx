@@ -12,7 +12,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { put } from '@vercel/blob'
 import { importArtifactFromFile, getSupportedFileTypes, isFileSupported } from '@/app/app/(main)/artifacts/import-actions'
@@ -47,10 +47,12 @@ export function FileImportDemo() {
     }
   }, [])
 
-  // Вызываем загрузку при первом рендере
-  if (!supportedTypes) {
-    loadSupportedTypes()
-  }
+  // ИСПРАВЛЕНИЕ BUG-070: Используем useEffect вместо вызова Server Function во время рендера
+  useEffect(() => {
+    if (!supportedTypes) {
+      loadSupportedTypes()
+    }
+  }, [loadSupportedTypes, supportedTypes])
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setIsUploading(true)

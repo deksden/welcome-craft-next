@@ -35,6 +35,11 @@ import { imageArtifact } from '@/artifacts/kinds/image/client'
 import { sheetArtifact } from '@/artifacts/kinds/sheet/client'
 import { siteArtifact } from '@/artifacts/kinds/site/client'
 import { textArtifact } from '@/artifacts/kinds/text/client'
+// Spectrum artifact editors
+import { personArtifact } from '@/artifacts/kinds/person/client'
+import { linkArtifact } from '@/artifacts/kinds/link/client'
+import { addressArtifact } from '@/artifacts/kinds/address/client'
+import { faqItemArtifact } from '@/artifacts/kinds/faq-item/client'
 import equal from 'fast-deep-equal'
 import type { UseChatHelpers } from '@ai-sdk/react'
 import { Button } from './ui/button'
@@ -49,11 +54,17 @@ import { normalizeArtifactForAPI } from '@/lib/artifact-content-utils-client'
 const logger = createClientLogger('Artifact')
 
 export const artifactDefinitions = [
+  // Legacy artifact types
   textArtifact,
   codeArtifact,
   imageArtifact,
   sheetArtifact,
   siteArtifact,
+  // Spectrum artifact types
+  personArtifact,
+  linkArtifact,
+  addressArtifact,
+  faqItemArtifact,
 ]
 
 export type ArtifactDisplayMode = 'split' | 'full';
@@ -156,8 +167,10 @@ function PureArtifact ({
       onError: (err) => {
         console.error('🔍 [DEBUG] Artifact - SWR error:', {
           artifactId: artifact.artifactId,
-          error: err.message,
-          status: err.status
+          error: err?.message || 'Unknown error',
+          status: err?.status || 'No status',
+          errorType: typeof err,
+          fullError: err
         })
       }
     }
@@ -281,7 +294,7 @@ function PureArtifact ({
   )
 
   useEffect(() => {
-    if (artifact.artifactId && artifactDefinition?.initialize) {
+    if (artifact.artifactId && artifactDefinition && 'initialize' in artifactDefinition && artifactDefinition.initialize) {
       artifactDefinition.initialize({ documentId: artifact.artifactId, setMetadata })
     }
   }, [artifact.artifactId, artifactDefinition, setMetadata])

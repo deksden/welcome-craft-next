@@ -18,6 +18,22 @@
 
 import { cookies, headers } from 'next/headers.js';
 import type { Session } from 'next-auth';
+import { createHash } from 'node:crypto';
+
+/**
+ * Generate deterministic UUID from email for consistent test user IDs
+ */
+function generateDeterministicUUID(email: string): string {
+  const hash = createHash('sha256').update(email).digest('hex');
+  // Format as UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    `4${hash.slice(13, 16)}`, // version 4
+    ((Number.parseInt(hash.slice(16, 17), 16) & 0x3) | 0x8).toString(16) + hash.slice(17, 20), // variant bits
+    hash.slice(20, 32)
+  ].join('-');
+}
 
 // Conditional NextAuth import only for production
 let auth: any = null;
@@ -93,10 +109,21 @@ export async function getTestSession(): Promise<Session | null> {
 
     console.log('✅ Test session found for user:', sessionData.user.email);
     
+    // 🚀 CRITICAL FIX: Ensure user.id is always a valid UUID for PostgreSQL compatibility
+    let userId = sessionData.user.id;
+    
+    // If user.id is not a valid UUID format, generate a deterministic UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || !uuidRegex.test(userId)) {
+      // Generate deterministic UUID based on email for consistency across sessions
+      userId = generateDeterministicUUID(sessionData.user.email);
+      console.log(`🔄 Generated deterministic UUID for test user ${sessionData.user.email}: ${userId}`);
+    }
+
     return {
       user: {
         ...sessionData.user,
-        id: sessionData.user.id || '00000000-0000-0000-0000-000000000000'
+        id: userId
       },
       expires: sessionData.expires
     };

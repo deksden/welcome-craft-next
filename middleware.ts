@@ -111,9 +111,10 @@ export async function middleware (request: NextRequest) {
     // Если пользователь уже идет на страницу входа или регистрации,
     // просто показываем ему ее, не проверяя токен.
     if (url.pathname === '/login' || url.pathname === '/register') {
-      // ИСПРАВЛЕНИЕ: НЕ переписываем пути, используем нативную Next.js структуру
-      console.log('🔧 MIDDLEWARE: Allowing auth page without rewrite:', url.pathname)
-      return NextResponse.next()
+      // ИСПРАВЛЕНИЕ: Для admin домена НУЖНО переписать пути в /app/* структуру
+      console.log('🔧 MIDDLEWARE: Auth page on admin domain, rewriting:', url.pathname, `-> /app${url.pathname}`)
+      url.pathname = `/app${url.pathname}`
+      return NextResponse.rewrite(url)
     }
     // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
@@ -197,9 +198,21 @@ export async function middleware (request: NextRequest) {
     // /phoenix -> /app/phoenix
     // /artifacts -> /app/artifacts  
     // / -> /app/
-    console.log('🔧 MIDDLEWARE: Rewriting app domain path:', url.pathname, '-> /app' + url.pathname)
+    console.log('🔧 MIDDLEWARE: Rewriting app domain path:', url.pathname, `-> /app${url.pathname}`)
     url.pathname = `/app${url.pathname}`
     return NextResponse.rewrite(url)
+  }
+
+  // UX УЛУЧШЕНИЕ: Redirect auth страниц на правильный admin домен
+  // ТОЛЬКО для публичного домена (localhost), НЕ для уже правильного admin домена
+  if ((url.pathname === '/login' || url.pathname === '/register') && !isAppDomain) {
+    const adminHostname = isProductionRemote 
+      ? 'app.welcome-onboard.ru'
+      : `app.localhost:${url.port || '3000'}`
+    const adminUrl = `${url.protocol}//${adminHostname}${url.pathname}${url.search ? `?${url.search}` : ''}`
+    
+    console.log('🔄 MIDDLEWARE: Redirecting auth page from public to admin domain:', hostname, url.pathname, '->', adminUrl)
+    return NextResponse.redirect(new URL(adminUrl))
   }
 
   // Для всех остальных запросов (публичный сайт)

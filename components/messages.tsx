@@ -1,12 +1,13 @@
 /**
  * @file components/messages.tsx
  * @description Компонент для отображения списка сообщений в чате.
- * @version 2.0.0
- * @date 2025-06-09
- * @updated Сделан универсальным, удалена зависимость от artifact-messages.
+ * @version 2.1.0
+ * @date 2025-07-02
+ * @updated Added selectedChatModel prop to pass model configuration down to Message component for proper regeneration functionality.
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-07-02): Added selectedChatModel prop to pass model configuration down to Message component for proper regeneration functionality.
  * v2.0.0 (2025-06-09): Сделан универсальным компонентом для отображения сообщений.
  * v1.2.0 (2025-06-06): Удален импорт и проп `Vote`.
  */
@@ -25,8 +26,10 @@ interface MessagesProps {
   messages: Array<UIMessage>;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
+  append: UseChatHelpers['append'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  selectedChatModel: string;
 }
 
 function PureMessages ({
@@ -35,7 +38,9 @@ function PureMessages ({
   messages,
   setMessages,
   reload,
+  append,
   isReadonly,
+  selectedChatModel,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -60,11 +65,14 @@ function PureMessages ({
           key={message.id}
           chatId={chatId}
           message={message}
+          messages={messages}
           isLoading={status === 'streaming' && messages.length - 1 === index}
           vote={undefined}
           setMessages={setMessages}
           reload={reload}
+          append={append}
           isReadonly={isReadonly}
+          selectedChatModel={selectedChatModel}
           requiresScrollPadding={
             hasSentMessage && index === messages.length - 1
           }

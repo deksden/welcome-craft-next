@@ -14,10 +14,11 @@
 import { mkdir, writeFile, readFile, readdir, stat } from 'node:fs/promises'
 import { join, basename, } from 'node:path'
 import { existsSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import type { WorldMeta } from '@/lib/db/schema'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { worldMeta, } from '@/lib/db/schema'
+import { worldMeta, artifact, chat, user } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 export interface SeedData {
@@ -528,6 +529,9 @@ export class PhoenixSeedManager {
   private async replaceWorld(seedData: SeedData): Promise<void> {
     const { metadata } = seedData.world
 
+    // 🚀 NEW: Delete existing database records first
+    await this.deleteDatabaseRecords(metadata.id)
+
     // Удаляем существующий мир (если есть)
     await this.db
       .delete(worldMeta)
@@ -618,6 +622,179 @@ export class PhoenixSeedManager {
       .values(newWorld)
 
     console.log(`✅ World '${metadata.id}' created from seed`)
+
+    // 🚀 NEW: Create actual database records for artifacts, chats, users with world_id
+    await this.createDatabaseRecords(seedData)
+  }
+
+  /**
+   * 🚀 NEW: Create database records for artifacts, chats, users with world_id
+   * This fixes the critical issue where seed import only created worldMeta 
+   * but didn't create actual database records
+   */
+  private async createDatabaseRecords(seedData: SeedData): Promise<void> {
+    const worldId = seedData.world.metadata.id
+
+    // Create users with world_id (if they have world_id support)
+    if (seedData.world.users && seedData.world.users.length > 0) {
+      console.log(`📝 Creating ${seedData.world.users.length} users for world ${worldId}...`)
+      
+      for (const userData of seedData.world.users) {
+        try {
+          // Check if user already exists
+          const existingUser = await this.db
+            .select()
+            .from(user)
+            .where(eq(user.email, userData.email))
+            .limit(1)
+
+          if (existingUser.length === 0) {
+            // Create new user - users don't have world_id, they're global
+            await this.db
+              .insert(user)
+              .values({
+                email: userData.email,
+                name: userData.name || userData.email,
+                password: userData.password || 'seed-user-password', // TODO: proper password handling
+                type: userData.type === 'admin' ? 'admin' : 'user'
+              })
+            console.log(`  ✅ Created user: ${userData.email}`)
+          } else {
+            console.log(`  ⏭️ User already exists: ${userData.email}`)
+          }
+        } catch (error) {
+          console.error(`  ❌ Failed to create user ${userData.email}:`, error)
+        }
+      }
+    }
+
+    // Create artifacts with world_id using UC-10 Schema-Driven CMS
+    if (seedData.world.artifacts && seedData.world.artifacts.length > 0) {
+      console.log(`📝 Creating ${seedData.world.artifacts.length} artifacts for world ${worldId}...`)
+      
+      // Get first user ID for artifacts ownership
+      let firstUserId = 'system'
+      if (seedData.world.users && seedData.world.users.length > 0) {
+        const firstUserEmail = seedData.world.users[0].email
+        const userResult = await this.db
+          .select({ id: user.id })
+          .from(user)
+          .where(eq(user.email, firstUserEmail))
+          .limit(1)
+        
+        if (userResult.length > 0) {
+          firstUserId = userResult[0].id
+        }
+      }
+      
+      for (const artifactData of seedData.world.artifacts) {
+        try {
+          // Generate UUID for artifact if not provided
+          const artifactId = artifactData.id || randomUUID()
+          
+          // Create artifact record with world_id
+          const newArtifact = {
+            id: artifactId,
+            title: artifactData.title,
+            kind: artifactData.kind,
+            userId: firstUserId, // Use real user UUID
+            authorId: null,
+            summary: `Seed artifact: ${artifactData.title}`,
+            world_id: worldId, // 🚀 CRITICAL: Set world_id for filtering
+            createdAt: new Date(),
+            deletedAt: null,
+            publication_state: []
+          }
+
+          await this.db
+            .insert(artifact)
+            .values(newArtifact)
+
+          // Use UC-10 artifact-tools to save content to specialized tables
+          const { saveArtifact: saveArtifactContent } = await import('@/artifacts/kinds/artifact-tools')
+          await saveArtifactContent(newArtifact, JSON.stringify(artifactData.content))
+
+          console.log(`  ✅ Created artifact: ${artifactData.title} (${artifactData.kind})`)
+        } catch (error) {
+          console.error(`  ❌ Failed to create artifact ${artifactData.title}:`, error)
+        }
+      }
+    }
+
+    // Create chats with world_id
+    if (seedData.world.chats && seedData.world.chats.length > 0) {
+      console.log(`📝 Creating ${seedData.world.chats.length} chats for world ${worldId}...`)
+      
+      // Get first user ID for chats ownership (reuse from artifacts)
+      let firstUserId = 'system'
+      if (seedData.world.users && seedData.world.users.length > 0) {
+        const firstUserEmail = seedData.world.users[0].email
+        const userResult = await this.db
+          .select({ id: user.id })
+          .from(user)
+          .where(eq(user.email, firstUserEmail))
+          .limit(1)
+        
+        if (userResult.length > 0) {
+          firstUserId = userResult[0].id
+        }
+      }
+      
+      for (const chatData of seedData.world.chats) {
+        try {
+          const chatId = chatData.id || randomUUID()
+          
+          await this.db
+            .insert(chat)
+            .values({
+              id: chatId,
+              title: chatData.title,
+              userId: firstUserId, // Use real user UUID
+              world_id: worldId, // 🚀 CRITICAL: Set world_id for filtering
+              createdAt: new Date()
+            })
+
+          console.log(`  ✅ Created chat: ${chatData.title}`)
+        } catch (error) {
+          console.error(`  ❌ Failed to create chat ${chatData.title}:`, error)
+        }
+      }
+    }
+
+    console.log(`🎯 Database records created for world ${worldId}`)
+  }
+
+  /**
+   * 🚀 NEW: Delete existing database records for a world
+   * Used in replace strategy to clean up before creating new records
+   */
+  private async deleteDatabaseRecords(worldId: string): Promise<void> {
+    console.log(`🗑️ Deleting existing database records for world ${worldId}...`)
+
+    try {
+      // Delete artifacts with this world_id
+      const deletedArtifacts = await this.db
+        .delete(artifact)
+        .where(eq(artifact.world_id, worldId))
+        .returning({ id: artifact.id })
+
+      console.log(`  🗑️ Deleted ${deletedArtifacts.length} artifacts`)
+
+      // Delete chats with this world_id
+      const deletedChats = await this.db
+        .delete(chat)
+        .where(eq(chat.world_id, worldId))
+        .returning({ id: chat.id })
+
+      console.log(`  🗑️ Deleted ${deletedChats.length} chats`)
+
+      // Note: Users are global and not deleted based on world_id
+      console.log(`  ⏭️ Users are global - not deleted`)
+
+    } catch (error) {
+      console.error(`❌ Error deleting database records for world ${worldId}:`, error)
+      throw error
+    }
   }
 
   private async importBlobs(seedPath: string, blobs: BlobReference[], strategy: ConflictResolution): Promise<void> {

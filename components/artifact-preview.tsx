@@ -1,17 +1,18 @@
 /**
  * @file components/artifact-preview.tsx
  * @description Компонент для отображения превью артефактов в чате.
- * @version 2.3.1
- * @date 2025-06-11
- * @updated Refactored to call React Hooks unconditionally at the top level.
+ * @version 2.3.2
+ * @date 2025-07-02
+ * @updated CRITICAL FIX: Added null safety check for 'error' in result to prevent runtime error "Cannot use 'in' operator to search for 'error' in undefined".
  */
 
 /** HISTORY:
+ * v2.3.2 (2025-07-02): CRITICAL FIX: Added null safety check for 'error' in result to prevent "Cannot use 'in' operator" runtime error.
  * v2.3.1 (2025-06-11): Fixed React Hooks rules by moving all hooks to the top level.
  * v2.3.0 (2025-06-10): Исправлены ошибки типизации (TS2322) путем явного приведения типов.
  */
 import { memo, type MouseEvent, useCallback, useMemo, useRef, } from 'react'
-import { BoxIcon, CodeIcon, FileIcon, FullscreenIcon, ImageIcon, WarningIcon } from './icons'
+import { BoxIcon, CodeIcon, FileIcon, FullscreenIcon, ImageIcon } from './icons'
 import { cn, fetcher } from '@/lib/utils'
 import type { ArtifactApiResponse, ArtifactKind } from '@/lib/types'
 import { InlineArtifactSkeleton } from './artifact-skeleton'
@@ -19,6 +20,7 @@ import useSWR from 'swr'
 import { useArtifact } from '@/hooks/use-artifact'
 import { ImageEditor } from './image-editor'
 import { toast } from './toast'
+import { ErrorArtifact } from './error-artifact'
 import type { artifactCreate } from '@/artifacts/tools/artifactCreate'
 
 type ArtifactToolResult = Awaited<ReturnType<ReturnType<typeof artifactCreate>['execute']>>;
@@ -32,13 +34,19 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
   const { setArtifact } = useArtifact()
 
   // Moved all hooks to the top level
-  const { artifactId, artifactTitle, artifactKind, description, summary } = 'error' in result ? {
+  const { artifactId, artifactTitle, artifactKind, description, summary } = (result && typeof result === 'object' && 'error' in result) ? {
     artifactId: '',
     artifactTitle: '',
     artifactKind: 'text',
     description: '',
     summary: ''
-  } : result
+  } : result || {
+    artifactId: '',
+    artifactTitle: '',
+    artifactKind: 'text',
+    description: '',
+    summary: ''
+  }
 
   const { data: artifacts, isLoading, error } = useSWR<Array<ArtifactApiResponse>>(
     artifactId ? `/api/artifact?id=${artifactId}` : null,
@@ -115,17 +123,8 @@ export function ArtifactPreview ({ isReadonly, result }: ArtifactPreviewProps) {
   }, [setArtifact, artifactId, artifactKind, artifactTitle, fullArtifact])
 
   // Early return for error state is now after the hooks
-  if ('error' in result) {
-    return (
-      <div
-        className="h-auto overflow-y-scroll border rounded-2xl dark:bg-muted border-destructive/50 dark:border-destructive/50 p-4 flex flex-row items-start gap-3 text-destructive">
-        <WarningIcon className="size-5 shrink-0 mt-0.5"/>
-        <div>
-          <h4 className="font-bold">Ошибка создания артефакта</h4>
-          <p className="text-sm">{result.error}</p>
-        </div>
-      </div>
-    )
+  if (result && typeof result === 'object' && 'error' in result) {
+    return <ErrorArtifact error={result.error} />
   }
 
   return (

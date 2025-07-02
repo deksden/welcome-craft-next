@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, } from '@playwright/test';
 import { universalAuthentication } from '../../helpers/auth.helper';
 import { PhoenixSeedExportPage } from '../../pages/phoenix-seed-export.page';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 test.describe('Phoenix Seed Export', () => {
   let seedExportPage: PhoenixSeedExportPage;
@@ -57,7 +57,7 @@ test.describe('Phoenix Seed Export', () => {
     // Perform full export using POM
     await seedExportPage.performFullExport({
       worldName: 'Test World 1',
-      dataSource: 'BETA',
+      dataSource: 'LOCAL',  // Используем LOCAL вместо BETA для тестов
       includeBlobs: true,
       directoryName: 'my-custom-seed-export'
     });

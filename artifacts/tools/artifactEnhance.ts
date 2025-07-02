@@ -16,16 +16,18 @@ import type { Session } from 'next-auth'
 import { z } from 'zod'
 import { getArtifactById, saveArtifact, saveSuggestions } from '@/lib/db/queries'
 import { createLogger } from '@fab33/fab-logger'
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { generateUUID } from '@/lib/utils'
 import type { Suggestion } from '@/lib/db/schema'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
 import { getDisplayContent } from '@/lib/artifact-content-utils'
+import type { WorldContext } from '@/lib/db/world-context'
 
 const logger = createLogger('artifacts:tools:artifactEnhance')
 
 interface EnhanceArtifactProps {
   session: Session;
+  worldContext?: WorldContext;
 }
 
 const recipes = {
@@ -33,7 +35,7 @@ const recipes = {
   suggest: 'You are a help writing assistant. Given a piece of writing, please offer suggestions to improve the piece of writing and describe the change. It is very important for the edits to contain full sentences instead of just words. Max 5 suggestions.',
 } as const
 
-export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
+export const artifactEnhance = ({ session, worldContext }: EnhanceArtifactProps) =>
   tool({
     description: 'Enhances a document by applying a specific recipe, like "polish" or "suggest". This creates a new version of the artifact with suggestions.',
     parameters: z.object({
@@ -69,7 +71,8 @@ export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
       await saveArtifact({
         ...artifact,
         createdAt: newVersionDate,
-        content: getDisplayContent(artifact) || ''
+        content: getDisplayContent(artifact) || '',
+        worldContext, // 🔧 BUG-086 FIX: Pass world context for proper world isolation
       })
 
       // 2. Generate suggestions
@@ -77,7 +80,7 @@ export const artifactEnhance = ({ session }: EnhanceArtifactProps) =>
       const suggestions: Array<Omit<Suggestion, 'userId' | 'createdAt' | 'documentCreatedAt'>> = []
 
       const { object: objectPromise } = await streamObject({
-        model: myProvider.languageModel('artifact-model'),
+        model: myEnhancedProvider.languageModel('artifact-model'),
         system: prompt,
         prompt: getDisplayContent(artifact) || '',
         schema: z.object({

@@ -1,12 +1,15 @@
 /**
  * @file components/chat-input.tsx
  * @description Компонент для ввода сообщений, включая текст и файлы с авто-созданием артефактов.
- * @version 2.6.0
- * @date 2025-06-17
- * @updated CRITICAL FIX: Replace addMessageWithCustomId with append() to send clipboard artifacts to AI instead of only adding to UI.
+ * @version 2.8.0
+ * @date 2025-07-02
+ * @updated PREFILL SUPPORT: Добавлена поддержка предзаполнения поля ввода через custom event 'prefill-chat-input' для интеграции с CreateArtifactDialog
  */
 
 /** HISTORY:
+ * v2.8.0 (2025-07-02): PREFILL SUPPORT - Добавлен useEffect для обработки custom event 'prefill-chat-input', позволяющий CreateArtifactDialog предзаполнять поле ввода чата текстом "Я хочу создать артефакт "
+ * v2.7.1 (2025-07-02): BUGFIX: Fixed Send→Stop button transformation - changed from 'streaming' to correct 'submitted' status check for useChat hook.
+ * v2.7.0 (2025-07-02): FEATURE: Added Send→Stop button transformation during AI processing. Send button becomes Stop button with square icon when status is 'awaiting_response'. Properly handles button state after stopping to allow new messages.
  * v2.6.0 (2025-06-17): CRITICAL FIX: Replace addMessageWithCustomId with append() to send clipboard artifacts to AI instead of only adding to UI.
  * v2.5.0 (2025-06-17): FINAL FIX: Properly implemented custom UUID preservation using setMessages with type casting for artifact clipboard and file upload flows.
  * v2.4.0 (2025-06-17): Fixed UUID format issues by using setMessages instead of append to preserve valid UUID format.
@@ -29,7 +32,7 @@ import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useE
 import Textarea from 'react-textarea-autosize'
 import { upload } from '@vercel/blob/client'
 
-import { ArrowUpIcon, CrossIcon } from './icons'
+import { ArrowUpIcon, CrossIcon, StopIcon } from './icons'
 import { PreviewAttachment } from './preview-attachment'
 import { Button } from './ui/button'
 import { SuggestedActions } from './suggested-actions'
@@ -71,6 +74,7 @@ export function ChatInput ({
   append,
   setMessages,
   handleSubmit,
+  stop,
   session,
   initialChatModel,
   artifact,
@@ -87,6 +91,7 @@ export function ChatInput ({
   append: UseChatHelpers['append'];
   setMessages: UseChatHelpers['setMessages'];
   handleSubmit: UseChatHelpers['handleSubmit'];
+  stop: UseChatHelpers['stop'];
   session: Session;
   initialChatModel: string;
   artifact: UIArtifact;
@@ -113,12 +118,27 @@ export function ChatInput ({
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Reset isSubmitting flag when status changes (e.g., from loading back to ready)
+  // Reset isSubmitting flag when status changes (e.g., from streaming back to ready)
   useEffect(() => {
     if (status === 'ready' && isSubmitting) {
       setIsSubmitting(false)
     }
   }, [status, isSubmitting])
+
+  // Handle prefill chat input from CreateArtifactDialog
+  useEffect(() => {
+    const handlePrefillChatInput = (event: CustomEvent) => {
+      const { text } = event.detail
+      console.log('💬 ChatInput: Received prefill-chat-input event:', text)
+      setInput(text)
+    }
+
+    window.addEventListener('prefill-chat-input', handlePrefillChatInput as EventListener)
+    
+    return () => {
+      window.removeEventListener('prefill-chat-input', handlePrefillChatInput as EventListener)
+    }
+  }, [setInput])
 
   // Helper function to add message with custom UUID
   const addMessageWithCustomId = useCallback((newMessage: UIMessage) => {
@@ -343,20 +363,37 @@ export function ChatInput ({
           </div>
 
           <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground">⌘+Enter to send</p>
-            <Button
-              data-testid="chat-input-send-button"
-              size="icon"
-              variant="outline"
-              className="rounded-full"
-              onClick={(e) => {
-                e.preventDefault()
-                submitForm()
-              }}
-              disabled={input.length === 0 || uploadingFiles.length > 0 || status !== 'ready' || isSubmitting}
-            >
-              <ArrowUpIcon size={18}/>
-            </Button>
+            <p className="text-xs text-muted-foreground">
+              {status === 'submitted' ? 'Generating...' : '⌘+Enter to send'}
+            </p>
+            {status === 'submitted' ? (
+              <Button
+                data-testid="chat-input-stop-button"
+                size="icon"
+                variant="outline"
+                className="rounded-full"
+                onClick={(e) => {
+                  e.preventDefault()
+                  stop()
+                }}
+              >
+                <StopIcon size={16}/>
+              </Button>
+            ) : (
+              <Button
+                data-testid="chat-input-send-button"
+                size="icon"
+                variant="outline"
+                className="rounded-full"
+                onClick={(e) => {
+                  e.preventDefault()
+                  submitForm()
+                }}
+                disabled={input.length === 0 || uploadingFiles.length > 0 || status !== 'ready' || isSubmitting}
+              >
+                <ArrowUpIcon size={18}/>
+              </Button>
+            )}
           </div>
         </div>
       </div>

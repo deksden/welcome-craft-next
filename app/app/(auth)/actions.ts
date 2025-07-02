@@ -74,7 +74,7 @@ export const login = async (
     }
 
     // Handle world_id cookie management
-    const isTestWorldsEnabled = process.env.ENABLE_TEST_WORLDS_UI === 'true';
+    const isTestWorldsEnabled = process.env.APP_STAGE === 'LOCAL' || process.env.APP_STAGE === 'BETA';
     const cookieStore = await cookies();
     const domain = process.env.NODE_ENV === 'development' ? '.localhost' : undefined;
     

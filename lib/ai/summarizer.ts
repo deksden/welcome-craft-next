@@ -14,7 +14,7 @@
 
 import 'server-only'
 import { generateText } from 'ai'
-import { myProvider } from './providers'
+import { myEnhancedProvider } from './providers.enhanced'
 import { db } from '@/lib/db'
 import { artifact } from '../db/schema'
 import { desc, eq } from 'drizzle-orm'
@@ -62,7 +62,7 @@ export async function generateAndSaveSummary (
 ): Promise<void> {
   try {
     const prompt = getSummaryPrompt(kind, content)
-    const model = myProvider.languageModel('title-model')
+    const model = myEnhancedProvider.languageModel('title-model')
 
     const { text: summary } = await generateText({
       model: model,

@@ -3,7 +3,7 @@
  * @description Серверный обработчик для артефактов типа "набор" (коллекция элементов).
  * @version 1.0.0
  * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Создан новый тип артефакта для наборов с упорядочиванием элементов.
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Создан новый тип артефакта для наборов с упорядочиванием элементов.
  */
 
 import { createLogger } from '@fab33/fab-logger'
@@ -91,7 +91,7 @@ export async function deleteSetArtifact(artifactId: string, createdAt: Date): Pr
 }
 
 /**
- * @description Set artifact tool с поддержкой UC-10 schema-driven операций
+ * @description Set artifact tool с поддержкой Spectrum schema-driven операций
  * @feature Только save/load/delete операции, без AI create/update
  */
 export const setTool = {

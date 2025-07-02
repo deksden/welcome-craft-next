@@ -26,14 +26,14 @@ const createAuthenticatedApiContext = async (
   browser: any, // Playwright's Browser type
   userNamePrefix: string,
   workerInfo: any, // Playwright's WorkerInfo type
-  userType?: 'regular' | 'admin' // Optional user type for universalAuthentication
+  userType?: 'user' | 'admin' // Optional user type for universalAuthentication
 ): Promise<UserContext> => {
   const browserContext = await browser.newContext({ baseURL: 'http://localhost:3000' }); // Ensure baseURL matches your app
   const uniqueId = crypto.randomUUID();
   const testUser: AuthUser = {
     email: `${userNamePrefix}-${workerInfo.workerIndex}-${Date.now()}@test.com`,
     id: uniqueId, // Provide a UUID for the user
-    type: userType || 'regular',
+    type: userType || 'user',
   };
 
   // universalAuthentication for APIRequestContext does not navigate or use Page
@@ -44,7 +44,7 @@ const createAuthenticatedApiContext = async (
     context: browserContext,
     request: browserContext.request,
     email: testUser.email,
-    userId: testUser.id!, // id is assigned crypto.randomUUID() before calling universalAuthentication.
+    userId: testUser.id ?? '', // id is assigned crypto.randomUUID() before calling universalAuthentication.
                           // universalAuthentication also ensures user.id is set if it was initially missing,
                           // based on the response from /api/test/create-user.
                           // So, testUser.id is guaranteed to be a string here.

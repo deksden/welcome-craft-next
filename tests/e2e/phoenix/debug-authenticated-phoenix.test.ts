@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { universalAuthentication } from '../../helpers/auth.helper';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 test.describe('Debug Authenticated Phoenix Access', () => {
   test('authenticate first, then access Phoenix page', async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('Debug Authenticated Phoenix Access', () => {
       console.log('✅ Test session cookie found:', {
         domain: testSessionCookie.domain,
         path: testSessionCookie.path,
-        value: testSessionCookie.value.slice(0, 50) + '...'
+        value: `${testSessionCookie.value.slice(0, 50)}...`
       })
       
       try {

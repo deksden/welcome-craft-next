@@ -28,27 +28,23 @@ const WORLDS = {
 
 type WorldId = keyof typeof WORLDS
 
-// Check if world indicator should be shown
+// Check if world indicator should be shown (LOCAL/BETA stages only)
 function getIsTestWorldsUIEnabled() {
   // Server-side check
   if (typeof window === 'undefined') {
-    const result = process.env.NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI === 'true'
+    const result = process.env.NEXT_PUBLIC_APP_STAGE === 'LOCAL' || process.env.NEXT_PUBLIC_APP_STAGE === 'BETA'
     console.log('🌍 SERVER-SIDE getIsTestWorldsUIEnabled:', {
-      NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI: process.env.NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI,
+      NEXT_PUBLIC_APP_STAGE: process.env.NEXT_PUBLIC_APP_STAGE,
       result
     })
     return result
   }
   
   // Client-side check
-  const envCheck = process.env.NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI === 'true'
-  const localStorageCheck = window.localStorage?.getItem('ENABLE_TEST_WORLDS_UI') === 'true'
-  const result = envCheck || localStorageCheck
+  const result = process.env.NEXT_PUBLIC_APP_STAGE === 'LOCAL' || process.env.NEXT_PUBLIC_APP_STAGE === 'BETA'
   
   console.log('🌍 CLIENT-SIDE getIsTestWorldsUIEnabled:', {
-    NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI: process.env.NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI,
-    envCheck,
-    localStorageCheck,
+    NEXT_PUBLIC_APP_STAGE: process.env.NEXT_PUBLIC_APP_STAGE,
     result
   })
   
@@ -63,8 +59,7 @@ export function WorldIndicator() {
     const enabled = getIsTestWorldsUIEnabled()
     console.log('🌍 WorldIndicator: useEffect started')
     console.log('🌍 isTestWorldsUIEnabled:', enabled)
-    console.log('🌍 NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI:', process.env.NEXT_PUBLIC_ENABLE_TEST_WORLDS_UI)
-    console.log('🌍 localStorage ENABLE_TEST_WORLDS_UI:', typeof window !== 'undefined' ? window.localStorage?.getItem('ENABLE_TEST_WORLDS_UI') : 'N/A (server)')
+    console.log('🌍 NEXT_PUBLIC_APP_STAGE:', process.env.NEXT_PUBLIC_APP_STAGE)
     
     setIsEnabled(enabled)
     

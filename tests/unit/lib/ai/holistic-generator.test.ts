@@ -28,8 +28,8 @@ vi.mock('ai', () => ({
   generateObject: vi.fn(),
 }))
 
-vi.mock('@/lib/ai/providers', () => ({
-  myProvider: {
+vi.mock('@/lib/ai/providers.enhanced', () => ({
+  myEnhancedProvider: {
     languageModel: vi.fn(() => 'mocked-model')
   }
 }))

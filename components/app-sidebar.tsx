@@ -1,12 +1,22 @@
 /**
  * @file components/app-sidebar.tsx
  * @description Компонент боковой панели приложения с навигацией.
- * @version 2.3.3
- * @date 2025-06-28
- * @updated DEBUG: Расширена отладочная информация - проверка SWR onSuccess/onError + детальная проверка каждого элемента в map
+ * @version 2.13.0
+ * @date 2025-07-02
+ * @updated UI HIERARCHY ENHANCEMENT: Создана четкая визуальная иерархия с отступами, типографикой и фонами для разделов, подразделов и элементов списков
  */
 
 /** HISTORY:
+ * v2.13.0 (2025-07-02): UI HIERARCHY ENHANCEMENT - Четкая визуальная иерархия: разделы полужирные с фоном, подразделы сдвинуты вправо, списки элементов еще правее с меньшим шрифтом. Консистентные отступы ml-2/ml-4. Списки чатов и артефактов выровнены по размеру шрифта.
+ * v2.12.0 (2025-07-02): COLLAPSIBLE GROUPS - Добавлены коллапсируемые группы для Dev Tools и Admin секций с chevron иконками, состоянием collapse/expand, localStorage persistence. Унификация UI с AI Chat и Артефакты секциями.
+ * v2.11.0 (2025-07-02): SIDEBAR UX FIX - Перемещен World Login пункт внутрь SidebarMenu в Dev Tools секции, убрана белая точка от ul, улучшено визуальное группирование
+ * v2.10.0 (2025-07-02): BUG-072 PROPER FIX - Убраны встроенные WorldIndicator/DevWorldSelector из sidebar, заменены ссылкой /world-login, создана отдельная страница World Login
+ * v2.9.0 (2025-07-02): BUG-073 FIX - Добавлена ссылка "📁 Импорт файлов" в Артефакты секцию (после "Все артефакты"), перенос импорта из табов в отдельный раздел sidebar
+ * v2.8.0 (2025-07-02): BUG-072 FIX - Восстановлен раздел World Login в Dev Tools: добавлены импорты WorldIndicator и DevWorldSelector, создана World Login секция в expanded sidebar
+ * v2.7.0 (2025-07-02): SIDEBAR REFRESH FIX - Добавлен useEffect listener для artifact-list-refresh events, список недавних артефактов теперь автоматически обновляется после создания/изменения артефактов
+ * v2.6.0 (2025-07-01): SIMPLIFIED ROUTING - Обновлены ссылки phoenix/* на direct routing, убран phoenix/ prefix
+ * v2.5.0 (2025-07-01): TEST-SESSION SUPPORT - Добавлена логика чтения test-session cookies (аналогично Header), исправлено определение admin типа в тестах
+ * v2.4.0 (2025-07-01): ROLE-BASED ACCESS - Исправлена логика видимости: Artifacts только для admin, Dev Tools только в LOCAL environment, добавлены WorldIndicator и DevWorldSelector в Developer section
  * v2.3.3 (2025-06-28): DEBUG - Расширена отладочная информация: SWR onSuccess/onError callbacks + детальная проверка каждого элемента map
  * v2.3.2 (2025-06-28): DEBUG - Добавлена отладочная информация для диагностики проблемы с undefined kind в recent artifacts API
  * v2.3.1 (2025-06-28): React key error исправлен - убран createdAt из key (вызывал "undefined-undefined"), используется только doc.id для уникальности
@@ -19,6 +29,7 @@
 
 'use client'
 
+import * as React from 'react'
 import type { User } from 'next-auth'
 import { usePathname, useRouter } from 'next/navigation.js'
 import { 
@@ -48,7 +59,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useLocalStorage } from 'usehooks-ts'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import { fetcher } from '@/lib/utils'
 import { useArtifact } from '@/hooks/use-artifact'
 import { Skeleton } from './ui/skeleton'
@@ -75,10 +86,12 @@ function SidebarArtifactItem ({ artifact: doc, isActive, onClick }: SidebarArtif
           side: 'right',
           align: 'center',
         }}
+        size="sm"
+        className="text-sm"
       >
         <button type="button" onClick={onClick} className="w-full text-left">
           <div className="flex items-center gap-2">
-            <BoxIcon size={16} className="shrink-0" />
+            <BoxIcon size={14} className="shrink-0" />
             <span className="truncate">{displayTitle}</span>
           </div>
         </button>
@@ -88,19 +101,73 @@ function SidebarArtifactItem ({ artifact: doc, isActive, onClick }: SidebarArtif
 }
 
 export function AppSidebar ({ user }: { user: User | undefined }) {
-  console.log('🔍 DEBUG: AppSidebar user state:', {
-    userExists: !!user,
-    userId: user?.id,
-    userEmail: user?.email,
-    userName: user?.name
-  })
-  
   const router = useRouter()
   const pathname = usePathname()
   const { setOpenMobile, state: sidebarState } = useSidebar()
+  const [testSession, setTestSession] = React.useState<any>(null)
 
-  // Admin checks
-  const isAdmin = user?.type === 'admin'
+  // Read test-session cookies (same logic as Header component)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const testSessionCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('test-session='))
+      
+      if (testSessionCookie) {
+        try {
+          const cookieValue = decodeURIComponent(testSessionCookie.split('=')[1])
+          const testSessionData = JSON.parse(cookieValue)
+          console.log('🔍 AppSidebar: Found test-session for:', testSessionData.user?.email)
+          setTestSession(testSessionData)
+        } catch (error) {
+          console.log('⚠️ AppSidebar: Failed to parse test-session cookie:', error)
+        }
+      }
+    }
+  }, [])
+
+  // Use test-session if available, otherwise use the passed user prop
+  const effectiveUser = testSession ? {
+    id: testSession.user?.id,
+    email: testSession.user?.email,
+    name: testSession.user?.name,
+    type: testSession.user?.type  // This will include admin type from test-session
+  } : user
+
+  // Listen for artifact-list-refresh events to update recent artifacts
+  React.useEffect(() => {
+    const handleArtifactRefresh = (event: CustomEvent) => {
+      console.log('🔄 AppSidebar: Received artifact-list-refresh event:', event.detail)
+      
+      // Revalidate recent artifacts SWR data
+      if (effectiveUser) {
+        const swrKey = `/api/artifacts/recent?limit=5`
+        console.log('🔄 AppSidebar: Mutating SWR key:', swrKey)
+        mutate(swrKey)
+      }
+    }
+
+    // Add event listener for artifact refresh
+    window.addEventListener('artifact-list-refresh', handleArtifactRefresh as EventListener)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('artifact-list-refresh', handleArtifactRefresh as EventListener)
+    }
+  }, [effectiveUser]) // Re-run when effectiveUser changes
+
+  console.log('🔍 DEBUG: AppSidebar user state:', {
+    userExists: !!effectiveUser,
+    userId: effectiveUser?.id,
+    userEmail: effectiveUser?.email,
+    userName: effectiveUser?.name,
+    userType: effectiveUser?.type,
+    source: testSession ? 'test-session' : 'props'
+  })
+
+  // Role and environment checks
+  const isAdmin = effectiveUser?.type === 'admin'
+  const isLocalEnv = process.env.NEXT_PUBLIC_APP_STAGE === 'LOCAL'
   const isDevEnv = process.env.NEXT_PUBLIC_APP_STAGE === 'LOCAL' || process.env.NEXT_PUBLIC_APP_STAGE === 'BETA'
 
   const [isChatSectionCollapsed, setIsChatSectionCollapsed] = useLocalStorage(
@@ -113,15 +180,32 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
     true,
     { initializeWithValue: false }
   )
+  const [isDevToolsSectionCollapsed, setIsDevToolsSectionCollapsed] = useLocalStorage(
+    'sidebar:isDevToolsSectionCollapsed',
+    false,
+    { initializeWithValue: false }
+  )
+  const [isAdminSectionCollapsed, setIsAdminSectionCollapsed] = useLocalStorage(
+    'sidebar:isAdminSectionCollapsed',
+    false,
+    { initializeWithValue: false }
+  )
+  const [isAllArtifactsSectionCollapsed, setIsAllArtifactsSectionCollapsed] = useLocalStorage(
+    'sidebar:isAllArtifactsSectionCollapsed',
+    false,
+    { initializeWithValue: false }
+  )
 
   const isChatActive = pathname.startsWith('/chat') || pathname === '/'
   const isArtifactsActive = pathname.startsWith('/artifacts')
+  const isDevToolsActive = ['/worlds', '/seed-import', '/seed-export', '/world-login'].some(path => pathname.startsWith(path))
+  const isAdminActive = ['/users', '/metrics'].some(path => pathname.startsWith(path))
 
   const {
     data: recentArtifacts,
     isLoading: isLoadingRecentArtifacts,
   } = useSWR<Array<Pick<ArtifactApiResponse, 'id' | 'title' | 'createdAt' | 'kind' | 'content'>>>(
-    user ? `/api/artifacts/recent?limit=5` : null,
+    effectiveUser ? `/api/artifacts/recent?limit=5` : null,
     fetcher,
     { 
       revalidateOnFocus: false,
@@ -195,11 +279,11 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                 }}
                 isActive={isChatActive}
                 tooltip={{ children: 'AI Чат', side: 'right' }}
-                className="justify-between"
+                className="justify-between font-semibold bg-muted/50 hover:bg-muted/80"
               >
                 <div className="flex items-center gap-2">
                   <MessageCircleIcon size={18}/>
-                  {sidebarState === 'expanded' && <span>AI Чат</span>}
+                  {sidebarState === 'expanded' && <span className="text-base">AI Чат</span>}
                 </div>
                 {sidebarState === 'expanded' && (
                   <ChevronDownIcon
@@ -213,11 +297,13 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
             </SidebarMenuItem>
           </SidebarMenu>
           {!isChatSectionCollapsed && sidebarState === 'expanded' && (
-            <SidebarHistory user={user}/>
+            <div className="ml-2">
+              <SidebarHistory user={effectiveUser}/>
+            </div>
           )}
         </SidebarGroup>
 
-        {user && (
+        {(effectiveUser && isAdmin) && (
           <SidebarGroup>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -233,11 +319,11 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
                   }}
                   isActive={isArtifactsActive}
                   tooltip={{ children: 'Артефакты', side: 'right' }}
-                  className="justify-between"
+                  className="justify-between font-semibold bg-muted/50 hover:bg-muted/80"
                 >
                   <div className="flex items-center gap-2">
                     <BoxIcon size={18}/>
-                    {sidebarState === 'expanded' && <span>Мои Артефакты</span>}
+                    {sidebarState === 'expanded' && <span className="text-base">Артефакты</span>}
                   </div>
                   {sidebarState === 'expanded' && (
                     <ChevronDownIcon
@@ -251,118 +337,225 @@ export function AppSidebar ({ user }: { user: User | undefined }) {
               </SidebarMenuItem>
             </SidebarMenu>
             {!isArtifactsSectionCollapsed && sidebarState === 'expanded' && (
-              <SidebarMenu>
-                {isLoadingRecentArtifacts && (
-                  <div className="flex flex-col gap-1 px-2">
-                    <Skeleton className="h-7 w-4/5"/>
-                    <Skeleton className="h-7 w-3/5"/>
-                  </div>
-                )}
-                {!isLoadingRecentArtifacts && recentArtifacts?.map((doc, index) => {
-                  console.log(`🔍 DEBUG: Rendering artifact ${index}:`, {
-                    id: doc.id,
-                    title: doc.title,
-                    kind: doc.kind,
-                    hasContent: !!doc.content,
-                    allKeys: Object.keys(doc)
-                  })
-                  return (
-                    <SidebarArtifactItem
-                      key={doc.id}
-                      artifact={doc}
-                      isActive={activeArtifactId === doc.id}
-                      onClick={() => handleArtifactClick(doc)}
-                    />
-                  )
-                })}
-                {!isLoadingRecentArtifacts && (!recentArtifacts || recentArtifacts.length === 0) && (
-                  <div className="px-2 py-1 text-xs text-sidebar-foreground/70 text-center">Нет недавних
-                    артефактов.</div>
-                )}
-                <SidebarMenuItem className="mt-1">
-                  <SidebarMenuButton
-                    data-testid="sidebar-all-artifacts-button"
-                    onClick={() => {
-                      router.push('/artifacts')
-                      setOpenMobile(false)
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-center"
-                  >
-                    <span>Все артефакты</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
+              <div className="ml-2">
+                <SidebarMenu>
+                  {/* Подраздел: Все артефакты (раскрывающийся) */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      data-testid="sidebar-all-artifacts-subsection"
+                      onClick={() => {
+                        setIsAllArtifactsSectionCollapsed(!isAllArtifactsSectionCollapsed)
+                      }}
+                      className="justify-between text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <BoxIcon size={16}/>
+                        <span>Все артефакты</span>
+                      </div>
+                      <ChevronDownIcon
+                        size={14}
+                        className={`transition-transform duration-200 ${
+                          isAllArtifactsSectionCollapsed ? '-rotate-90' : 'rotate-0'
+                        }`}
+                      />
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  {/* Список недавних артефактов (сдвинут еще правее) */}
+                  {!isAllArtifactsSectionCollapsed && (
+                    <div className="ml-2">
+                      {isLoadingRecentArtifacts && (
+                        <div className="flex flex-col gap-1 px-2">
+                          <Skeleton className="h-6 w-4/5"/>
+                          <Skeleton className="h-6 w-3/5"/>
+                        </div>
+                      )}
+                      {!isLoadingRecentArtifacts && recentArtifacts?.map((doc, index) => {
+                        console.log(`🔍 DEBUG: Rendering artifact ${index}:`, {
+                          id: doc.id,
+                          title: doc.title,
+                          kind: doc.kind,
+                          hasContent: !!doc.content,
+                          allKeys: Object.keys(doc)
+                        })
+                        return (
+                          <SidebarArtifactItem
+                            key={doc.id}
+                            artifact={doc}
+                            isActive={activeArtifactId === doc.id}
+                            onClick={() => handleArtifactClick(doc)}
+                          />
+                        )
+                      })}
+                      {!isLoadingRecentArtifacts && (!recentArtifacts || recentArtifacts.length === 0) && (
+                        <div className="px-2 py-1 text-xs text-sidebar-foreground/70 text-center">Нет недавних
+                          артефактов.</div>
+                      )}
+                      
+                      {/* Кнопка "Посмотреть все" */}
+                      <SidebarMenu>
+                        <SidebarMenuItem className="mt-1">
+                          <SidebarMenuButton
+                            data-testid="sidebar-view-all-artifacts-button"
+                            onClick={() => {
+                              router.push('/artifacts')
+                              setOpenMobile(false)
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-center text-xs"
+                          >
+                            <span>Посмотреть все</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      </SidebarMenu>
+                    </div>
+                  )}
+                  
+                  {/* Подраздел: Импорт файлов */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild className="text-sm">
+                      <Link href="/import" onClick={() => setOpenMobile(false)}>
+                        <Upload className="size-4 mr-2" />
+                        <span>Импорт файлов</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </div>
             )}
           </SidebarGroup>
         )}
 
-        {isAdmin && isDevEnv && (
+        {isAdmin && isLocalEnv && (
           <SidebarGroup data-testid="sidebar-dev-tools-section">
-            <SidebarMenuButton
-              tooltip={{ children: 'Dev Tools', side: 'right' }}
-              className="pointer-events-none justify-start"
-            >
-              <Flame className="size-5" />
-              {sidebarState === 'expanded' && <span className="ml-2 font-semibold">Dev Tools</span>}
-            </SidebarMenuButton>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/phoenix/worlds" onClick={() => setOpenMobile(false)}>
-                    <Globe className="size-4 mr-2" />
-                    {sidebarState === 'expanded' && <span>World Management</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/phoenix/seed-import" onClick={() => setOpenMobile(false)}>
-                    <Download className="size-4 mr-2" />
-                    {sidebarState === 'expanded' && <span>Seed Import</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/phoenix/seed-export" onClick={() => setOpenMobile(false)}>
-                    <Upload className="size-4 mr-2" />
-                    {sidebarState === 'expanded' && <span>Seed Export</span>}
-                  </Link>
+                <SidebarMenuButton
+                  data-testid="sidebar-dev-tools-section"
+                  onClick={() => {
+                    if (sidebarState === 'collapsed') {
+                      router.push('/worlds')
+                    } else {
+                      setIsDevToolsSectionCollapsed(!isDevToolsSectionCollapsed)
+                    }
+                    setOpenMobile(false)
+                  }}
+                  isActive={isDevToolsActive}
+                  tooltip={{ children: 'Dev Tools', side: 'right' }}
+                  className="justify-between font-semibold bg-muted/50 hover:bg-muted/80"
+                >
+                  <div className="flex items-center gap-2">
+                    <Flame className="size-5" />
+                    {sidebarState === 'expanded' && <span className="text-base">Dev Tools</span>}
+                  </div>
+                  {sidebarState === 'expanded' && (
+                    <ChevronDownIcon
+                      size={16}
+                      className={`transition-transform duration-200 ${
+                        isDevToolsSectionCollapsed ? '-rotate-90' : 'rotate-0'
+                      }`}
+                    />
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+            {!isDevToolsSectionCollapsed && sidebarState === 'expanded' && (
+              <div className="ml-2">
+                <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="text-sm">
+                    <Link href="/worlds" onClick={() => setOpenMobile(false)}>
+                      <Globe className="size-4 mr-2" />
+                      <span>World Management</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="text-sm">
+                    <Link href="/seed-import" onClick={() => setOpenMobile(false)}>
+                      <Download className="size-4 mr-2" />
+                      <span>Seed Import</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="text-sm">
+                    <Link href="/seed-export" onClick={() => setOpenMobile(false)}>
+                      <Upload className="size-4 mr-2" />
+                      <span>Seed Export</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="text-sm">
+                    <Link href="/world-login" onClick={() => setOpenMobile(false)}>
+                      <Globe className="size-4 mr-2" />
+                      <span>World Login</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                </SidebarMenu>
+              </div>
+            )}
           </SidebarGroup>
         )}
 
         {isAdmin && (
           <SidebarGroup data-testid="sidebar-admin-section">
-            <SidebarMenuButton
-              tooltip={{ children: 'Admin', side: 'right' }}
-              className="pointer-events-none justify-start"
-            >
-              <Shield className="size-5" />
-              {sidebarState === 'expanded' && <span className="ml-2 font-semibold">Admin</span>}
-            </SidebarMenuButton>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/phoenix/users" onClick={() => setOpenMobile(false)}>
-                    <Users className="size-4 mr-2" />
-                    {sidebarState === 'expanded' && <span>User Management</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/phoenix/metrics" onClick={() => setOpenMobile(false)}>
-                    <BarChart3 className="size-4 mr-2" />
-                    {sidebarState === 'expanded' && <span>System Metrics</span>}
-                  </Link>
+                <SidebarMenuButton
+                  data-testid="sidebar-admin-section"
+                  onClick={() => {
+                    if (sidebarState === 'collapsed') {
+                      router.push('/users')
+                    } else {
+                      setIsAdminSectionCollapsed(!isAdminSectionCollapsed)
+                    }
+                    setOpenMobile(false)
+                  }}
+                  isActive={isAdminActive}
+                  tooltip={{ children: 'Admin', side: 'right' }}
+                  className="justify-between font-semibold bg-muted/50 hover:bg-muted/80"
+                >
+                  <div className="flex items-center gap-2">
+                    <Shield className="size-5" />
+                    {sidebarState === 'expanded' && <span className="text-base">Admin</span>}
+                  </div>
+                  {sidebarState === 'expanded' && (
+                    <ChevronDownIcon
+                      size={16}
+                      className={`transition-transform duration-200 ${
+                        isAdminSectionCollapsed ? '-rotate-90' : 'rotate-0'
+                      }`}
+                    />
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+            {!isAdminSectionCollapsed && sidebarState === 'expanded' && (
+              <div className="ml-2">
+                <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="text-sm">
+                    <Link href="/users" onClick={() => setOpenMobile(false)}>
+                      <Users className="size-4 mr-2" />
+                      <span>User Management</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="text-sm">
+                    <Link href="/metrics" onClick={() => setOpenMobile(false)}>
+                      <BarChart3 className="size-4 mr-2" />
+                      <span>System Metrics</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                </SidebarMenu>
+              </div>
+            )}
           </SidebarGroup>
         )}
       </SidebarContent>

@@ -1,12 +1,14 @@
 /**
  * @file app/(main)/artifacts/page.tsx
  * @description Server Component страница для артефактов с правильной архитектурой
- * @version 3.2.0
- * @date 2025-06-27
- * @updated Integrated FileImportDemo component for UC-11 E2E tests support
+ * @version 3.4.0
+ * @date 2025-07-02
+ * @updated PAGE HEADER UNIFICATION: Добавлен PageHeader компонент для унификации заголовков страниц
  */
 
 /** HISTORY:
+ * v3.4.0 (2025-07-02): PAGE HEADER UNIFICATION - Добавлен PageHeader компонент для стандартизации заголовка с остальными страницами
+ * v3.3.0 (2025-07-02): BUG-073 FIX - Убраны табы (библиотека/импорт), оставлена только библиотека артефактов, FileImportDemo перенесен в /import
  * v3.2.0 (2025-06-27): Integrated FileImportDemo component for UC-11 E2E tests support
  * v3.1.0 (2025-06-23): Fixed Next.js 15 searchParams promise + correct auth imports
  * v3.0.0 (2025-06-23): Fixed server-only import issues - converted to proper Server Component architecture
@@ -18,9 +20,9 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation.js'
 import { getAuthSession } from '@/lib/test-auth'
 import { ArtifactGridClientWrapper } from '@/components/artifact-grid-client-wrapper'
-import { FileImportDemo } from '@/components/file-import-demo'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageHeader } from '@/components/page-header'
+import { BoxIcon } from '@/components/icons'
 
 const skeletonKeys = Array.from({ length: 8 }, (_, i) => `sk-${i}`)
 
@@ -41,31 +43,15 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
   return (
     <div className="flex h-full overflow-hidden">
       <div className="container mx-auto py-10 px-4 md:px-6 lg:px-8 flex-1 overflow-y-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Мои Артефакты
-          </h1>
-          <p className="text-muted-foreground">
-            Здесь вы можете управлять всеми вашими артефактами: текстами, кодом и другими материалами.
-          </p>
-        </header>
+        <PageHeader
+          icon={<BoxIcon className="size-8 text-blue-600" />}
+          title="Артефакты"
+          description="Управление артефактами организации: тексты, документы, сайты и другие материалы для коллаборативной работы."
+        />
 
-        <Tabs defaultValue="library" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="library">📚 Библиотека</TabsTrigger>
-            <TabsTrigger value="import">📁 Импорт файлов</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="library" className="mt-6">
-            <Suspense fallback={<GridSkeleton/>}>
-              <ArtifactGridClientWrapper userId={session.user.id} openArtifactId={openArtifactId}/>
-            </Suspense>
-          </TabsContent>
-          
-          <TabsContent value="import" className="mt-6">
-            <FileImportDemo />
-          </TabsContent>
-        </Tabs>
+        <Suspense fallback={<GridSkeleton/>}>
+          <ArtifactGridClientWrapper userId={session.user.id} openArtifactId={openArtifactId}/>
+        </Suspense>
       </div>
     </div>
   )

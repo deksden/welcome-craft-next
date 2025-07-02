@@ -1,12 +1,13 @@
 /**
  * @file lib/db/queries.ts
  * @description Функции для выполнения запросов к базе данных.
- * @version 2.5.0
- * @date 2025-06-28
- * @updated УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - включена изоляция данных по world_id для тестовых миров
+ * @version 2.6.0
+ * @date 2025-07-02
+ * @updated BUG-082 FIX - добавлена world isolation в message query функции для предотвращения cross-world data access
  */
 
 /** HISTORY:
+ * v2.6.0 (2025-07-02): BUG-082 FIX - добавлена world isolation в getMessageById, getMessagesByChatId, getMessageWithSiblings для предотвращения доступа к сообщениям из других миров
  * v2.5.0 (2025-06-28): УНИФИКАЦИЯ МИРНОЙ СИСТЕМЫ - включена изоляция данных по world_id, убрана временная отладка
  * v2.4.1 (2025-06-13): Добавлен await к вызову query() для корректной работы.
  * v2.4.0 (2025-06-13): Инстанс db теперь импортируется из @/lib/db.
@@ -20,7 +21,8 @@
 import 'server-only'
 
 import { and, asc, count, desc, eq, gt, gte, inArray, isNull, sql, type SQL, } from 'drizzle-orm'
-import { createLogger } from '@fab33/fab-logger'
+// ИСПРАВЛЕНИЕ BUG-071: Заменяем проблемный fab-logger на стандартное логирование  
+// import { createLogger } from '@fab33/fab-logger'
 
 import {
   artifact,
@@ -39,10 +41,19 @@ import { generateUUID } from '../utils'
 // import { generateHashedPassword } from './utils'; // TODO: Restore when generateHashedPassword is available
 import { generateAndSaveSummary } from '../ai/summarizer'
 import { db } from '@/lib/db'
-import { getCurrentWorldContextSync, createWorldFilter, type WorldContext } from './world-context'
+import { getCurrentWorldContextSync, createWorldFilter, addWorldId, type WorldContext } from './world-context'
 
-console.log(`process.env.TRANSPORT1=${process.env.TRANSPORT1}`)
-const logger = createLogger('lib:db:queries')
+// ИСПРАВЛЕНИЕ BUG-071: Используем стандартное console логирование вместо проблемного fab-logger
+// console.log(`process.env.TRANSPORT1=${process.env.TRANSPORT1}`)
+// const logger = createLogger('lib:db:queries')
+const logger = {
+  trace: (obj: any, msg?: string) => console.debug(`[lib:db:queries] ${msg || ''}`, obj),
+  debug: (msg: string | object, ...args: any[]) => console.debug(`[lib:db:queries]`, typeof msg === 'string' ? msg : JSON.stringify(msg), ...args),
+  info: (msg: string | object, ...args: any[]) => console.info(`[lib:db:queries]`, typeof msg === 'string' ? msg : JSON.stringify(msg), ...args),
+  warn: (msg: string | object, ...args: any[]) => console.warn(`[lib:db:queries]`, typeof msg === 'string' ? msg : JSON.stringify(msg), ...args),
+  error: (msg: string | object, ...args: any[]) => console.error(`[lib:db:queries]`, typeof msg === 'string' ? msg : JSON.stringify(msg), ...args),
+  child: (context: any) => logger, // Stub для совместимости с fab-logger API
+}
 
 // --- User Queries ---
 export async function getUser (email: string): Promise<Array<User>> {
@@ -84,16 +95,69 @@ export async function createGuestUser () {
   })
 }
 
+/**
+ * @description Ensures a user exists in the database. Creates the user if they don't exist.
+ * @param userId - The user ID to check/create
+ * @param email - The email for the user (required for test users)
+ * @param type - The user type (defaults to 'user')
+ * @returns User record or null if creation failed
+ */
+export async function ensureUserExists(userId: string, email: string, type: 'user' | 'admin' = 'user') {
+  const childLogger = logger.child({ userId, email, type })
+  childLogger.trace('Entering ensureUserExists')
+  
+  try {
+    // Check if user already exists
+    const existingUser = await db.select().from(user).where(eq(user.id, userId)).limit(1)
+    
+    if (existingUser.length > 0) {
+      childLogger.trace('User already exists')
+      return existingUser[0]
+    }
+    
+    // Create user if they don't exist
+    childLogger.info('User does not exist, creating new user')
+    const result = await db.insert(user).values({ 
+      id: userId, 
+      email, 
+      password: 'test-password', // Test users don't need real passwords
+      type 
+    }).returning({
+      id: user.id,
+      email: user.email,
+      type: user.type,
+    })
+    
+    childLogger.info({ userId }, 'Test user created successfully')
+    return result[0]
+  } catch (error) {
+    childLogger.error({ error: error instanceof Error ? error.message : String(error) }, 'Failed to ensure user exists')
+    return null
+  }
+}
+
 // --- Chat Queries ---
-export async function saveChat ({ id, userId, title, published_until }: {
+export async function saveChat ({ id, userId, title, published_until, worldContext }: {
   id: string;
   userId: string;
   title: string;
   published_until?: Date | null;
+  worldContext?: WorldContext;
 }) {
   const childLogger = logger.child({ chatId: id, userId })
   childLogger.trace({ title, published_until }, 'Entering saveChat')
-  return await db.insert(chat).values({ id, createdAt: new Date(), userId, title, published_until }).onConflictDoNothing()
+  
+  // 🌍 BUG-080 FIX: Use world context passed from request instead of sync version
+  const chatData = addWorldId({
+    id, 
+    createdAt: new Date(), 
+    userId, 
+    title, 
+    published_until
+  }, worldContext)
+  
+  childLogger.debug('Saving chat with world context', { world_id: chatData.world_id })
+  return await db.insert(chat).values(chatData).onConflictDoNothing()
 }
 
 export async function deleteChatSoftById ({ id, userId }: { id: string; userId: string }) {
@@ -195,12 +259,44 @@ export async function saveMessages ({ messages: messagesToSave }: { messages: Ar
   return await db.insert(message).values(messagesToSave)
 }
 
-export async function getMessagesByChatId ({ id }: { id: string }) {
-  return await db.select().from(message).where(eq(message.chatId, id)).orderBy(asc(message.createdAt))
+export async function getMessagesByChatId ({ id, worldContext }: { id: string; worldContext?: WorldContext | null }) {
+  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContextSync()
+  
+  let baseWhere = eq(message.chatId, id)
+  
+  // Add world isolation if enabled
+  if (actualWorldContext?.worldId) {
+    const worldFilter = createWorldFilter(actualWorldContext)
+    const worldCondition = worldFilter.world_id === null 
+      ? isNull(message.world_id) 
+      : eq(message.world_id, worldFilter.world_id)
+    const combinedWhere = and(baseWhere, worldCondition)
+    if (combinedWhere) {
+      baseWhere = combinedWhere
+    }
+  }
+  
+  return await db.select().from(message).where(baseWhere).orderBy(asc(message.createdAt))
 }
 
-export async function getMessageById ({ id }: { id: string }): Promise<DBMessage | undefined> {
-  const [result] = await db.select().from(message).where(eq(message.id, id))
+export async function getMessageById ({ id, worldContext }: { id: string; worldContext?: WorldContext | null }): Promise<DBMessage | undefined> {
+  const actualWorldContext = worldContext !== undefined ? worldContext : getCurrentWorldContextSync()
+  
+  let baseWhere = eq(message.id, id)
+  
+  // Add world isolation if enabled
+  if (actualWorldContext?.worldId) {
+    const worldFilter = createWorldFilter(actualWorldContext)
+    const worldCondition = worldFilter.world_id === null 
+      ? isNull(message.world_id) 
+      : eq(message.world_id, worldFilter.world_id)
+    const combinedWhere = and(baseWhere, worldCondition)
+    if (combinedWhere) {
+      baseWhere = combinedWhere
+    }
+  }
+  
+  const [result] = await db.select().from(message).where(baseWhere)
   return result
 }
 
@@ -209,10 +305,10 @@ export async function deleteMessageById ({ messageId }: { messageId: string }): 
   return deletedMessage
 }
 
-export async function getMessageWithSiblings ({ messageId }: { messageId: string }) {
-  const targetMessage = await getMessageById({ id: messageId })
+export async function getMessageWithSiblings ({ messageId, worldContext }: { messageId: string; worldContext?: WorldContext | null }) {
+  const targetMessage = await getMessageById({ id: messageId, worldContext })
   if (!targetMessage) return null
-  const allMessages = await getMessagesByChatId({ id: targetMessage.chatId })
+  const allMessages = await getMessagesByChatId({ id: targetMessage.chatId, worldContext })
   const targetIndex = allMessages.findIndex(m => m.id === messageId)
   if (targetIndex === -1) return null
   return {
@@ -241,28 +337,32 @@ export async function getMessageCountByUserId ({ id, differenceInHours, }: { id:
 }
 
 // --- Artifact Queries ---
-export async function saveArtifact ({ id, title, kind, content, userId, authorId, createdAt }: {
+export async function saveArtifact ({ id, title, kind, content, userId, authorId, createdAt, worldContext }: {
   id: string;
   title: string;
   kind: ArtifactKind;
   content: string;
   userId: string;
   authorId: string | null;
-  createdAt?: Date
+  createdAt?: Date;
+  worldContext?: WorldContext;
 }) {
   const childLogger = logger.child({ artifactId: id, userId, kind })
   childLogger.trace({ title, authorId, contentLength: content?.length }, 'Entering saveArtifact')
   
   try {
-    childLogger.debug('Creating artifact record in main table')
-    const [savedArtifact] = await db.insert(artifact).values({
+    // 🌍 BUG-080 FIX: Use world context passed from request instead of sync version
+    const artifactData = addWorldId({
       id,
       title,
       kind,
       userId,
       authorId,
       createdAt: createdAt ?? new Date()
-    }).returning()
+    }, worldContext)
+    
+    childLogger.debug('Creating artifact record in main table', { world_id: artifactData.world_id })
+    const [savedArtifact] = await db.insert(artifact).values(artifactData).returning()
     
     // UC-10 SCHEMA-DRIVEN CMS: Use artifact-tools unified dispatcher for specialized tables
     childLogger.debug('Saving content using UC-10 artifact-tools unified dispatcher')
@@ -336,7 +436,8 @@ export async function getPagedArtifactsByUserId ({
   searchQuery, 
   kind,
   worldContext,
-  groupByVersions = true
+  groupByVersions = true,
+  showOnlyMyArtifacts = false // 🚀 NEW: Collaborative filter
 }: {
   userId: string;
   page?: number;
@@ -345,6 +446,7 @@ export async function getPagedArtifactsByUserId ({
   kind?: ArtifactKind;
   worldContext?: WorldContext | null; // Optional parameter for world isolation
   groupByVersions?: boolean; // ✅ New parameter to control version grouping
+  showOnlyMyArtifacts?: boolean; // 🚀 NEW: If true, filter by userId; if false, show all artifacts
 }): Promise<{
   data: Artifact[],
   totalCount: number
@@ -360,7 +462,8 @@ export async function getPagedArtifactsByUserId ({
     pageSize,
     searchQuery,
     kind,
-    groupByVersions
+    groupByVersions,
+    showOnlyMyArtifacts
   });
   const offset = (page - 1) * pageSize
   
@@ -375,12 +478,25 @@ export async function getPagedArtifactsByUserId ({
     )`
   }
   
-  const baseWhere = and(
-    eq(artifact.userId, userId), 
-    isNull(artifact.deletedAt), 
-    searchConditions,
-    kind ? eq(artifact.kind, kind) : undefined
-  )
+  // 🚀 COLLABORATIVE SYSTEM: New filtering logic based on user preference
+  // By default, show ALL artifacts (collaborative); optionally filter by userId if requested
+  let baseWhere: SQL<unknown> | undefined;
+  if (showOnlyMyArtifacts) {
+    console.log('🚀 PERSONAL FILTER MODE: Showing only user-owned artifacts');
+    baseWhere = and(
+      eq(artifact.userId, userId), 
+      isNull(artifact.deletedAt), 
+      searchConditions,
+      kind ? eq(artifact.kind, kind) : undefined
+    );
+  } else {
+    console.log('🚀 COLLABORATIVE MODE: Showing all artifacts for collaboration');
+    baseWhere = and(
+      isNull(artifact.deletedAt), 
+      searchConditions,
+      kind ? eq(artifact.kind, kind) : undefined
+    );
+  }
   
   // Add world isolation if enabled
   let finalWhere = baseWhere
@@ -440,12 +556,14 @@ export async function getRecentArtifactsByUserId ({
   userId, 
   limit = 5, 
   kind,
-  worldContext
+  worldContext,
+  showOnlyMyArtifacts = false // 🚀 NEW: Collaborative filter
 }: {
   userId: string;
   limit?: number;
   kind?: ArtifactKind;
   worldContext?: WorldContext | null; // Optional parameter for world isolation
+  showOnlyMyArtifacts?: boolean; // 🚀 NEW: Filter preference
 }): Promise<Artifact[]> {
   const result = await getPagedArtifactsByUserId({ 
     userId, 
@@ -453,7 +571,8 @@ export async function getRecentArtifactsByUserId ({
     pageSize: limit, 
     kind,
     worldContext,
-    groupByVersions: true // ✅ Always group for recent artifacts 
+    groupByVersions: true, // ✅ Always group for recent artifacts 
+    showOnlyMyArtifacts // 🚀 Pass collaborative filter
   })
   return result.data
 }
@@ -502,6 +621,91 @@ export async function getSuggestionsByDocumentId ({ documentId }: { documentId: 
 
 export async function dismissSuggestion ({ suggestionId, userId }: { suggestionId: string; userId: string }) {
   return await db.update(suggestion).set({ isDismissed: true }).where(and(eq(suggestion.id, suggestionId), eq(suggestion.userId, userId)))
+}
+
+// --- User Helper Functions ---
+
+/**
+ * Resolve user ID from test session data (handles both real UUIDs and email-based lookup)
+ */
+export async function resolveUserIdFromSession(sessionUserId: string, sessionUserEmail?: string): Promise<string> {
+  // First, check if the provided ID exists in the database
+  const userById = await db.select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, sessionUserId))
+    .limit(1);
+  
+  if (userById.length > 0) {
+    return sessionUserId; // Use the provided ID if it exists
+  }
+  
+  // If ID doesn't exist and we have email, look up by email
+  if (sessionUserEmail) {
+    const userByEmail = await db.select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, sessionUserEmail))
+      .limit(1);
+    
+    if (userByEmail.length > 0) {
+      return userByEmail[0].id; // Return the real database ID
+    }
+  }
+  
+  // If neither worked, return the original ID (fallback)
+  return sessionUserId;
+}
+
+// --- User Preferences Queries ---
+
+/**
+ * Get user's artifact filter preference by ID or email
+ */
+export async function getUserArtifactFilterPreference(userIdOrEmail: string): Promise<boolean> {
+  // Try by ID first, then by email for test sessions
+  let result = await db.select({ showOnlyMyArtifacts: user.show_only_my_artifacts })
+    .from(user)
+    .where(eq(user.id, userIdOrEmail))
+    .limit(1);
+  
+  if (result.length === 0) {
+    // Try by email if ID lookup failed (for test sessions)
+    result = await db.select({ showOnlyMyArtifacts: user.show_only_my_artifacts })
+      .from(user)
+      .where(eq(user.email, userIdOrEmail))
+      .limit(1);
+  }
+  
+  return result[0]?.showOnlyMyArtifacts ?? false; // Default to collaborative mode
+}
+
+/**
+ * Update user's artifact filter preference by ID or email
+ */
+export async function updateUserArtifactFilterPreference({ 
+  userIdOrEmail, 
+  showOnlyMyArtifacts 
+}: { 
+  userIdOrEmail: string; 
+  showOnlyMyArtifacts: boolean; 
+}): Promise<void> {
+  // Try by ID first, then by email for test sessions
+  const result = await db.update(user)
+    .set({ 
+      show_only_my_artifacts: showOnlyMyArtifacts,
+      updatedAt: new Date()
+    })
+    .where(eq(user.id, userIdOrEmail))
+    .returning({ id: user.id });
+  
+  if (result.length === 0) {
+    // Try by email if ID update failed (for test sessions)
+    await db.update(user)
+      .set({ 
+        show_only_my_artifacts: showOnlyMyArtifacts,
+        updatedAt: new Date()
+      })
+      .where(eq(user.email, userIdOrEmail));
+  }
 }
 
 // END OF: lib/db/queries.ts

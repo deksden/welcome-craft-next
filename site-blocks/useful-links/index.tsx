@@ -1,12 +1,13 @@
 /**
  * @file site-blocks/useful-links/index.tsx
  * @description Компонент блока Useful Links.
- * @version 1.0.0
- * @date 2025-06-19
- * @updated Улучшенный дизайн в стиле современных конструкторов с интерактивными кнопками
+ * @version 1.1.0
+ * @date 2025-07-02
+ * @updated BUG-077 FIX: Removed papaparse import causing server-side errors - replaced with simple CSV parsing
  */
 
 /** HISTORY:
+ * v1.1.0 (2025-07-02): BUG-077 FIX: Убран импорт papaparse, который блокировал seed данные от сохранения в UC-10 таблицы
  * v1.0.0 (2025-06-19): Улучшенный дизайн с интерактивными кнопками, иконками и современным layout
  * v0.1.0 (2025-06-12): Initial component.
  */
@@ -15,7 +16,6 @@
 
 import * as React from 'react'
 import useSWR from 'swr'
-import { parse } from 'papaparse'
 import { fetcher } from '@/lib/utils'
 import type { BlockSlotData } from '../types'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -35,8 +35,17 @@ export default function UsefulLinksBlock ({ links }: UsefulLinksProps) {
   const parsedLinks: Array<{ label: string; url: string }> = React.useMemo(() => {
     const content = Array.isArray(data) ? data.at(-1)?.content : data?.doc.content
     if (content) {
-      const parsed = parse<string[]>(content, { skipEmptyLines: true })
-      return parsed.data.map((row) => ({ label: row[0], url: row[1] }))
+      try {
+        // Simple CSV parsing without papaparse to avoid server-side issues
+        const rows = content.split('\n').filter((row: string) => row.trim());
+        return rows.map((row: string) => {
+          const cols = row.split(',').map((col: string) => col.trim());
+          return { label: cols[0] || '', url: cols[1] || '' };
+        });
+      } catch (error) {
+        console.warn('Error parsing links data:', error);
+        return [];
+      }
     }
     return []
   }, [data])

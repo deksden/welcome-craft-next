@@ -39,8 +39,8 @@ vi.mock('@/lib/db', () => ({
 }))
 
 // Мокируем AI provider для подстановки fixtures-wrapped модели
-vi.mock('@/lib/ai/providers', () => ({
-  myProvider: {
+vi.mock('@/lib/ai/providers.enhanced', () => ({
+  myEnhancedProvider: {
     languageModel: vi.fn()
   }
 }))
@@ -55,7 +55,7 @@ import { generateAndSaveSummary } from '@/lib/ai/summarizer'
 import { AIFixturesProvider } from '@/lib/ai/fixtures-provider'
 import { generateText } from 'ai'
 import { db } from '@/lib/db'
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 
 describe('Summarizer with AI Fixtures (record-or-replay)', () => {
   let fixturesProvider: AIFixturesProvider
@@ -102,8 +102,8 @@ describe('Summarizer with AI Fixtures (record-or-replay)', () => {
       fixturePrefix: 'summarizer'
     })
     
-    // Мокируем myProvider чтобы он вернул обернутую модель
-    vi.mocked(myProvider.languageModel).mockReturnValue(wrappedModel)
+    // Мокируем myEnhancedProvider чтобы он вернул обернутую модель
+    vi.mocked(myEnhancedProvider.languageModel).mockReturnValue(wrappedModel)
     
     // Мокируем generateText - он будет использовать обернутую модель
     vi.mocked(generateText).mockResolvedValue({
@@ -143,7 +143,7 @@ describe('Summarizer with AI Fixtures (record-or-replay)', () => {
       fixturePrefix: 'summarizer'
     })
     
-    vi.mocked(myProvider.languageModel).mockReturnValue(wrappedModel)
+    vi.mocked(myEnhancedProvider.languageModel).mockReturnValue(wrappedModel)
     
     vi.mocked(generateText).mockResolvedValue({
       text: 'Функция сортировки массива',
@@ -189,7 +189,7 @@ function bubbleSort(arr) {
       fixturePrefix: 'summarizer'
     })
     
-    vi.mocked(myProvider.languageModel).mockReturnValue(wrappedModel)
+    vi.mocked(myEnhancedProvider.languageModel).mockReturnValue(wrappedModel)
     
     vi.mocked(generateText).mockResolvedValue({
       text: 'Сайт с блоками hero и contacts',
@@ -230,7 +230,7 @@ function bubbleSort(arr) {
       fixturePrefix: 'summarizer'
     })
     
-    vi.mocked(myProvider.languageModel).mockReturnValue(wrappedModel)
+    vi.mocked(myEnhancedProvider.languageModel).mockReturnValue(wrappedModel)
     
     // Мокируем ошибку квоты
     vi.mocked(generateText).mockRejectedValue(new Error('API quota exceeded'))
@@ -271,7 +271,7 @@ function bubbleSort(arr) {
       fixturePrefix: 'summarizer'
     })
     
-    vi.mocked(myProvider.languageModel).mockReturnValue(wrappedModel)
+    vi.mocked(myEnhancedProvider.languageModel).mockReturnValue(wrappedModel)
     
     vi.mocked(generateText).mockResolvedValue({
       text: 'Логотип компании',

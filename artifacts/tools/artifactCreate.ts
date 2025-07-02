@@ -1,12 +1,13 @@
 /**
  * @file artifacts/tools/artifactCreate.ts
  * @description AI-инструмент для создания нового артефакта.
- * @version 2.2.1
- * @date 2025-06-11
- * @updated Added a guard clause to safely handle session.user.id.
+ * @version 2.3.0
+ * @date 2025-07-02
+ * @updated CRITICAL BUGFIX: Added worldContext parameter to ensure artifacts are saved with correct world_id for proper world isolation.
  */
 
 /** HISTORY:
+ * v2.3.0 (2025-07-02): CRITICAL BUGFIX: Added worldContext parameter to artifactCreate tool. Fixed issue where new artifacts were saved with world_id=null instead of proper world context, causing them not to appear in sidebar recent artifacts list.
  * v2.2.1 (2025-06-11): Replaced non-null assertion with a guard clause for session.user.id.
  * v2.2.0 (2025-06-10): Исправлены все ошибки типизации (TS2305, TS2322, TS2724) путем обновления импортов и явной типизации.
  */
@@ -22,6 +23,7 @@ import { saveArtifact as dbSaveArtifact } from '@/lib/db/queries'
 import { saveArtifact as toolsSaveArtifact } from '@/artifacts/kinds/artifact-tools'
 import { artifactKinds } from '@/lib/types'
 import { generateAndSaveSummary } from '@/lib/ai/summarizer'
+import type { WorldContext } from '@/lib/db/world-context'
 
 const logger = createLogger('artifacts:tools:artifactCreate')
 
@@ -35,9 +37,10 @@ type CreateArtifactParams = z.infer<typeof CreateArtifactSchema>;
 
 interface CreateArtifactProps {
   session: Session;
+  worldContext?: WorldContext;
 }
 
-export const artifactCreate = ({ session }: CreateArtifactProps) =>
+export const artifactCreate = ({ session, worldContext }: CreateArtifactProps) =>
   tool({
     description:
       'Creates a new artifact reference (metadata only) with a title and type. This tool creates only a REFERENCE/LINK to the artifact, not the actual content. The content is generated asynchronously in the background. To access the full content of any artifact, use artifactContent tool with the artifact ID. Use this when the user explicitly asks to "create", "write", "generate", or "make" something new.',
@@ -82,10 +85,10 @@ export const artifactCreate = ({ session }: CreateArtifactProps) =>
           contentType: typeof content
         }, 'Content generation completed')
 
-        childLogger.debug('Saving artifact to database (UC-10 Schema-Driven)')
+        childLogger.debug('Saving artifact to database (Spectrum Schema-Driven)')
         const dbSaveStart = Date.now()
         
-        // UC-10: Первый шаг - сохранение в основную таблицу Artifact
+        // Spectrum: Первый шаг - сохранение в основную таблицу Artifact
         const savedArtifacts = await dbSaveArtifact({
           id: artifactId,
           title,
@@ -93,13 +96,14 @@ export const artifactCreate = ({ session }: CreateArtifactProps) =>
           kind,
           userId: session.user.id,
           authorId: null, // Created by AI
+          worldContext, // 🔧 BUG-086 FIX: Pass world context for proper world isolation
         })
         
         const savedArtifact = savedArtifacts[0]
         const dbSaveTime = Date.now() - dbSaveStart
         childLogger.info({ dbSaveTimeMs: dbSaveTime }, 'Artifact saved to main table successfully')
         
-        // UC-10: Второй шаг - сохранение в специализированную таблицу через диспетчер
+        // Spectrum: Второй шаг - сохранение в специализированную таблицу через диспетчер
         childLogger.debug('Saving content to specialized table via tools dispatcher')
         const toolsSaveStart = Date.now()
         

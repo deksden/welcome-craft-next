@@ -1,12 +1,14 @@
 /**
- * @file app/app/(main)/phoenix/worlds/page.tsx
- * @description PHOENIX PROJECT - World Management Page
- * @version 1.0.0
- * @date 2025-06-30
- * @updated Enterprise Admin Interface - Перенесена логика из WorldManagementPanel в отдельную страницу
+ * @file app/app/(main)/worlds/page.tsx
+ * @description PHOENIX PROJECT - World Management Page (simplified routing)
+ * @version 2.1.0
+ * @date 2025-07-02
+ * @updated PAGE HEADER UNIFICATION: Добавлен PageHeader компонент с dev badges и environment indicators
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-07-02): PAGE HEADER UNIFICATION - Добавлен PageHeader компонент для стандартизации заголовка, dev badges, environment indicators
+ * v2.0.0 (2025-07-01): Simplified routing - убран phoenix/ prefix, убраны ссылки на dashboard
  * v1.0.0 (2025-06-30): Enterprise Admin Interface - создана отдельная страница для world management
  */
 
@@ -14,9 +16,10 @@ import { getAuthSession } from '@/lib/test-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Globe, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { WorldManagementPanel } from '@/components/phoenix/world-management-panel'
+import { PageHeader, PageHeaderPresets } from '@/components/page-header'
 
 export const metadata = {
   title: 'World Management - PHOENIX Admin Dashboard',
@@ -103,9 +106,6 @@ export default async function WorldManagementPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Current environment: <strong>{currentEnvironment}</strong>
             </p>
-            <Button asChild variant="outline">
-              <Link href="/phoenix">Back to Dashboard</Link>
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -113,27 +113,17 @@ export default async function WorldManagementPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Globe className="size-8 text-blue-500" />
-            <h1 className="text-3xl font-bold">World Management</h1>
-            <Badge variant="secondary">{currentEnvironment}</Badge>
-          </div>
-          <p className="text-muted-foreground">
-            Manage dynamic test worlds and environments
-          </p>
-        </div>
-        
-        <Button asChild variant="outline">
-          <Link href="/phoenix">
-            <ArrowLeft className="size-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </Button>
-      </div>
+    <div className="container mx-auto py-10 px-4 md:px-6 lg:px-8 space-y-6 max-h-screen overflow-y-auto">
+      <PageHeader
+        icon={<Globe className="size-8 text-blue-600" />}
+        title="World Management"
+        description="Управление динамическими тестовыми мирами и окружениями для разработки и тестирования системы."
+        badges={[
+          ...PageHeaderPresets.dev.badges,
+          { text: currentEnvironment, variant: 'secondary' }
+        ]}
+        meta="Доступно только администраторам в DEV окружениях (LOCAL/BETA)"
+      />
 
       {/* World Management Component */}
       <WorldManagementPanel />

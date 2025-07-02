@@ -4,11 +4,11 @@
  * @description UC-09 Holistic Site Generation - single AI call approach
  * @version 4.0.0
  * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции для работы с A_Site таблицей.
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции для работы с A_Site таблицей.
  */
 
 /** HISTORY:
- * v4.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveSiteArtifact, loadSiteArtifact, deleteSiteArtifact функции для работы с новой A_Site таблицей.
+ * v4.0.0 (2025-06-20): Spectrum SCHEMA-DRIVEN CMS - Добавлены saveSiteArtifact, loadSiteArtifact, deleteSiteArtifact функции для работы с новой A_Site таблицей.
  * v3.0.0 (2025-06-20): PHASE2 UC-09 IMPLEMENTATION - Complete rewrite for holistic approach (aggregation + single AI call)
  * v2.1.0 (2025-06-20): PHASE1 UC-08 CLEANUP - Removed UC-08 imports, ready for holistic refactoring
  * v2.0.0 (2025-06-20): Integrated SmartSearchEngine for intelligent artifact search and slot filling
@@ -94,7 +94,7 @@ const siteLegacyTool: ArtifactTool = {
 }
 
 /**
- * @description Site artifact tool с поддержкой UC-10 schema-driven операций
+ * @description Site artifact tool с поддержкой Spectrum schema-driven операций
  * @feature Поддержка как legacy AI операций (UC-09), так и новых save/load/delete
  */
 export const siteTool = {
@@ -102,14 +102,14 @@ export const siteTool = {
   // Legacy AI operations (для совместимости)
   create: siteLegacyTool.create,
   update: siteLegacyTool.update,
-  // UC-10 Schema-Driven операции
+  // Spectrum Schema-Driven операции
   save: saveSiteArtifact,
   load: loadSiteArtifact,
   delete: deleteSiteArtifact,
 }
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Новые функции для работы с A_Site таблицей
+// Spectrum SCHEMA-DRIVEN CMS: Новые функции для работы с A_Site таблицей
 // =============================================================================
 
 /**

@@ -32,6 +32,12 @@ export async function triggerArtifactListRefresh(options?: {
   console.log(`🔄 Triggering global artifact list refresh (${operation} from ${source})...`)
   
   try {
+    // Проверяем что мы в браузере (client-side)
+    if (typeof window === 'undefined') {
+      console.log(`⚠️ Server-side artifact refresh triggered - skipping window events`)
+      return
+    }
+    
     // Отправляем custom event для обновления всех слушающих компонентов
     const refreshEvent = new CustomEvent('artifact-list-refresh', {
       detail: { 

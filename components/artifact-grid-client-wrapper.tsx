@@ -1,12 +1,14 @@
 /**
  * @file components/artifact-grid-client-wrapper.tsx
  * @description Клиентский компонент-обертка для сетки артефактов с элегантным обновлением.
- * @version 2.3.0
- * @date 2025-06-27
- * @updated Интегрирован useElegantArtifactRefresh для элегантного обновления списков без page.reload()
+ * @version 2.5.0
+ * @date 2025-07-02
+ * @updated UNIFIED ARTIFACT CREATION: Интегрирован CreateArtifactDialog - кнопка "Создать новый" теперь открывает унифицированный диалог выбора типа артефакта
  */
 
 /** HISTORY:
+ * v2.5.0 (2025-07-02): UNIFIED ARTIFACT CREATION - Интегрирован CreateArtifactDialog: кнопка "Создать новый" открывает диалог с выбором между AI чатом и прямым созданием 11 типов артефактов. Добавлен state isCreateDialogOpen.
+ * v2.4.0 (2025-07-02): BUG-036 FIX - Исправлена кнопка "Создать новый" артефакт: заменен router.push('/') на setArtifact() с правильными параметрами для создания нового артефакта
  * v2.3.0 (2025-06-27): Интегрирован useElegantArtifactRefresh hook для элегантного обновления списков артефактов без page.reload() - решение BUG-034
  * v2.2.0 (2025-06-20): Added type filtering UI with Select component - user can filter by text, code, sheet, site, image (BUG-022).
  * v2.1.1 (2025-06-11): Fixed exhaustive-deps linting rule by wrapping handleCardClick in useCallback.
@@ -20,6 +22,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation.js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { PlusIcon } from '@/components/icons'
 import { type ArtifactDocument, ArtifactGridDisplay } from './artifact-grid-display'
 import { useDebounceCallback } from 'usehooks-ts'
@@ -27,8 +30,10 @@ import { toast } from '@/components/toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useArtifact } from '@/hooks/use-artifact'
 import { useElegantArtifactRefresh } from '@/hooks/use-elegant-artifact-refresh'
+import { useArtifactFilter } from '@/hooks/use-artifact-filter'
 import { fetcher } from '@/lib/utils'
 import type { ArtifactKind } from '@/lib/types'
+import { CreateArtifactDialog } from '@/components/create-artifact-dialog'
 
 const PAGE_SIZE = 12
 const skeletonKeys = Array.from({ length: PAGE_SIZE }, (_, i) => `sk-item-${i}`)
@@ -45,12 +50,21 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
 
   const { setArtifact } = useArtifact()
   const { refreshArtifacts } = useElegantArtifactRefresh()
+  
+  // 🚀 COLLABORATIVE SYSTEM: Use database-backed filter preference
+  const { showOnlyMyArtifacts, updatePreference, isUpdating } = useArtifactFilter()
+  
+  // State for CreateArtifactDialog
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1)
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [kindFilter, setKindFilter] = useState<ArtifactKind | 'all'>(
     (searchParams.get('kind') as ArtifactKind) || 'all'
   )
+  // 🚀 URL override for collaborative filter (URL parameter overrides database setting)
+  const urlShowOnlyMy = searchParams.get('showOnlyMy')
+  const effectiveShowOnlyMy = urlShowOnlyMy !== null ? urlShowOnlyMy === 'true' : showOnlyMyArtifacts
   const debouncedSearchTerm = useDebounceCallback(setSearchTerm, 500)
 
   const createQueryString = useCallback(
@@ -73,13 +87,14 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
       page: currentPage === 1 ? undefined : currentPage,
       search: searchTerm === '' ? undefined : searchTerm,
       kind: kindFilter === 'all' ? undefined : kindFilter,
+      showOnlyMy: urlShowOnlyMy !== null ? urlShowOnlyMy : undefined, // 🚀 Only include if explicitly set in URL
     })
     const finalQuery = newQuery.toString() ? `?${newQuery}` : ''
     router.push(`${pathname}${finalQuery}`, { scroll: false })
-  }, [currentPage, searchTerm, kindFilter, router, pathname, createQueryString])
+  }, [currentPage, searchTerm, kindFilter, urlShowOnlyMy, router, pathname, createQueryString]) // 🚀 URL param dependency
 
   const { data, error, isLoading, mutate } = useSWR<ArtifactListApiResponse>(
-    `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}&searchQuery=${encodeURIComponent(searchTerm)}${kindFilter !== 'all' ? `&kind=${kindFilter}` : ''}&groupByVersions=true`,
+    `/api/artifacts?page=${currentPage}&pageSize=${PAGE_SIZE}&searchQuery=${encodeURIComponent(searchTerm)}${kindFilter !== 'all' ? `&kind=${kindFilter}` : ''}${urlShowOnlyMy !== null ? `&showOnlyMy=${urlShowOnlyMy}` : ''}&groupByVersions=true`,
     fetcher,
     {
       keepPreviousData: true,
@@ -176,37 +191,83 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Input
-            placeholder="Поиск по заголовкам..."
-            defaultValue={searchTerm}
-            onChange={(e) => debouncedSearchTerm(e.target.value)}
-            className="max-w-sm bg-background"
-          />
-          <Select
-            value={kindFilter}
-            onValueChange={(value: ArtifactKind | 'all') => {
-              setKindFilter(value)
-              setCurrentPage(1) // Reset to first page when filter changes
+      <div className="flex flex-col gap-4">
+        {/* 🚀 COLLABORATIVE SYSTEM: Filter toggle */}
+        <div className="flex justify-center sm:justify-start">
+          <ToggleGroup 
+            type="single" 
+            value={effectiveShowOnlyMy ? 'my' : 'all'} 
+            onValueChange={async (value) => {
+              const newShowOnlyMy = value === 'my'
+              
+              try {
+                // Update database preference
+                await updatePreference(newShowOnlyMy)
+                
+                // Reset page when filter changes
+                setCurrentPage(1)
+                
+                // Remove URL override since we're now using database setting
+                const newQuery = createQueryString({ 
+                  showOnlyMy: undefined,
+                  page: undefined 
+                })
+                router.push(`${pathname}${newQuery ? `?${newQuery}` : ''}`, { scroll: false })
+                
+              } catch (error) {
+                toast({ 
+                  type: 'error', 
+                  description: 'Не удалось сохранить настройки фильтра' 
+                })
+              }
             }}
+            className="border rounded-md"
+            disabled={isUpdating}
           >
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Тип артефакта" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все типы</SelectItem>
-              <SelectItem value="text">📝 Текст</SelectItem>
-              <SelectItem value="code">💻 Код</SelectItem>
-              <SelectItem value="sheet">📊 Таблица</SelectItem>
-              <SelectItem value="site">🌐 Сайт</SelectItem>
-              <SelectItem value="image">🖼️ Изображение</SelectItem>
-            </SelectContent>
-          </Select>
+            <ToggleGroupItem value="all" className="px-4 py-2" disabled={isUpdating}>
+              🌐 Все артефакты
+            </ToggleGroupItem>
+            <ToggleGroupItem value="my" className="px-4 py-2" disabled={isUpdating}>
+              👤 Мои {isUpdating && '...'}
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
-        <Button onClick={() => router.push('/')} className="w-full sm:w-auto">
-          <PlusIcon className="mr-2 size-4"/> Создать новый
-        </Button>
+        
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <Input
+              placeholder="Поиск по заголовкам..."
+              defaultValue={searchTerm}
+              onChange={(e) => debouncedSearchTerm(e.target.value)}
+              className="max-w-sm bg-background"
+            />
+            <Select
+              value={kindFilter}
+              onValueChange={(value: ArtifactKind | 'all') => {
+                setKindFilter(value)
+                setCurrentPage(1) // Reset to first page when filter changes
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Тип артефакта" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все типы</SelectItem>
+                <SelectItem value="text">📝 Текст</SelectItem>
+                <SelectItem value="code">💻 Код</SelectItem>
+                <SelectItem value="sheet">📊 Таблица</SelectItem>
+                <SelectItem value="site">🌐 Сайт</SelectItem>
+                <SelectItem value="image">🖼️ Изображение</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)} 
+            className="w-full sm:w-auto"
+          >
+            <PlusIcon className="mr-2 size-4"/> Создать новый
+          </Button>
+        </div>
       </div>
 
       {isLoading && !data ? (
@@ -223,6 +284,11 @@ export function ArtifactGridClientWrapper ({ userId, openArtifactId }: { userId:
           onCardClick={handleCardClick}
         />
       )}
+      
+      <CreateArtifactDialog 
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+      />
     </div>
   )
 }

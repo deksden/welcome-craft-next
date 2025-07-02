@@ -446,7 +446,7 @@ NEXT_TELEMETRY_DISABLED=1
 
 ---
 
-## 🧪 UC-10 Schema-Driven CMS
+## 🌈 Spectrum Schema-Driven CMS
 
 ### Специализированные таблицы БД
 - **A_Text** — текстовый контент и код
@@ -462,7 +462,7 @@ NEXT_TELEMETRY_DISABLED=1
 ### Unified Artifact Tools Registry
 **Файл:** `artifacts/kinds/artifact-tools.ts`
 - Централизованная система для всех 11 типов артефактов
-- Legacy AI Operations (create, update) + UC-10 Operations (save, load, delete)
+- Legacy AI Operations (create, update) + Spectrum Operations (save, load, delete)
 
 ### File Import System
 **Поддерживаемые форматы:** .docx, .xlsx, .csv, .txt, .md, изображения  

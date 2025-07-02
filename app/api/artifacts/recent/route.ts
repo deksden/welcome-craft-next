@@ -12,7 +12,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/app/(auth)/auth'
 import { getTestSession } from '@/lib/test-auth'
-import { getRecentArtifactsByUserId } from '@/lib/db/queries'
+import { getRecentArtifactsByUserId, getUserArtifactFilterPreference, resolveUserIdFromSession } from '@/lib/db/queries'
 import { getWorldContextFromRequest } from '@/lib/db/world-context'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
@@ -42,19 +42,27 @@ export async function GET (request: NextRequest) {
     // Get world context from request cookies
     const worldContext = getWorldContextFromRequest(request);
     
+    // 🚀 COLLABORATIVE SYSTEM: Resolve real user ID and get filter preference
+    const realUserId = await resolveUserIdFromSession(session.user.id, session.user.email || undefined);
+    const showOnlyMyArtifacts = await getUserArtifactFilterPreference(realUserId);
+    
     console.log('🌍 API /artifacts/recent using world context:', {
-      userId: session.user.id,
+      sessionUserId: session.user.id,
+      realUserId,
+      userEmail: session.user.email,
       worldContext,
       limit,
-      kind
+      kind,
+      showOnlyMyArtifacts
     });
 
-    // Use enhanced getRecentArtifactsByUserId with automatic world isolation
+    // Use enhanced getRecentArtifactsByUserId with collaborative filtering
     const recentArtifacts = await getRecentArtifactsByUserId({ 
-      userId: session.user.id, 
+      userId: realUserId, // 🚀 Use resolved real user ID
       limit, 
       kind,
-      worldContext
+      worldContext,
+      showOnlyMyArtifacts // 🚀 Pass user preference
     });
     
     console.log('🌍 API /artifacts/recent returned artifacts:', {

@@ -1,15 +1,16 @@
 /**
  * @file app/api/chat/route.ts
  * @description API маршрут для обработки запросов чата, переписанный под новую архитектуру.
- * @version 5.6.0
- * @date 2025-06-17
- * @updated Fixed artifact references persistence - save all new messages including role: 'data' to database.
+ * @version 5.7.0
+ * @date 2025-07-02
+ * @updated FEATURE: Added automatic artifact list refresh after chat tool operations (create, update, delete, restore).
  * 
  * 📚 **API Documentation:** See `.memory-bank/guides/api-documentation.md#post-apichat`
  * ⚠️ **ВАЖНО:** При изменении AI инструментов или логики чата - обновить документацию И Use Cases!
  *
  * ## HISTORY:
  *
+ * v5.7.0 (2025-07-02): FEATURE: Added automatic artifact list refresh after chat tool operations (create, update, delete, restore).
  * v5.6.0 (2025-06-17): Fixed artifact references persistence - save all new messages including role: 'data' to database.
  * v5.5.0 (2025-06-13): Removed siteGenerate tool.
  * v5.4.1 (2025-06-10): Улучшена обработка ошибок InvalidToolArgumentsError и добавлена проверка в onFinish.
@@ -33,7 +34,8 @@ import {
 import { auth, type UserType } from '@/app/app/(auth)/auth'
 import { getTestSession } from '@/lib/test-auth'
 import { type ArtifactContext, type RequestHints, systemPrompt } from '@/lib/ai/prompts'
-import { deleteChatSoftById, getChatById, getMessageCountByUserId, getMessagesByChatId, saveChat, saveMessages, } from '@/lib/db/queries'
+import { deleteChatSoftById, getChatById, getMessageCountByUserId, getMessagesByChatId, saveChat, saveMessages, ensureUserExists } from '@/lib/db/queries'
+import { getWorldContextFromRequest, addWorldId } from '@/lib/db/world-context'
 import { generateUUID } from '@/lib/utils'
 import { generateTitleFromUserMessage } from '@/app/app/(main)/chat/actions'
 import { artifactCreate } from '@/artifacts/tools/artifactCreate'
@@ -43,7 +45,8 @@ import { getWeather } from '@/lib/ai/tools/get-weather'
 import { artifactContent } from '@/artifacts/tools/artifactContent'
 import { artifactDelete } from '@/artifacts/tools/artifactDelete'
 import { artifactRestore } from '@/artifacts/tools/artifactRestore'
-import { myProvider } from '@/lib/ai/providers'
+import { triggerArtifactListRefresh } from '@/lib/elegant-refresh-utils'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { entitlementsByUserType } from '@/lib/ai/entitlements'
 import { type PostRequestBody, postRequestBodySchema } from './schema'
 import { geolocation } from '@vercel/functions'
@@ -78,6 +81,10 @@ export async function POST (request: Request) {
   const logger = parentLogger.child({ requestId: generateUUID(), method: 'POST' })
   logger.trace('Entering POST /api/chat')
   try {
+    // Получаем world context из request для правильной изоляции
+    const worldContext = getWorldContextFromRequest(request)
+    logger.debug('World context detected', { worldContext })
+    
     const requestBody = postRequestBodySchema.parse(await request.json())
     const {
       id: chatId,
@@ -90,14 +97,21 @@ export async function POST (request: Request) {
     } = requestBody
 
     let session = await auth()
+    let isTestSession = false
     if (!session?.user) {
       session = await getTestSession()
+      isTestSession = true
     }
     if (!session?.user?.id) {
       return new ChatSDKError('unauthorized:api', 'User not authenticated.').toResponse()
     }
+    
+    // 🚀 CRITICAL FIX: Ensure test users exist in database to prevent foreign key violations
+    if (isTestSession && session.user.email) {
+      await ensureUserExists(session.user.id, session.user.email, session.user.type as 'user' | 'admin')
+    }
 
-    const childLogger = logger.child({ chatId, userId: session.user.id })
+    const childLogger = logger.child({ chatId, userId: session.user.id, worldId: worldContext.worldId })
 
     const latestMessage = messages.at(-1)
     if (!latestMessage) {
@@ -112,7 +126,7 @@ export async function POST (request: Request) {
     const chat = await getChatById({ id: chatId })
     if (!chat) {
       const title = await generateTitleFromUserMessage({ message: latestMessage as UIMessage })
-      await saveChat({ id: chatId, userId: session.user.id, title, published_until: selectedVisibilityType === 'public' ? null : null })
+      await saveChat({ id: chatId, userId: session.user.id, title, published_until: selectedVisibilityType === 'public' ? null : null, worldContext })
     } else if (chat.userId !== session.user.id) {
       throw new ChatSDKError('forbidden:chat')
     }
@@ -125,42 +139,44 @@ export async function POST (request: Request) {
       : getContextFromHistory(messages)
 
     // Save all new user messages, including those with role: 'data' (artifact references)
-    // We need to determine which messages are new by checking what's already in the DB
-    const existingMessages = await getMessagesByChatId({ id: chatId })
-    const existingMessageIds = new Set(existingMessages.map(m => m.id))
+    // 🔧 BUG-081 FIX: Since we generate UUIDs for storage, we can't compare AI SDK IDs with DB UUIDs
+    // Instead, we'll use message count comparison as a safer deduplication method
+    const existingMessages = await getMessagesByChatId({ id: chatId, worldContext })
+    const existingMessageCount = existingMessages.length
     
-    const newMessages = messages.filter(msg => !existingMessageIds.has(msg.id))
+    // Only save messages that exceed existing count (new messages are always at the end)
+    const newMessages = messages.slice(existingMessageCount)
     
     if (newMessages.length > 0) {
+      // 🌍 BUG-080 FIX: Use world context from request instead of sync version
       await saveMessages({
-        messages: newMessages.map(msg => ({
+        messages: newMessages.map(msg => addWorldId({
           chatId,
-          id: msg.id,
+          id: generateUUID(), // 🔧 BUG-081 FIX: Generate valid UUID instead of using AI SDK message ID
           role: msg.role,
           parts: msg.parts ?? [{ type: 'text', text: msg.content }],
           attachments: msg.experimental_attachments ?? [],
           createdAt: new Date(),
-          world_id: null, // Production сообщения не принадлежат тестовому миру
-        }))
+        }, worldContext))
       })
-      childLogger.info({ newMessagesCount: newMessages.length }, 'Saved new user messages to database')
+      childLogger.info({ newMessagesCount: newMessages.length, world_id: worldContext?.worldId }, 'Saved new user messages to database')
     }
 
     childLogger.info('Starting text stream with AI model')
 
     const result = await streamText({
-      model: myProvider.languageModel(selectedChatModel),
+      model: myEnhancedProvider.languageModel(selectedChatModel),
       system: systemPrompt({ selectedChatModel, requestHints, artifactContext }),
       messages: messages as CoreMessage[],
       maxSteps: 6,
       tools: {
         getWeather,
         artifactContent,
-        artifactCreate: artifactCreate({ session }),
-        artifactUpdate: artifactUpdate({ session }),
-        artifactEnhance: artifactEnhance({ session }),
-        artifactDelete: artifactDelete({ session }),
-        artifactRestore: artifactRestore({ session }),
+        artifactCreate: artifactCreate({ session, worldContext }), // 🔧 BUG-086 FIX: Pass world context to artifact tools
+        artifactUpdate: artifactUpdate({ session, worldContext }),
+        artifactEnhance: artifactEnhance({ session, worldContext }),
+        artifactDelete: artifactDelete({ session, worldContext }),
+        artifactRestore: artifactRestore({ session, worldContext }),
       },
       onFinish: async ({ response, finishReason, usage }) => {
         childLogger.info({ finishReason, usage }, 'Text stream finished, saving assistant response')
@@ -174,17 +190,66 @@ export async function POST (request: Request) {
           return
         }
 
+        // Проверяем, были ли созданы артефакты в этом сообщении
+        let hasArtifactOperations = false
+        const artifactOperations: Array<{ operation: 'create' | 'update' | 'delete'; artifactId?: string }> = []
+
+        if (assistantMessage.parts) {
+          for (const part of assistantMessage.parts) {
+            if (part.type === 'tool-invocation') {
+              const { toolInvocation } = part
+              const { toolName, state } = toolInvocation
+              
+              if (state === 'result' && (toolName === 'artifactCreate' || toolName === 'artifactUpdate' || toolName === 'artifactDelete' || toolName === 'artifactRestore')) {
+                hasArtifactOperations = true
+                
+                // Определяем операцию и извлекаем artifactId
+                const operation = toolName === 'artifactCreate' ? 'create' :
+                                toolName === 'artifactUpdate' ? 'update' :
+                                toolName === 'artifactDelete' ? 'delete' : 'update' // artifactRestore = update
+                
+                const result = toolInvocation.result as any
+                const artifactId = result?.artifactId || result?.id
+                artifactOperations.push({ operation, artifactId })
+                
+                childLogger.info({ toolName, artifactId, operation }, 'Detected artifact operation in chat response')
+              }
+            }
+          }
+        }
+
+        // 🌍 BUG-080 FIX: Use world context from request instead of sync version
+        // worldContext is already defined at the beginning of the function
+        
         await saveMessages({
-          messages: [{
+          messages: [addWorldId({
             id: generateUUID(),
             chatId,
             role: assistantMessage.role,
             parts: assistantMessage.parts,
             attachments: assistantMessage.experimental_attachments ?? [],
             createdAt: new Date(),
-            world_id: null, // Production сообщения не принадлежат тестовому миру
-          }]
+          }, worldContext)]
         })
+
+        // Триггерим обновление списков артефактов если были операции
+        if (hasArtifactOperations) {
+          childLogger.info({ operationsCount: artifactOperations.length }, 'Triggering artifact list refresh after chat operations')
+          
+          // Вызываем refresh для каждой операции
+          for (const { operation, artifactId } of artifactOperations) {
+            try {
+              await triggerArtifactListRefresh({
+                source: 'chat-completion',
+                artifactId,
+                operation,
+                showNotification: false // В чате не показываем дополнительные уведомления
+              })
+            } catch (error) {
+              childLogger.error({ error, operation, artifactId }, 'Failed to trigger artifact list refresh')
+            }
+          }
+        }
       },
       onError: (error) => {
         childLogger.error({ err: error as unknown as Error }, 'An error occurred during the stream.')

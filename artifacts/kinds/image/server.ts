@@ -3,17 +3,17 @@
  * @description Серверный обработчик для артефактов-изображений.
  * @version 4.0.0
  * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции сохранения/загрузки для A_Image таблицы.
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции сохранения/загрузки для A_Image таблицы.
  */
 
 /** HISTORY:
- * v4.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveImageArtifact, loadImageArtifact, deleteImageArtifact функции для работы с новой A_Image таблицей.
+ * v4.0.0 (2025-06-20): Spectrum SCHEMA-DRIVEN CMS - Добавлены saveImageArtifact, loadImageArtifact, deleteImageArtifact функции для работы с новой A_Image таблицей.
  * v3.0.0 (2025-06-10): Refactored to export a standalone tool object.
  * v2.4.0 (2025-06-10): Added `providerOptions` to `generateText` to request the correct image modality.
  * v2.3.0 (2025-06-09): Рефакторинг. Обработчик теперь возвращает URL изображения.
  */
 
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { type CoreMessage, type GeneratedFile, generateText } from 'ai'
 import { put } from '@vercel/blob'
 import { generateUUID } from '@/lib/utils'
@@ -50,7 +50,7 @@ const imageLegacyTool: ArtifactTool = {
       
       const aiCallStart = Date.now()
       const { files } = await generateText({
-        model: myProvider.languageModel('omni-image-model'),
+        model: myEnhancedProvider.languageModel('omni-image-model'),
         prompt: userPrompt,
         providerOptions: {
           google: { responseModalities: ['IMAGE', 'TEXT'] },
@@ -167,7 +167,7 @@ const imageLegacyTool: ArtifactTool = {
       
       const aiCallStart = Date.now()
       const { files } = await generateText({
-        model: myProvider.languageModel('omni-image-model'),
+        model: myEnhancedProvider.languageModel('omni-image-model'),
         messages,
         providerOptions: {
           google: { responseModalities: ['IMAGE', 'TEXT'] },
@@ -232,7 +232,7 @@ const imageLegacyTool: ArtifactTool = {
 }
 
 /**
- * @description Image artifact tool с поддержкой UC-10 schema-driven операций  
+ * @description Image artifact tool с поддержкой Spectrum schema-driven операций  
  * @feature Поддержка как legacy AI операций, так и новых save/load/delete
  */
 export const imageTool = {
@@ -240,7 +240,7 @@ export const imageTool = {
   // Legacy AI operations (для совместимости)
   create: imageLegacyTool.create,
   update: imageLegacyTool.update,
-  // UC-10 Schema-Driven операции
+  // Spectrum Schema-Driven операции
   save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
     return saveImageArtifact(artifact, content, metadata)
   },
@@ -249,7 +249,7 @@ export const imageTool = {
 }
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Новые функции для работы с A_Image таблицей
+// Spectrum SCHEMA-DRIVEN CMS: Новые функции для работы с A_Image таблицей
 // =============================================================================
 
 /**

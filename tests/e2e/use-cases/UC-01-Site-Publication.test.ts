@@ -49,6 +49,19 @@ import { universalAuthentication } from '../../helpers/auth.helper'
  * @feature SIMPLIFIED WORKFLOW - убрана сложная логика с elegant refresh, прямое создание через API
  */
 test.describe('UC-01: Site Publication - Production Server', () => {
+  
+  // Настройка AI Fixtures для режима record-or-replay (запись реальных ответов AI)
+  test.beforeAll(async () => {
+    // Устанавливаем режим record-or-replay для записи реальных AI ответов при первом запуске
+    process.env.AI_FIXTURES_MODE = 'record-or-replay'
+    console.log('🤖 AI Fixtures mode set to: record-or-replay')
+  })
+
+  test.afterAll(async () => {
+    // Очищаем настройки после тестов
+    process.env.AI_FIXTURES_MODE = undefined
+  })
+
   test.beforeEach(async ({ page }) => {
     console.log('🚀 UC-01: Starting unified authentication + artifact creation')
     

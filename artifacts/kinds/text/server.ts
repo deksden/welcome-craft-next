@@ -1,14 +1,14 @@
 /**
  * @file artifacts/kinds/text/server.ts
- * @description Серверный обработчик для текстовых артефактов с поддержкой UC-10 Schema-Driven CMS.
+ * @description Серверный обработчик для текстовых артефактов с поддержкой Spectrum Schema-Driven CMS.
  * @version 4.0.0
  * @date 2025-06-21
- * @updated UC-10 SCHEMA-DRIVEN CMS - Полностью переписан для унификации с artifact-tools.ts реестром.
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Полностью переписан для унификации с artifact-tools.ts реестром.
  */
 
 /** HISTORY:
- * v4.0.0 (2025-06-21): UC-10 SCHEMA-DRIVEN CMS - Полностью переписан для унификации с artifact-tools.ts. Удален дублированный код, оставлены только schema-driven функции.
- * v3.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveTextArtifact, loadTextArtifact, deleteTextArtifact функции для работы с новой A_Text таблицей.
+ * v4.0.0 (2025-06-21): Spectrum SCHEMA-DRIVEN CMS - Полностью переписан для унификации с artifact-tools.ts. Удален дублированный код, оставлены только schema-driven функции.
+ * v3.0.0 (2025-06-20): Spectrum SCHEMA-DRIVEN CMS - Добавлены saveTextArtifact, loadTextArtifact, deleteTextArtifact функции для работы с новой A_Text таблицей.
  * v2.0.0 (2025-06-10): Refactored to export a standalone tool object.
  * v1.3.0 (2025-06-09): Рефакторинг. Обработчик теперь возвращает сгенерированный текст.
  */
@@ -22,7 +22,7 @@ import type { Artifact, ArtifactText } from '@/lib/db/schema'
 const logger = createLogger('artifacts:kinds:text:server')
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Функции для работы с A_Text таблицей
+// Spectrum SCHEMA-DRIVEN CMS: Функции для работы с A_Text таблицей
 // =============================================================================
 
 /**
@@ -159,11 +159,11 @@ export const loadCodeArtifact = loadTextArtifact
 export const deleteCodeArtifact = deleteTextArtifact
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Экспорт tools для использования в artifact-tools.ts
+// Spectrum SCHEMA-DRIVEN CMS: Экспорт tools для использования в artifact-tools.ts
 // =============================================================================
 
 /**
- * @description Text artifact tool с поддержкой UC-10 schema-driven операций
+ * @description Text artifact tool с поддержкой Spectrum schema-driven операций
  * @feature Поддержка как legacy AI операций, так и новых save/load/delete
  */
 export const textTool = {
@@ -175,7 +175,7 @@ export const textTool = {
   update: async () => {
     throw new Error('textTool.update is deprecated - use AI tools instead') 
   },
-  // UC-10 Schema-Driven операции с адаптацией metadata
+  // Spectrum Schema-Driven операции с адаптацией metadata
   save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
     return saveTextArtifact(artifact, content, metadata?.language)
   },
@@ -196,7 +196,7 @@ export const codeTool = {
   update: async () => {
     throw new Error('codeTool.update is deprecated - use AI tools instead')
   },
-  // UC-10 Schema-Driven операции с адаптацией metadata
+  // Spectrum Schema-Driven операции с адаптацией metadata
   save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
     return saveCodeArtifact(artifact, content, metadata?.language)
   },

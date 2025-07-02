@@ -24,11 +24,13 @@ import { Button } from "@/components/ui/button"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  meta?: any
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const table = useReactTable({
@@ -41,6 +43,7 @@ export function DataTable<TData, TValue>({
     state: {
       sorting,
     },
+    meta: meta,
   })
 
   return (

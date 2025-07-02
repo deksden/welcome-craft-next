@@ -160,8 +160,10 @@ export function Chat ({
           messages={messages}
           setMessages={setMessages}
           reload={reload}
+          append={append}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
+          selectedChatModel={initialChatModel}
         />
       </div>
 
@@ -180,6 +182,7 @@ export function Chat ({
           messages={messages}
           append={append}
           setMessages={setMessages}
+          stop={stop}
           session={session}
             initialChatModel={initialChatModel}
             artifact={artifact}

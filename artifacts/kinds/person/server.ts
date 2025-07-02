@@ -3,11 +3,11 @@
  * @description Серверный обработчик для артефактов типа "персона" (HR-система).
  * @version 1.0.0
  * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Создан новый тип артефакта для персон с полной информацией о сотрудниках.
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Создан новый тип артефакта для персон с полной информацией о сотрудниках.
  */
 
 /** HISTORY:
- * v1.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Создан новый обработчик для person артефактов с поддержкой A_Person таблицы. Включает функции создания, сохранения, загрузки и удаления персон.
+ * v1.0.0 (2025-06-20): Spectrum SCHEMA-DRIVEN CMS - Создан новый обработчик для person артефактов с поддержкой A_Person таблицы. Включает функции создания, сохранения, загрузки и удаления персон.
  */
 
 import { createLogger } from '@fab33/fab-logger'
@@ -16,11 +16,91 @@ import { artifactPerson } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import type { Artifact, ArtifactPerson } from '@/lib/db/schema'
 import type { ArtifactPersonData } from '@/lib/types'
+import type { Session } from 'next-auth'
+import { generateObject } from 'ai'
+import { google } from '@ai-sdk/google'
+import { z } from 'zod'
 
 const logger = createLogger('artifacts:kinds:person:server')
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Функции для работы с A_Person таблицей
+// Zod Schema for AI Generation
+// =============================================================================
+
+const PersonSchema = z.object({
+  fullName: z.string().describe('Полное имя'),
+  position: z.string().describe('Должность'),
+  department: z.string().optional().describe('Отдел/подразделение'),
+  email: z.string().optional().describe('Email адрес'),
+  phone: z.string().optional().describe('Телефон'),
+  location: z.string().optional().describe('Местоположение/офис'),
+  quote: z.string().optional().describe('Девиз/цитата')
+})
+
+// =============================================================================
+// AI OPERATION: Create Person
+// =============================================================================
+
+/**
+ * @description AI-генерация персоны на основе промпта пользователя
+ * @param props - Параметры создания (id, title, prompt, session)
+ * @returns Promise<string> - JSON строка с данными персоны
+ */
+export async function createPersonArtifact(props: {
+  id: string;
+  title: string;
+  prompt: string;
+  session: Session;
+}): Promise<string> {
+  const childLogger = logger.child({ artifactId: props.id, kind: 'person' })
+  
+  try {
+    childLogger.info({ prompt: props.prompt }, 'AI создание персоны')
+    
+    const result = await generateObject({
+      model: google('gemini-1.5-flash'),
+      system: `Ты - эксперт по созданию профилей сотрудников для корпоративного онбординга.
+      Создай реалистичный профиль сотрудника на основе запроса пользователя.
+      
+      Правила:
+      - Используй профессиональные названия должностей
+      - Добавь полезную контактную информацию
+      - Создай подходящую цитату/девиз если уместно
+      - Укажи подразделение и локацию если возможно`,
+      prompt: `Создай профиль сотрудника: ${props.prompt}`,
+      schema: PersonSchema
+    })
+    
+    const personData = {
+      fullName: result.object.fullName,
+      position: result.object.position,
+      department: result.object.department || undefined,
+      email: result.object.email || undefined,
+      phone: result.object.phone || undefined,
+      location: result.object.location || undefined,
+      quote: result.object.quote || undefined,
+      photoUrl: undefined // Пользователь может добавить позже
+    }
+    
+    childLogger.info({ 
+      fullName: personData.fullName,
+      position: personData.position,
+      department: personData.department
+    }, 'Персона успешно создана AI')
+    
+    return JSON.stringify(personData)
+  } catch (error) {
+    childLogger.error({ 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 'Ошибка AI создания персоны')
+    
+    throw error
+  }
+}
+
+// =============================================================================
+// Spectrum SCHEMA-DRIVEN CMS: Функции для работы с A_Person таблицей
 // =============================================================================
 
 /**
@@ -173,16 +253,18 @@ export async function deletePersonArtifact(artifactId: string, createdAt: Date):
 }
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Экспорт tool для использования в artifact-tools.ts
+// Spectrum SCHEMA-DRIVEN CMS: Экспорт tool для использования в artifact-tools.ts
 // =============================================================================
 
 /**
- * @description Person artifact tool с поддержкой UC-10 schema-driven операций
- * @feature Только save/load/delete операции, без AI create/update
+ * @description Person artifact tool с поддержкой AI + Spectrum schema-driven операций
+ * @feature AI create + save/load/delete операции
  */
 export const personTool = {
   kind: 'person' as const,
-  // UC-10 Schema-Driven операции
+  // AI операции
+  create: createPersonArtifact,
+  // Spectrum Schema-Driven операции
   save: savePersonArtifact,
   load: loadPersonArtifact,
   delete: deletePersonArtifact,

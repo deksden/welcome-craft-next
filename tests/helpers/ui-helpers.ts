@@ -124,6 +124,17 @@ export class ChatInputHelpers {
     if (message) {
       await this.typeMessage(message)
     }
+    
+    // ⚡ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Ждем пока чат станет готов к отправке
+    // Кнопка disabled когда: input.length === 0 || uploadingFiles.length > 0 || status !== 'ready' || isSubmitting
+    await this.sendButton.waitFor({ state: 'visible' })
+    
+    // Ждем пока кнопка станет активной (может занять время пока AI обработает предыдущий запрос)
+    await this.page.waitForFunction(() => {
+      const button = document.querySelector('[data-testid="chat-input-send-button"]')
+      return button && !button.hasAttribute('disabled')
+    }, { timeout: 15000 })
+    
     await this.sendButton.click()
   }
 

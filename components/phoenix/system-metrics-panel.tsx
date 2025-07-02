@@ -112,7 +112,35 @@ export function SystemMetricsPanel() {
     try {
       setLoading(true)
 
-      // MOCK DATA для демонстрации - в реальном проекте это будут API вызовы
+      console.log('🔍 SystemMetricsPanel: Loading real metrics from API...')
+      
+      // REAL API CALL to Phoenix metrics endpoint
+      const response = await fetch('/api/phoenix/metrics')
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load metrics')
+      }
+      
+      console.log('✅ SystemMetricsPanel: Real metrics loaded:', result.data.overview)
+      setMetrics(result.data)
+      
+      // Show success toast for real data
+      toast({ 
+        type: 'success', 
+        description: `Metrics updated from ${result.source}` 
+      })
+      
+    } catch (error) {
+      console.error('❌ SystemMetricsPanel: Failed to load metrics:', error)
+      
+      // Fallback to mock data if API fails
+      console.log('⚠️ SystemMetricsPanel: Falling back to mock data...')
       const mockMetrics: SystemMetrics = {
         overview: {
           totalUsers: 1247,
@@ -167,9 +195,13 @@ export function SystemMetricsPanel() {
       }
 
       setMetrics(mockMetrics)
-    } catch (error) {
-      toast({ type: 'error', description: 'Failed to load system metrics' })
-      console.error('Error loading system metrics:', error)
+      
+      // Show fallback toast
+      toast({ 
+        type: 'error', 
+        description: 'Using fallback metrics - API unavailable' 
+      })
+      
     } finally {
       setLoading(false)
     }

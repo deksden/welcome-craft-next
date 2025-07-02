@@ -1,12 +1,16 @@
 /**
  * @file app/(main)/chat/actions.ts
  * @description Server Actions для управления чатом и сообщениями.
- * @version 1.5.0
- * @date 2025-06-17
- * @updated Добавлены Server Actions для системы публикации чатов.
+ * @version 1.7.0
+ * @date 2025-07-02
+ * @updated CRITICAL BUGFIX: Fixed world context access in Server Actions - regenerateFromUserMessage and regenerateAssistantResponse now accept worldContext parameter to prevent world isolation failures.
  */
 
 /** HISTORY:
+ * v1.7.0 (2025-07-02): CRITICAL BUGFIX: Fixed world context access in Server Actions - replaced getCurrentWorldContextSync() calls with worldContext parameter to prevent "Invalid message context" errors in test worlds.
+ * v1.6.2 (2025-07-02): BUGFIX: Fixed regenerateFromUserMessage to delete only target assistant message, preserving subsequent messages.
+ * v1.6.1 (2025-07-02): BUGFIX: Added test-session support to all Server Actions for regeneration functionality.
+ * v1.6.0 (2025-07-02): FEATURE: Added regenerateFromUserMessage function for user message regeneration.
  * v1.5.0 (2025-06-17): Добавлены publishChat и unpublishChat для системы публикации с TTL.
  * v1.4.0 (2025-06-09): Исправлены импорты на новые функции.
  * v1.3.0 (2025-06-06): `deleteMessage` теперь возвращает `{ success: boolean }`.
@@ -29,11 +33,13 @@ import {
   updateArtifactById,
 } from '@/lib/db/queries'
 import type { VisibilityType, PublicationInfo } from '@/lib/types'
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { auth } from '@/app/app/(auth)/auth'
+import { getTestSession } from '@/lib/test-auth'
 import { ChatSDKError } from '@/lib/errors'
 import { db } from '@/lib/db'
 import { artifact } from '@/lib/db/schema'
+import { getCurrentWorldContextSync, type WorldContext } from '@/lib/db/world-context'
 
 export async function saveChatModelAsCookie (model: string) {
   const cookieStore = await cookies()
@@ -46,7 +52,7 @@ export async function generateTitleFromUserMessage ({
   message: UIMessage;
 }) {
   const { text: title } = await generateText({
-    model: myProvider.languageModel('title-model'),
+    model: myEnhancedProvider.languageModel('title-model'),
     system: `\n
     - you will generate a short title based on the first message a user begins a conversation with
     - ensure it is not more than 80 characters long
@@ -59,7 +65,8 @@ export async function generateTitleFromUserMessage ({
 }
 
 export async function deleteTrailingMessages ({ id }: { id: string }) {
-  const message = await getMessageById({ id })
+  const worldContext = getCurrentWorldContextSync()
+  const message = await getMessageById({ id, worldContext })
   if (!message) return
 
   await deleteMessagesByChatIdAfterTimestamp({
@@ -69,19 +76,24 @@ export async function deleteTrailingMessages ({ id }: { id: string }) {
 }
 
 export async function deleteAssistantResponse ({ userMessageId }: { userMessageId: string }) {
-  const siblings = await getMessageWithSiblings({ messageId: userMessageId })
+  const worldContext = getCurrentWorldContextSync()
+  const siblings = await getMessageWithSiblings({ messageId: userMessageId, worldContext })
   if (siblings?.next && siblings.next.role === 'assistant') {
     await deleteMessageById({ messageId: siblings.next.id })
   }
 }
 
-export async function regenerateAssistantResponse ({ assistantMessageId }: { assistantMessageId: string }) {
-  const session = await auth()
+export async function regenerateAssistantResponse ({ assistantMessageId, worldContext }: { assistantMessageId: string; worldContext?: WorldContext | null }) {
+  let session = await auth()
+  if (!session?.user) {
+    session = await getTestSession()
+  }
   if (!session?.user?.id) {
     throw new ChatSDKError('unauthorized:chat')
   }
 
-  const siblings = await getMessageWithSiblings({ messageId: assistantMessageId })
+  // Use passed worldContext instead of sync version which fails in Server Actions
+  const siblings = await getMessageWithSiblings({ messageId: assistantMessageId, worldContext })
   if (!siblings || !siblings.previous || siblings.current.role !== 'assistant') {
     throw new ChatSDKError('bad_request:chat', 'Invalid message context for regeneration.')
   }
@@ -92,17 +104,65 @@ export async function regenerateAssistantResponse ({ assistantMessageId }: { ass
   return siblings.previous
 }
 
+export async function regenerateFromUserMessage ({ userMessageId, worldContext }: { userMessageId: string; worldContext?: WorldContext | null }) {
+  let session = await auth()
+  if (!session?.user) {
+    session = await getTestSession()
+  }
+  if (!session?.user?.id) {
+    throw new ChatSDKError('unauthorized:chat')
+  }
+
+  // Use passed worldContext instead of sync version which fails in Server Actions
+  console.log('🔧 REGENERATE ACTION DEBUG: Searching for message:', { userMessageId, worldContext })
+  
+  const siblings = await getMessageWithSiblings({ messageId: userMessageId, worldContext })
+  
+  console.log('🔧 REGENERATE ACTION DEBUG: Message search result:', {
+    found: !!siblings,
+    currentRole: siblings?.current?.role,
+    currentId: siblings?.current?.id,
+    hasAll: !!siblings?.all,
+    allCount: siblings?.all?.length || 0
+  })
+  
+  if (!siblings || siblings.current.role !== 'user') {
+    console.error('🔧 REGENERATE ACTION ERROR: Invalid message context', {
+      siblings: !!siblings,
+      currentRole: siblings?.current?.role,
+      userMessageId,
+      worldContext
+    })
+    throw new ChatSDKError('bad_request:chat', 'Invalid message context for regeneration.')
+  }
+
+  // Просто возвращаем информацию для фронтенда
+  // Фронтенд сам заменит сообщение через новый API /api/chat/regenerate
+  // БД обновится автоматически при сохранении нового сообщения с тем же ID
+  
+  revalidatePath(`/chat/${siblings.current.chatId}`)
+
+  return {
+    userMessage: siblings.current,
+    assistantMessage: siblings.next && siblings.next.role === 'assistant' ? siblings.next : null
+  }
+}
+
 export async function deleteMessage ({ messageId }: { messageId: string }): Promise<{
   success: boolean;
   error?: string
 }> {
-  const session = await auth()
+  let session = await auth()
+  if (!session?.user) {
+    session = await getTestSession()
+  }
   if (!session?.user?.id) {
     return { success: false, error: 'Пользователь не авторизован.' }
   }
 
   try {
-    const message = await getMessageById({ id: messageId })
+    const worldContext = getCurrentWorldContextSync()
+    const message = await getMessageById({ id: messageId, worldContext })
     if (!message) {
       return { success: false, error: 'Сообщение не найдено.' }
     }
@@ -142,7 +202,10 @@ export async function publishChat({
   chatId: string;
   expiresAt: Date | null;
 }) {
-  const session = await auth()
+  let session = await auth()
+  if (!session?.user) {
+    session = await getTestSession()
+  }
   if (!session?.user?.id) {
     throw new ChatSDKError('unauthorized:chat')
   }
@@ -165,7 +228,8 @@ export async function publishChat({
     })
 
     // 3. Найти все artifact IDs в сообщениях чата
-    const messages = await getMessagesByChatId({ id: chatId })
+    const worldContext = getCurrentWorldContextSync()
+    const messages = await getMessagesByChatId({ id: chatId, worldContext })
     const artifactIds = new Set<string>()
 
     for (const message of messages) {
@@ -264,7 +328,10 @@ export async function publishChat({
  * @feature Система публикации с поддержкой TTL
  */
 export async function unpublishChat({ chatId }: { chatId: string }) {
-  const session = await auth()
+  let session = await auth()
+  if (!session?.user) {
+    session = await getTestSession()
+  }
   if (!session?.user?.id) {
     throw new ChatSDKError('unauthorized:chat')
   }

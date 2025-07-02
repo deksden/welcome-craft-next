@@ -35,6 +35,9 @@ export const user = pgTable('User', {
   // Phase 2: Поле для изоляции тестовых миров
   // NULL = production user, 'WORLD_ID' = test user в конкретном мире
   world_id: varchar('world_id', { length: 64 }),
+  // 🚀 COLLABORATIVE SYSTEM: User preference for artifacts filter
+  // true = show only "my artifacts", false = show all artifacts (default)
+  show_only_my_artifacts: boolean('show_only_my_artifacts').notNull().default(false),
 })
 
 export type User = InferSelectModel<typeof user>;

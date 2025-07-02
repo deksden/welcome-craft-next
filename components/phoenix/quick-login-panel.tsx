@@ -229,15 +229,15 @@ export function QuickLoginPanel() {
       <CardContent className="space-y-4">
         {/* Текущий статус */}
         {currentAuth.isAuthenticated && (
-          <div className="bg-green-50 p-3 rounded-lg">
+          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <User className="size-4 text-green-600" />
-                <span className="text-sm font-medium">
+                <User className="size-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">
                   {currentAuth.user?.name || currentAuth.user?.email}
                 </span>
                 {currentAuth.worldId && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs border-green-300 dark:border-green-700 text-green-700 dark:text-green-300">
                     <Globe className="size-3 mr-1" />
                     {currentAuth.worldId}
                   </Badge>
@@ -247,7 +247,7 @@ export function QuickLoginPanel() {
                 size="sm"
                 variant="outline"
                 onClick={handleLogout}
-                className="text-xs"
+                className="text-xs border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40"
               >
                 <LogOut className="size-3 mr-1" />
                 Выйти
@@ -320,7 +320,7 @@ export function QuickLoginPanel() {
         </Button>
 
         {/* Информация */}
-        <div className="text-xs text-muted-foreground bg-gray-50 p-2 rounded">
+        <div className="text-xs text-muted-foreground bg-gray-50 dark:bg-gray-800 p-2 rounded">
           <div className="flex items-center gap-1">
             <AlertTriangle className="size-3" />
             Quick Login доступен только в LOCAL и BETA окружениях

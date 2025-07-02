@@ -1,12 +1,14 @@
 /**
- * @file app/app/(main)/phoenix/metrics/page.tsx
- * @description PHOENIX PROJECT - System Metrics Page
- * @version 1.0.0
- * @date 2025-06-30
- * @updated Enterprise Admin Interface - Перенесена логика из SystemMetricsPanel в отдельную страницу
+ * @file app/app/(main)/metrics/page.tsx
+ * @description PHOENIX PROJECT - System Metrics Page (simplified routing)
+ * @version 2.1.0
+ * @date 2025-07-02
+ * @updated PAGE HEADER UNIFICATION: Добавлен PageHeader компонент с admin badges и environment indicators
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-07-02): PAGE HEADER UNIFICATION - Добавлен PageHeader компонент для стандартизации заголовка с admin badges
+ * v2.0.0 (2025-07-01): Simplified routing - убран phoenix/ prefix, убраны ссылки на dashboard, добавлена прокрутка
  * v1.0.0 (2025-06-30): Enterprise Admin Interface - создана отдельная страница для system metrics
  */
 
@@ -15,9 +17,10 @@ import { getAuthSession } from '@/lib/test-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Activity, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { SystemMetricsPanel } from '@/components/phoenix/system-metrics-panel'
+import { PageHeader, PageHeaderPresets } from '@/components/page-header'
 
 export const metadata = {
   title: 'System Metrics - PHOENIX Admin Dashboard',
@@ -87,27 +90,17 @@ export default async function SystemMetricsPage() {
   const currentEnvironment = process.env.APP_STAGE || 'PROD'
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Activity className="size-8 text-red-500" />
-            <h1 className="text-3xl font-bold">System Metrics</h1>
-            <Badge variant="outline">{currentEnvironment}</Badge>
-          </div>
-          <p className="text-muted-foreground">
-            Monitor system performance and health metrics
-          </p>
-        </div>
-        
-        <Button asChild variant="outline">
-          <Link href="/phoenix">
-            <ArrowLeft className="size-4 mr-2" />
-            Back to Dashboard
-          </Link>
-        </Button>
-      </div>
+    <div className="container mx-auto py-10 px-4 md:px-6 lg:px-8 space-y-6 max-h-screen overflow-y-auto">
+      <PageHeader
+        icon={<Activity className="size-8 text-red-600" />}
+        title="System Metrics"
+        description="Мониторинг производительности системы, health checks и аналитика использования WelcomeCraft Platform."
+        badges={[
+          ...PageHeaderPresets.admin.badges,
+          { text: currentEnvironment, variant: 'outline' }
+        ]}
+        meta="Phoenix System: комплексный мониторинг и аналитика"
+      />
 
       {/* System Metrics Component */}
       <Suspense fallback={<MetricsSkeleton />}>
@@ -131,4 +124,4 @@ function MetricsSkeleton() {
   )
 }
 
-// END OF: app/app/(main)/phoenix/metrics/page.tsx
+// END OF: app/app/(main)/metrics/page.tsx

@@ -64,7 +64,7 @@ const providers = [
           id: 'test-user-id',
           email: 'test@test.com',
           name: 'Test User',
-          type: 'regular' as UserType
+          type: 'user' as UserType
         };
       }
       
@@ -94,7 +94,7 @@ const providers = [
         id: user.id,
         email: user.email,
         name: user.email, // Use email as name
-        type: 'regular' as UserType
+        type: (user.type as UserType) || 'user' // Use actual user type from database
       };
 
       console.log('🔐 AUTH: Returning user object:', authUser);
@@ -120,7 +120,7 @@ if (process.env.NODE_ENV === 'development' || process.env.PLAYWRIGHT_PORT) {
             id: 'test-user-id',
             email: credentials.email as string,
             name: credentials.email as string,
-            type: 'regular' as UserType
+            type: 'user' as UserType
           };
         }
         return null;
@@ -148,7 +148,7 @@ if (process.env.NODE_ENV === 'development' || process.env.PLAYWRIGHT_PORT) {
               id: sessionData.user?.id || 'fast-cookie-user',
               email: sessionData.user?.email || 'test@fast-cookie.com',
               name: sessionData.user?.name || 'Fast Cookie User',
-              type: (sessionData.user?.type as UserType) || 'regular'
+              type: (sessionData.user?.type as UserType) || 'user'
             };
           } catch (error) {
             console.log('🔍 Fast Cookie Bridge: Failed to parse test session data:', error);
@@ -190,7 +190,7 @@ export const {
       // Regular Auth.js session processing
       if (session.user) {
         session.user.id = token.id || token.sub || '';
-        session.user.type = (token.type as UserType) || 'regular';
+        session.user.type = (token.type as UserType) || 'user';
         
         // Для тестовых сессий
         if (token.sub === 'test-user-id') {

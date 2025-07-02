@@ -14,7 +14,7 @@
 
 import type { Page, APIRequestContext } from '@playwright/test';
 import { getTestUrls } from './test-config';
-import { getTestWorldId, getTestConfig } from './test-world-allocator';
+import { getTestWorldId, } from './test-world-allocator';
 
 export interface AuthUser {
   email: string;

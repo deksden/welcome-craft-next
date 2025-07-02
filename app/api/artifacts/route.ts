@@ -19,7 +19,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/app/(auth)/auth'
 import { getTestSession } from '@/lib/test-auth'
-import { getPagedArtifactsByUserId } from '@/lib/db/queries'
+import { getPagedArtifactsByUserId, getUserArtifactFilterPreference, resolveUserIdFromSession } from '@/lib/db/queries'
 import { ChatSDKError } from '@/lib/errors'
 import type { ArtifactKind } from '@/lib/types' // <-- ИЗМЕНЕН ИМПОРТ
 import { getWorldContextFromRequest } from '@/lib/db/world-context'
@@ -45,6 +45,7 @@ export async function GET (request: NextRequest) {
     const tagsParam = searchParams.get('tags')
     const cursor = searchParams.get('cursor')
     const groupByVersions = searchParams.get('groupByVersions') !== 'false' // ✅ Default to true for backward compatibility
+    const showOnlyMyParam = searchParams.get('showOnlyMy') === 'true' // 🚀 COLLABORATIVE SYSTEM: URL parameter override
 
     const page = pageParam ? Number.parseInt(pageParam, 10) : 1
     const pageSize = pageSizeParam ? Number.parseInt(pageSizeParam, 10) : 20 // ✅ Default 20 for better UX
@@ -62,7 +63,24 @@ export async function GET (request: NextRequest) {
     // Get world context for database isolation
     const worldContext = getWorldContextFromRequest(request)
     
-    const queryParams = { userId: session.user.id, page, pageSize, searchQuery, kind, groupByVersions, worldContext }
+    // 🚀 COLLABORATIVE SYSTEM: Resolve real user ID and get filter preference
+    const realUserId = await resolveUserIdFromSession(session.user.id, session.user.email || undefined);
+    
+    // URL parameter overrides database preference
+    const showOnlyMyArtifacts = showOnlyMyParam !== undefined 
+      ? showOnlyMyParam 
+      : await getUserArtifactFilterPreference(realUserId);
+    
+    const queryParams = { 
+      userId: realUserId, // 🚀 Use resolved real user ID
+      page, 
+      pageSize, 
+      searchQuery, 
+      kind, 
+      groupByVersions, 
+      worldContext,
+      showOnlyMyArtifacts // 🚀 Pass user preference
+    }
 
     const result = await getPagedArtifactsByUserId(queryParams)
 

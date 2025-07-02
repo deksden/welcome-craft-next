@@ -79,22 +79,71 @@ export class QuickLoginHelper {
       }
     ]
 
-    // В LOCAL окружении добавляем world-specific пользователей
+    // В LOCAL окружении добавляем standard test world пользователей
     if (this.environment === 'LOCAL') {
       baseUsers.push(
         {
-          id: 'demo-tester-uc',
-          email: 'tester@phoenix.dev',
-          name: 'UC Tester',
+          id: 'demo-clean-workspace',
+          email: 'clean-user@test.com',
+          name: 'Clean Workspace User',
           type: 'regular',
-          worldId: 'UC_TESTING_001'
+          worldId: 'CLEAN_USER_WORKSPACE'
         },
         {
-          id: 'demo-tester-reg',
-          email: 'regression@phoenix.dev', 
-          name: 'Regression Tester',
+          id: 'demo-publisher',
+          email: 'publisher@test.com',
+          name: 'Site Publisher',
           type: 'regular',
-          worldId: 'REGRESSION_001'
+          worldId: 'SITE_READY_FOR_PUBLICATION'
+        },
+        {
+          id: 'demo-content-manager',
+          email: 'content-manager@test.com',
+          name: 'Content Manager',
+          type: 'regular',
+          worldId: 'CONTENT_LIBRARY_BASE'
+        },
+        {
+          id: 'demo-presenter',
+          email: 'demo@welcomecraft.com',
+          name: 'Demo Presenter',
+          type: 'demo',
+          worldId: 'DEMO_PREPARATION'
+        },
+        {
+          id: 'demo-hr-admin',
+          email: 'hr-admin@enterprise.com',
+          name: 'HR Administrator',
+          type: 'admin',
+          worldId: 'ENTERPRISE_ONBOARDING'
+        },
+        {
+          id: 'demo-new-hire',
+          email: 'new-hire@enterprise.com',
+          name: 'New Employee',
+          type: 'regular',
+          worldId: 'ENTERPRISE_ONBOARDING'
+        },
+        {
+          id: 'demo-alice-developer',
+          email: 'alice.developer@enterprise.com',
+          name: 'Alice Johnson',
+          type: 'regular',
+          worldId: 'ENTERPRISE_ONBOARDING'
+        },
+        {
+          id: 'demo-bob-designer',
+          email: 'bob.designer@enterprise.com',
+          name: 'Bob Smith',
+          type: 'regular',
+          worldId: 'ENTERPRISE_ONBOARDING'
+        },
+        {
+          id: 'demo-carol-manager',
+          email: 'carol.manager@enterprise.com',
+          name: 'Carol Wilson',
+          type: 'regular',
+          worldId: 'ENTERPRISE_ONBOARDING'
         }
       )
     }
@@ -142,15 +191,16 @@ export class QuickLoginHelper {
           this.saveLastUser(user)
         }
 
-        // Перенаправляем если задан target URL
+        console.log(`✅ Quick login successful: ${user.name} (${user.email})`)
+        
+        // Редирект на главную страницу приложения после успешного логина
         if (options.targetUrl) {
           window.location.href = options.targetUrl
         } else {
-          // Перезагружаем страницу для активации сессии
-          window.location.reload()
+          // Редирект на главную страницу приложения (admin panel)
+          window.location.href = '/'
         }
-
-        console.log(`✅ Quick login successful: ${user.name} (${user.email})`)
+        
         return true
       } else {
         console.error('❌ Quick login failed:', result.error)
@@ -201,19 +251,27 @@ export class QuickLoginHelper {
    * Проверка доступности Quick Login в текущем окружении
    */
   isAvailable(): boolean {
-    // Quick login доступен только в LOCAL и BETA окружениях
-    const allowedEnvs = ['LOCAL', 'BETA', 'development', 'test']
+    // Проверяем APP_STAGE на клиенте через NEXT_PUBLIC_APP_STAGE
+    if (typeof window !== 'undefined') {
+      // Client-side check
+      const appStage = (window as any).__NEXT_DATA__?.props?.pageProps?.env?.NEXT_PUBLIC_APP_STAGE || 
+                       process.env.NEXT_PUBLIC_APP_STAGE
+      
+      console.log('🚀 Quick Login isAvailable check:', {
+        appStage,
+        windowAppStage: (window as any).__NEXT_DATA__?.props?.pageProps?.env?.NEXT_PUBLIC_APP_STAGE,
+        processAppStage: process.env.NEXT_PUBLIC_APP_STAGE,
+        hostname: window.location.hostname
+      })
+      
+      return appStage === 'LOCAL' || appStage === 'BETA' || window.location.hostname.includes('localhost')
+    }
     
-    // Проверяем различные способы определения окружения
+    // Server-side fallback
     const nodeEnv = typeof process !== 'undefined' ? process.env.NODE_ENV : 'production'
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : ''
-    
-    // Разрешаем в LOCAL/BETA или на localhost
-    return allowedEnvs.includes(this.environment) || 
-           allowedEnvs.includes(nodeEnv) ||
-           hostname.includes('localhost') ||
-           hostname.includes('dev') ||
-           hostname.includes('beta')
+    return this.environment === 'LOCAL' || 
+           this.environment === 'BETA' || 
+           nodeEnv === 'development'
   }
 
   /**

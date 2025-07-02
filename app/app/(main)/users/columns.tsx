@@ -28,8 +28,11 @@ interface UserActionsProps {
 function UserActions({ user, onUserUpdated, onUserDeleted }: UserActionsProps) {
   const [isChangeRoleDialogOpen, setIsChangeRoleDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(user.type);
+  const [isChangingRole, setIsChangingRole] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   const handleChangeRole = async () => {
+    setIsChangingRole(true);
     try {
       const response = await fetch(`/api/phoenix/users/${user.id}`, {
         method: "PUT",
@@ -49,10 +52,13 @@ function UserActions({ user, onUserUpdated, onUserDeleted }: UserActionsProps) {
       setIsChangeRoleDialogOpen(false);
     } catch (error: any) {
       toast({ type: "error", description: error.message });
+    } finally {
+      setIsChangingRole(false);
     }
   };
 
   const handleDeleteUser = async () => {
+    setIsDeletingUser(true);
     try {
       const response = await fetch(`/api/phoenix/users/${user.id}`, {
         method: "DELETE",
@@ -67,6 +73,8 @@ function UserActions({ user, onUserUpdated, onUserDeleted }: UserActionsProps) {
       onUserDeleted();
     } catch (error: any) {
       toast({ type: "error", description: error.message });
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -104,9 +112,9 @@ function UserActions({ user, onUserUpdated, onUserDeleted }: UserActionsProps) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteUser}>
-                Continue
+              <AlertDialogCancel disabled={isDeletingUser}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteUser} disabled={isDeletingUser}>
+                {isDeletingUser ? "Deleting..." : "Continue"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -138,9 +146,9 @@ function UserActions({ user, onUserUpdated, onUserDeleted }: UserActionsProps) {
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleChangeRole}>
-              Save Changes
+            <AlertDialogCancel disabled={isChangingRole}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleChangeRole} disabled={isChangingRole}>
+              {isChangingRole ? "Saving..." : "Save Changes"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

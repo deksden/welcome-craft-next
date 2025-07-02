@@ -1,12 +1,13 @@
 /**
  * @file components/phoenix/world-management-panel.tsx
  * @description PHOENIX PROJECT - World Management Panel для управления динамическими мирами
- * @version 2.0.0
- * @date 2025-06-30
- * @updated Phase 3: Добавлена интеграция SeedImportTab для полной GUI seed data функциональности
+ * @version 3.0.0
+ * @date 2025-07-01
+ * @updated SIMPLIFIED UI: Убраны табы, убрана двойная шапка, оставлен только world management контент
  */
 
 /** HISTORY:
+ * v3.0.0 (2025-07-01): SIMPLIFIED UI - убраны табы (SeedImportTab вынесен в отдельную страницу), убрана двойная шапка, добавлена прокрутка
  * v2.0.0 (2025-06-30): Интегрирован SeedImportTab - добавлена табовая система для seed data import GUI
  * v1.0.0 (2025-06-29): Создан основной WorldManagementPanel с динамическим управлением мирами
  */
@@ -23,7 +24,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/components/toast'
 import { 
   Globe, 
@@ -35,11 +35,9 @@ import {
   FileText,
   BarChart3,
   RefreshCw,
-  Download,
   Settings
 } from 'lucide-react'
 import type { WorldMeta } from '@/lib/db/schema'
-import { SeedImportTab } from './seed-import-tab'
 
 interface WorldFormData {
   id: string
@@ -62,13 +60,11 @@ interface WorldFormData {
  * - Активация/деактивация миров
  * - Статистика использования
  * - Bulk operations (массовые операции)
- * - Seed Data Import - GUI интерфейс для импорта seed данных
  * 
- * @feature PHOENIX PROJECT Phase 3 - Complete World Management with Seed Import
- * @feature Tabbed interface для разделения функциональности
- * @feature SeedImportTab integration для полной GUI функциональности
+ * @feature PHOENIX PROJECT Phase 3 - Complete World Management
  * @feature Real-time updates и статистика
  * @feature Environment-aware filtering
+ * @feature Simplified UI без tabs
  */
 export function WorldManagementPanel() {
   const [worlds, setWorlds] = useState<WorldMeta[]>([])
@@ -79,7 +75,6 @@ export function WorldManagementPanel() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [selectedWorld, setSelectedWorld] = useState<WorldMeta | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [activeTab, setActiveTab] = useState('worlds')
 
   /**
    * Загрузка списка миров с фильтрацией
@@ -239,35 +234,8 @@ export function WorldManagementPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="size-5" />
-            World Management
-          </CardTitle>
-          <CardDescription>
-            Complete world management system with dynamic worlds and seed data import
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      {/* Tabs для разных функций */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="worlds" className="flex items-center gap-2">
-            <Settings className="size-4" />
-            World Management
-          </TabsTrigger>
-          <TabsTrigger value="seed-import" className="flex items-center gap-2">
-            <Download className="size-4" />
-            Seed Data Import
-          </TabsTrigger>
-        </TabsList>
-
-        {/* World Management Tab */}
-        <TabsContent value="worlds" className="space-y-6">
+    <div className="space-y-6 max-h-screen overflow-y-auto">
+      {/* World Management Content */}
           {/* Фильтры и контролы */}
           <Card>
             <CardHeader>
@@ -500,13 +468,6 @@ export function WorldManagementPanel() {
             </div>
           </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Seed Import Tab */}
-        <TabsContent value="seed-import" className="space-y-6">
-          <SeedImportTab />
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

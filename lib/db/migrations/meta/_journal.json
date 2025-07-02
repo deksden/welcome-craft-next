@@ -71,6 +71,13 @@
       "when": 1751299089244,
       "tag": "0009_goofy_secret_warriors",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1751427883447,
+      "tag": "0010_funny_blazing_skull",
+      "breakpoints": true
     }
   ]
 }

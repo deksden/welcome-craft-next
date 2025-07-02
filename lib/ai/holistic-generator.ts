@@ -12,7 +12,7 @@
 
 import { createLogger } from '@fab33/fab-logger'
 import { generateObject } from 'ai'
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { blockDefinitions } from '@/site-blocks'
 import { getPagedArtifactsByUserId } from '@/lib/db/queries'
 import { SiteDefinitionSchema } from '@/lib/ai/schemas/site-definition'
@@ -171,7 +171,7 @@ Select the BEST artifact for each slot, considering:
 
   try {
     const result = await generateObject({
-      model: myProvider.languageModel('gemini-1.5-flash'), // Fast model for structured output
+      model: myEnhancedProvider.languageModel('artifact-model'), // Fast model with AI Fixtures support
       system: systemPrompt,
       prompt: userPrompt,
       schema: SiteDefinitionSchema,

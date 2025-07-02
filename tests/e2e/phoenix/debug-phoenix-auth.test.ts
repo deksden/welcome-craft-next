@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, } from '@playwright/test';
 import { universalAuthentication } from '../../helpers/auth.helper';
 
 test.describe('Debug Phoenix Authentication', () => {
@@ -28,12 +28,12 @@ test.describe('Debug Phoenix Authentication', () => {
     
     // Check cookies
     const cookies = await page.context().cookies()
-    console.log('🍪 All cookies:', cookies.map(c => ({ name: c.name, value: c.value.slice(0, 50) + '...', domain: c.domain })))
+    console.log('🍪 All cookies:', cookies.map(c => ({ name: c.name, value: `${c.value.slice(0, 50)}...`, domain: c.domain })))
     
     // Check test-session cookies specifically
     const testSessionCookie = cookies.find(c => c.name === 'test-session')
     if (testSessionCookie) {
-      console.log('🍪 Found test-session cookie:', testSessionCookie.value.slice(0, 100) + '...')
+      console.log('🍪 Found test-session cookie:', `${testSessionCookie.value.slice(0, 100)}...`)
       try {
         const sessionData = JSON.parse(decodeURIComponent(testSessionCookie.value))
         console.log('🔍 Session data parsed:', sessionData)

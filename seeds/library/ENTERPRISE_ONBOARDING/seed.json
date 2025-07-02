@@ -1,0 +1,321 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2025-07-02T02:53:43.342Z",
+  "source": {
+    "worldId": "ENTERPRISE_ONBOARDING",
+    "environment": "LOCAL",
+    "databaseUrl": "localhost"
+  },
+  "world": {
+    "metadata": {
+      "id": "ENTERPRISE_ONBOARDING",
+      "name": "Enterprise Onboarding",
+      "description": "Enterprise-grade onboarding environment with comprehensive content and workflows",
+      "users": [
+        {
+          "name": "HR Administrator",
+          "type": "admin",
+          "email": "hr-admin@enterprise.com"
+        },
+        {
+          "name": "New Employee",
+          "type": "user",
+          "email": "new-hire@enterprise.com"
+        }
+      ],
+      "artifacts": [
+        {
+          "kind": "site",
+          "title": "Enterprise Onboarding Portal",
+          "content": {
+            "theme": "enterprise",
+            "blocks": [
+              {
+                "type": "hero",
+                "slots": {
+                  "heading": "enterprise-welcome",
+                  "subtitle": "enterprise-subtitle"
+                }
+              },
+              {
+                "type": "key-contacts",
+                "slots": {
+                  "contacts": "enterprise-contacts"
+                }
+              },
+              {
+                "type": "getting-started",
+                "slots": {
+                  "checklist": "onboarding-checklist"
+                }
+              },
+              {
+                "type": "faq",
+                "slots": {
+                  "faqs": "enterprise-faqs"
+                }
+              },
+              {
+                "type": "address",
+                "slots": {
+                  "offices": "enterprise-offices"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "kind": "text",
+          "title": "Enterprise Welcome",
+          "content": "Welcome to Enterprise Corp - Building the Future Together"
+        },
+        {
+          "kind": "text",
+          "title": "Enterprise Subtitle",
+          "content": "As a new member of our team, you are now part of an organization committed to innovation, excellence, and growth."
+        },
+        {
+          "kind": "person",
+          "title": "VP of People",
+          "content": {
+            "email": "maria.rodriguez@enterprise.com",
+            "phone": "+1 (555) 987-6543",
+            "fullName": "Maria Rodriguez",
+            "position": "VP of People Operations",
+            "department": "People Operations"
+          }
+        },
+        {
+          "kind": "person",
+          "title": "IT Support Lead",
+          "content": {
+            "email": "david.kim@enterprise.com",
+            "phone": "+1 (555) 456-7890",
+            "fullName": "David Kim",
+            "position": "IT Support Lead",
+            "department": "Information Technology"
+          }
+        },
+        {
+          "kind": "address",
+          "title": "Headquarters",
+          "content": {
+            "city": "Business District",
+            "state": "NY",
+            "country": "United States",
+            "postalCode": "10001",
+            "streetAddress": "500 Enterprise Boulevard"
+          }
+        },
+        {
+          "kind": "faq-item",
+          "title": "Benefits Enrollment",
+          "content": {
+            "answer": "You can enroll in benefits within your first 30 days of employment. HR will schedule a benefits orientation session during your first week.",
+            "category": "Benefits",
+            "question": "When can I enroll in benefits?"
+          }
+        },
+        {
+          "kind": "faq-item",
+          "title": "Parking Information",
+          "content": {
+            "answer": "Yes, we provide free parking for all employees. Your parking pass will be available at the security desk on your first day.",
+            "category": "Facilities",
+            "question": "Is parking available at the office?"
+          }
+        },
+        {
+          "kind": "link",
+          "title": "Employee Portal",
+          "content": {
+            "url": "https://portal.enterprise.com",
+            "title": "Employee Self-Service Portal",
+            "category": "Essential Tools",
+            "description": "Access your benefits, payroll, and HR information"
+          }
+        },
+        {
+          "kind": "link",
+          "title": "Learning Management System",
+          "content": {
+            "url": "https://learn.enterprise.com",
+            "title": "Enterprise Learning Hub",
+            "category": "Training",
+            "description": "Complete your required training and explore professional development opportunities"
+          }
+        }
+      ],
+      "chats": [
+        {
+          "title": "Enterprise Onboarding Chat",
+          "messages": []
+        }
+      ],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 168
+      },
+      "dependencies": [],
+      "environment": "LOCAL",
+      "category": "ENTERPRISE",
+      "tags": [
+        "enterprise",
+        "onboarding",
+        "comprehensive",
+        "corporate"
+      ],
+      "isTemplate": true,
+      "isActive": true,
+      "autoCleanup": true,
+      "cleanupAfterHours": 168,
+      "isolationLevel": "FULL",
+      "usageCount": 0,
+      "lastUsedAt": null,
+      "version": "1.0.0",
+      "createdBy": null
+    },
+    "users": [
+      {
+        "name": "HR Administrator",
+        "type": "admin",
+        "email": "hr-admin@enterprise.com"
+      },
+      {
+        "name": "New Employee",
+        "type": "user",
+        "email": "new-hire@enterprise.com"
+      }
+    ],
+    "artifacts": [
+      {
+        "kind": "site",
+        "title": "Enterprise Onboarding Portal",
+        "content": {
+          "theme": "enterprise",
+          "blocks": [
+            {
+              "type": "hero",
+              "slots": {
+                "heading": "enterprise-welcome",
+                "subtitle": "enterprise-subtitle"
+              }
+            },
+            {
+              "type": "key-contacts",
+              "slots": {
+                "contacts": "enterprise-contacts"
+              }
+            },
+            {
+              "type": "getting-started",
+              "slots": {
+                "checklist": "onboarding-checklist"
+              }
+            },
+            {
+              "type": "faq",
+              "slots": {
+                "faqs": "enterprise-faqs"
+              }
+            },
+            {
+              "type": "address",
+              "slots": {
+                "offices": "enterprise-offices"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "text",
+        "title": "Enterprise Welcome",
+        "content": "Welcome to Enterprise Corp - Building the Future Together"
+      },
+      {
+        "kind": "text",
+        "title": "Enterprise Subtitle",
+        "content": "As a new member of our team, you are now part of an organization committed to innovation, excellence, and growth."
+      },
+      {
+        "kind": "person",
+        "title": "VP of People",
+        "content": {
+          "email": "maria.rodriguez@enterprise.com",
+          "phone": "+1 (555) 987-6543",
+          "fullName": "Maria Rodriguez",
+          "position": "VP of People Operations",
+          "department": "People Operations"
+        }
+      },
+      {
+        "kind": "person",
+        "title": "IT Support Lead",
+        "content": {
+          "email": "david.kim@enterprise.com",
+          "phone": "+1 (555) 456-7890",
+          "fullName": "David Kim",
+          "position": "IT Support Lead",
+          "department": "Information Technology"
+        }
+      },
+      {
+        "kind": "address",
+        "title": "Headquarters",
+        "content": {
+          "city": "Business District",
+          "state": "NY",
+          "country": "United States",
+          "postalCode": "10001",
+          "streetAddress": "500 Enterprise Boulevard"
+        }
+      },
+      {
+        "kind": "faq-item",
+        "title": "Benefits Enrollment",
+        "content": {
+          "answer": "You can enroll in benefits within your first 30 days of employment. HR will schedule a benefits orientation session during your first week.",
+          "category": "Benefits",
+          "question": "When can I enroll in benefits?"
+        }
+      },
+      {
+        "kind": "faq-item",
+        "title": "Parking Information",
+        "content": {
+          "answer": "Yes, we provide free parking for all employees. Your parking pass will be available at the security desk on your first day.",
+          "category": "Facilities",
+          "question": "Is parking available at the office?"
+        }
+      },
+      {
+        "kind": "link",
+        "title": "Employee Portal",
+        "content": {
+          "url": "https://portal.enterprise.com",
+          "title": "Employee Self-Service Portal",
+          "category": "Essential Tools",
+          "description": "Access your benefits, payroll, and HR information"
+        }
+      },
+      {
+        "kind": "link",
+        "title": "Learning Management System",
+        "content": {
+          "url": "https://learn.enterprise.com",
+          "title": "Enterprise Learning Hub",
+          "category": "Training",
+          "description": "Complete your required training and explore professional development opportunities"
+        }
+      }
+    ],
+    "chats": [
+      {
+        "title": "Enterprise Onboarding Chat",
+        "messages": []
+      }
+    ],
+    "blobs": []
+  }
+}

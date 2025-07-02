@@ -17,10 +17,11 @@ import { z } from 'zod'
 import { getArtifactById, restoreArtifactById } from '@/lib/db/queries'
 import { createLogger } from '@fab33/fab-logger'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
+import type { WorldContext } from '@/lib/db/world-context'
 
 const logger = createLogger('artifacts:tools:artifactRestore')
 
-export const artifactRestore = ({ session }: { session: Session }) =>
+export const artifactRestore = ({ session, worldContext }: { session: Session; worldContext?: WorldContext }) =>
   tool({
     description: 'Restores a soft-deleted artifact from the trash.',
     parameters: z.object({

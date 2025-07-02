@@ -1,15 +1,29 @@
 "use client";
 
+/**
+ * @file app/(main)/seed-export/page.tsx
+ * @description Phoenix Seed Export Page with PageHeader unification
+ * @version 1.1.0
+ * @date 2025-07-02
+ * @updated PAGE HEADER UNIFICATION: Добавлен PageHeader компонент с dev/admin badges
+ */
+
+/** HISTORY:
+ * v1.1.0 (2025-07-02): PAGE HEADER UNIFICATION - Добавлен PageHeader компонент для стандартизации заголовка с dev/admin badges
+ * v1.0.0 (2025-06-30): Initial seed export page
+ */
+
 import { useEffect, useState } from "react";
 import { useSession } from '@/components/fast-session-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Upload } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/toast";
+import { PageHeader, PageHeaderPresets } from '@/components/page-header';
 
 interface WorldMeta {
   id: string;
@@ -36,19 +50,23 @@ export default function SeedExportPage() {
         ? (process.env.NEXT_PUBLIC_APP_STAGE || 'LOCAL') 
         : 'LOCAL';
       
-      console.log('🌱 SEED EXPORT: Environment check:', { appStage, isClient: typeof window !== 'undefined' });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🌱 SEED EXPORT: Environment check:', { appStage, isClient: typeof window !== 'undefined' });
+      }
       setIsLocal(appStage === 'LOCAL');
 
       if (session?.user?.type === 'admin' && appStage === 'LOCAL') {
         // Fetch worlds from current LOCAL DB
         try {
-          const response = await fetch("/api/phoenix/worlds"); // Assuming an API to list worlds
+          const response = await fetch("/api/phoenix/worlds");
           if (response.ok) {
-            const data = await response.json();
-            setWorlds(data);
-            if (data.length > 0) {
-              setSelectedWorld(data[0].id);
-              setSeedName(`seed-${data[0].name.toLowerCase().replace(/\s/g, '-')}-${new Date().toISOString().split('T')[0]}`);
+            const result = await response.json();
+            // API возвращает объект с структурой: { success: true, data: worlds[] }
+            const worldsData = result.success ? result.data : [];
+            setWorlds(worldsData);
+            if (worldsData.length > 0) {
+              setSelectedWorld(worldsData[0].id);
+              setSeedName(`seed-${worldsData[0].name.toLowerCase().replace(/\s/g, '-')}-${new Date().toISOString().split('T')[0]}`);
             }
           } else {
             toast({ type: "error", description: "Failed to fetch worlds." });
@@ -122,17 +140,19 @@ export default function SeedExportPage() {
     ? (process.env.NEXT_PUBLIC_APP_STAGE || 'LOCAL') 
     : 'LOCAL';
     
-  console.log('🌱 SEED EXPORT: Final access check:', {
-    session: !!session,
-    userType: session?.user?.type,
-    isAdmin: session?.user?.type === 'admin',
-    isLocal,
-    appStage: currentAppStage,
-    condition1: !session,
-    condition2: session?.user?.type !== 'admin',
-    condition3: !isLocal,
-    overallCondition: !session || session?.user?.type !== 'admin' || !isLocal
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🌱 SEED EXPORT: Final access check:', {
+      session: !!session,
+      userType: session?.user?.type,
+      isAdmin: session?.user?.type === 'admin',
+      isLocal,
+      appStage: currentAppStage,
+      condition1: !session,
+      condition2: session?.user?.type !== 'admin',
+      condition3: !isLocal,
+      overallCondition: !session || session?.user?.type !== 'admin' || !isLocal
+    });
+  }
 
   if (!session || session.user?.type !== 'admin' || !isLocal) {
     return (
@@ -153,8 +173,18 @@ export default function SeedExportPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <h1 className="text-3xl font-bold">Seed Export</h1>
+    <div className="container mx-auto py-10 px-4 md:px-6 lg:px-8 space-y-6">
+      <PageHeader
+        icon={<Upload className="size-8 text-orange-600" />}
+        title="Seed Export"
+        description="Экспорт данных тестовых миров в seed-формат для повторного использования и развертывания в других окружениях."
+        badges={[
+          ...PageHeaderPresets.dev.badges,
+          ...PageHeaderPresets.admin.badges,
+          { text: 'LOCAL Only', variant: 'outline' }
+        ]}
+        meta="Phoenix System: создание переносимых seed наборов данных"
+      />
       <Card>
         <CardHeader>
           <CardTitle>Export World Seed</CardTitle>
@@ -169,7 +199,7 @@ export default function SeedExportPage() {
                   <SelectValue placeholder="Select a world" />
                 </SelectTrigger>
                 <SelectContent>
-                  {worlds.map((world) => (
+                  {Array.isArray(worlds) && worlds.map((world) => (
                     <SelectItem key={world.id} value={world.id}>
                       {world.name} ({world.id})
                     </SelectItem>

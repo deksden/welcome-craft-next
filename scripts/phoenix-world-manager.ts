@@ -828,13 +828,24 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       break
     }
 
-    case 'import-seed':
+    case 'import-seed': {
       if (!arg1) {
-        console.error('❌ Usage: import-seed <seedPath>')
+        console.error('❌ Usage: import-seed <seedPath> [--replace-all]')
         await client.end()
         process.exit(1)
       }
-      manager.importSeed(arg1)
+      
+      // Check for --replace-all flag
+      const replaceAll = process.argv.includes('--replace-all')
+      const strategy = replaceAll ? {
+        world: 'replace' as const,
+        users: 'replace' as const,
+        artifacts: 'replace' as const,
+        chats: 'replace' as const,
+        blobs: 'replace' as const
+      } : undefined
+      
+      manager.importSeed(arg1, strategy)
         .then(async () => {
           await manager.cleanup()
           await client.end()
@@ -846,6 +857,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           process.exit(1)
         })
       break
+    }
 
     case 'validate-seed':
       if (!arg1) {
@@ -907,7 +919,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log('')
       console.log('Seed Data Management:')
       console.log('  export-seed <worldId> [env] [opts]   - Export world to seed format')
-      console.log('  import-seed <seedPath>               - Import seed data with conflict resolution')
+      console.log('  import-seed <seedPath> [--replace-all] - Import seed data with conflict resolution')
       console.log('  validate-seed <seedPath>             - Validate seed structure')
       console.log('  list-seeds                           - List available seed directories')
       console.log('  cleanup-orphaned-blobs               - Detect and cleanup orphaned blob files')
@@ -924,6 +936,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log('Seed Data Examples:')
       console.log('  pnpm phoenix:worlds:export-seed UC_001 LOCAL --include-blobs')
       console.log('  pnpm phoenix:worlds:import-seed ./seeds/UC_001_LOCAL_2025-06-30')
+      console.log('  pnpm phoenix:worlds:import-seed ./seeds/library/ENTERPRISE_ONBOARDING --replace-all')
       console.log('  pnpm phoenix:worlds:validate-seed ./seeds/UC_001_LOCAL_2025-06-30')
       console.log('  pnpm phoenix:worlds:list-seeds')
       console.log('  pnpm phoenix:worlds:cleanup-orphaned-blobs')

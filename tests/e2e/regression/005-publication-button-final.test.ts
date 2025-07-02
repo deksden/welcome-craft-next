@@ -30,6 +30,18 @@ import { universalAuthentication } from '../../helpers/auth.helper'
  */
 test.describe('BUG-005: Site Publication Button - UC-01-11 Architecture', () => {
 
+  // Настройка AI Fixtures для режима record-or-replay (запись реальных ответов AI)
+  test.beforeAll(async () => {
+    // Устанавливаем режим record-or-replay для записи реальных AI ответов при первом запуске
+    process.env.AI_FIXTURES_MODE = 'record-or-replay'
+    console.log('🤖 AI Fixtures mode set to: record-or-replay')
+  })
+
+  test.afterAll(async () => {
+    // Очищаем настройки после тестов
+    process.env.AI_FIXTURES_MODE = undefined
+  })
+
   test.beforeEach(async ({ page }) => {
     console.log('🚀 BUG-005: Starting unified authentication following UC-01-11 patterns')
     

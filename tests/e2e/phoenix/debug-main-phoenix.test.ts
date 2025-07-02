@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { universalAuthentication } from '../../helpers/auth.helper';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 test.describe('Debug Main Phoenix Page Access', () => {
   test('test main Phoenix page instead of users page', async ({ page }) => {

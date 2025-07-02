@@ -1,12 +1,13 @@
 /**
  * @file components/sidebar-history-item.tsx
  * @description Элемент истории чата в сайдбаре с меню действий.
- * @version 2.0.0
- * @date 2025-06-09
- * @updated Добавлено меню действий "Переименовать" и обновлена логика "Удалить".
+ * @version 2.1.0
+ * @date 2025-07-02
+ * @updated UI HIERARCHY: Добавлены size="sm" и text-sm классы для создания визуальной иерархии в sidebar
  */
 
 /** HISTORY:
+ * v2.1.0 (2025-07-02): UI HIERARCHY - Добавлены size="sm" и text-sm классы для chat items, чтобы соответствовать общей иерархии sidebar и выравниванию с artifact items
  * v2.0.0 (2025-06-09): Добавлено меню с переименованием, удаление теперь мягкое.
  * v1.1.0 (2025-06-06): Добавлена логика показа уведомления о загрузке при клике.
  */
@@ -74,7 +75,7 @@ const PureChatItem = ({
 
   return (
     <SidebarMenuItem data-testid="sidebar-chat-item">
-      <SidebarMenuButton asChild isActive={isActive}>
+      <SidebarMenuButton asChild isActive={isActive} size="sm" className="text-sm">
         <Link href={`/chat/${chat.id}`} onClick={handleLinkClick}>
           <span>{chat.title}</span>
         </Link>

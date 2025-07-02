@@ -46,11 +46,28 @@ export interface WorldContext {
  * @returns Контекст мира для использования в DB запросах
  */
 export function getCurrentWorldContextSync(): WorldContext {
-  // В синхронном режиме всегда возвращаем production контекст
+  const worldId: WorldId | null = null
+  
+  try {
+    // APP_STAGE-based environment detection (PHOENIX PROJECT)
+    const stage = process.env.APP_STAGE || 'PROD'
+    if (stage === 'LOCAL' || stage === 'BETA') {
+      // В синхронном режиме не можем прочитать cookies напрямую
+      // Возвращаем fallback контекст для server-side вызовов
+      console.log('🌍 getCurrentWorldContextSync: Cannot read cookies in sync mode, using fallback')
+      // TODO: Implement sync cookie reading from request context if available
+    }
+  } catch (error) {
+    console.warn('getCurrentWorldContextSync: Failed to determine world context:', error)
+  }
+  
+  const isTestMode = worldId !== null
+  const isolationPrefix = worldId ? `test-${worldId}` : null
+  
   return {
-    worldId: null,
-    isTestMode: false,
-    isolationPrefix: null
+    worldId,
+    isTestMode,
+    isolationPrefix
   }
 }
 
@@ -194,15 +211,14 @@ export function getWorldContextFromRequest(request: Request): WorldContext {
                       hasPlaywrightPort ||
                       stage === 'LOCAL' || 
                       stage === 'BETA'
-    const isWorldUIEnabled = process.env.ENABLE_TEST_WORLDS_UI === 'true'
+    const isWorldUIEnabled = stage === 'LOCAL' || stage === 'BETA'
     
     console.log('🌍 getWorldContextFromRequest DEBUG:', {
       hasCookieHeader: !!cookieHeader,
       stage,
       isTestEnv,
       isWorldUIEnabled,
-      APP_STAGE: process.env.APP_STAGE,
-      ENABLE_TEST_WORLDS_UI: process.env.ENABLE_TEST_WORLDS_UI
+      APP_STAGE: process.env.APP_STAGE
     })
     
     if (cookieHeader && (isTestEnv || isWorldUIEnabled)) {

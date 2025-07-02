@@ -46,7 +46,7 @@ export class MultiArtifactPage {
 
   /** Кнопка отправки сообщения */
   get sendButton(): Locator {
-    return this.page.getByTestId('chat-send-button')
+    return this.page.getByTestId('chat-input-send-button')
   }
 
   /** Все сообщения в чате */

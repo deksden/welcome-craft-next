@@ -3,16 +3,16 @@
  * @description Серверный обработчик для артефактов типа "таблица".
  * @version 3.0.0
  * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции для работы с A_Text таблицей (sheet использует ту же таблицу что и text).
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Добавлены схема-ориентированные функции для работы с A_Text таблицей (sheet использует ту же таблицу что и text).
  */
 
 /** HISTORY:
- * v3.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены saveSheetArtifact, loadSheetArtifact, deleteSheetArtifact алиасы для работы с A_Text таблицей.
+ * v3.0.0 (2025-06-20): Spectrum SCHEMA-DRIVEN CMS - Добавлены saveSheetArtifact, loadSheetArtifact, deleteSheetArtifact алиасы для работы с A_Text таблицей.
  * v2.0.0 (2025-06-10): Refactored to export a standalone tool object.
  * v1.4.1 (2025-06-10): Ensured 'object' promise from streamObject is awaited before property access (TS2339).
  */
 
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { sheetPrompt, updateDocumentPrompt } from '@/lib/ai/prompts'
 import { generateText } from 'ai'
 import type { ArtifactTool } from '@/artifacts/kinds/artifact-tools'
@@ -60,7 +60,7 @@ const sheetLegacyTool: ArtifactTool = {
 
       // Запускаем гонку между вызовом API и таймаутом
       const generateTextPromise = generateText({
-        model: myProvider.languageModel('artifact-model'),
+        model: myEnhancedProvider.languageModel('artifact-model'),
         system: systemPrompt,
         prompt: userPrompt,
       })
@@ -148,7 +148,7 @@ const sheetLegacyTool: ArtifactTool = {
 
       // Запускаем гонку между вызовом API и таймаутом
       const generateTextPromise = generateText({
-        model: myProvider.languageModel('artifact-model'),
+        model: myEnhancedProvider.languageModel('artifact-model'),
         system: systemPrompt,
         prompt: description,
       })
@@ -183,7 +183,7 @@ const sheetLegacyTool: ArtifactTool = {
 }
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Алиасы для работы с A_Text таблицей
+// Spectrum SCHEMA-DRIVEN CMS: Алиасы для работы с A_Text таблицей
 // =============================================================================
 
 // Sheet артефакты используют ту же A_Text таблицу что и text/code артефакты
@@ -193,7 +193,7 @@ export { loadTextArtifact as loadSheetArtifact } from '../text/server'
 export { deleteTextArtifact as deleteSheetArtifact } from '../text/server'
 
 /**
- * @description Sheet artifact tool с поддержкой UC-10 schema-driven операций
+ * @description Sheet artifact tool с поддержкой Spectrum schema-driven операций
  * @feature Поддержка как legacy AI операций, так и новых save/load/delete
  */
 export const sheetTool = {
@@ -201,7 +201,7 @@ export const sheetTool = {
   // Legacy AI operations (для совместимости)
   create: sheetLegacyTool.create,
   update: sheetLegacyTool.update,
-  // UC-10 Schema-Driven операции (используют A_Text таблицу)
+  // Spectrum Schema-Driven операции (используют A_Text таблицу)
   save: async (artifact: any, content: string, metadata?: Record<string, any>) => {
     const { saveTextArtifact } = await import('../text/server')
     return saveTextArtifact(artifact, content, metadata?.language)

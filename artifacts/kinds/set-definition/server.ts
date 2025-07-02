@@ -3,7 +3,7 @@
  * @description Серверный обработчик для артефактов типа "определение набора".
  * @version 1.0.0
  * @date 2025-06-20
- * @updated UC-10 SCHEMA-DRIVEN CMS - Создан новый тип артефакта для определений наборов с валидацией.
+ * @updated Spectrum SCHEMA-DRIVEN CMS - Создан новый тип артефакта для определений наборов с валидацией.
  */
 
 import { createLogger } from '@fab33/fab-logger'
@@ -96,7 +96,7 @@ export async function deleteSetDefinitionArtifact(artifactId: string, createdAt:
 }
 
 /**
- * @description Set definition artifact tool с поддержкой UC-10 schema-driven операций
+ * @description Set definition artifact tool с поддержкой Spectrum schema-driven операций
  * @feature Только save/load/delete операции, без AI create/update
  */
 export const setDefinitionTool = {

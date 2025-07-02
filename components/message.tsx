@@ -1,12 +1,18 @@
 /**
  * @file components/message.tsx
  * @description Компонент для отображения одного сообщения в чате.
- * @version 2.2.0
- * @date 2025-06-17
- * @updated Removed legacy role: 'data' handling - now uses proper tool-invocation architecture.
+ * @version 2.8.0
+ * @date 2025-07-02
+ * @updated CRITICAL BUGFIX: Fixed world context passing to Server Actions for regeneration to prevent "Invalid message context" errors in test worlds.
  */
 
 /** HISTORY:
+ * v2.8.0 (2025-07-02): CRITICAL BUGFIX: Fixed world context passing to Server Actions for regeneration - added client-side cookie reading to pass worldContext to regenerateFromUserMessage and regenerateAssistantResponse functions.
+ * v2.7.0 (2025-07-02): CRITICAL BUGFIX: Fixed model selection to use actual selectedChatModel instead of hardcoded 'main-model' for regeneration API calls.
+ * v2.6.0 (2025-07-02): REVOLUTIONARY FIX: Implemented direct AI call with message replacement - preserves all subsequent messages while regenerating specific response.
+ * v2.5.0 (2025-07-02): CRITICAL FIX: Fixed reload() targeting by trimming messages array to correct context before regeneration.
+ * v2.4.0 (2025-07-02): BUGFIX: Fixed message targeting in regeneration - now preserves subsequent messages and regenerates only specific assistant response.
+ * v2.3.0 (2025-07-02): FEATURE: Added regeneration functionality for both user and assistant messages with RedoIcon.
  * v2.2.0 (2025-06-17): Removed legacy role: 'data' handling - now uses proper tool-invocation architecture.
  * v2.1.0 (2025-06-17): Fixed artifact references display - improved parts[] parsing for Message_v2 schema compatibility.
  * v2.0.0 (2025-06-10): Updated to handle new artifact tool names using AI_TOOL_NAMES and render ArtifactPreview component.
@@ -37,30 +43,63 @@ import { MessageReasoning } from './message-reasoning'
 import type { UseChatHelpers } from '@ai-sdk/react'
 import { useCopyToClipboard } from 'usehooks-ts'
 import { toast } from './toast'
-import { deleteMessage, regenerateAssistantResponse } from '@/app/app/(main)/chat/actions'
+import { deleteMessage, regenerateAssistantResponse, regenerateFromUserMessage } from '@/app/app/(main)/chat/actions'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
 import { ArtifactPreview } from './artifact-preview'
+import { WORLD_COOKIE_KEY } from '@/lib/db/world-context'
 
 const PurePreviewMessage = ({
   chatId,
   message,
+  messages,
   isLoading,
   setMessages,
   reload,
+  append,
   isReadonly,
+  selectedChatModel,
   requiresScrollPadding,
 }: {
   chatId: string;
   message: UIMessage;
+  messages: Array<UIMessage>;
   vote: undefined;
   isLoading: boolean;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
+  append: UseChatHelpers['append'];
   isReadonly: boolean;
+  selectedChatModel: string;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [, copyToClipboard] = useCopyToClipboard()
+  
+  // Get world context from client-side cookies for Server Actions
+  const getWorldContextFromCookies = () => {
+    if (typeof document === 'undefined') return null
+    
+    const cookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith(`${WORLD_COOKIE_KEY}=`))
+    
+    if (!cookie) return null
+    
+    try {
+      const sessionData = JSON.parse(decodeURIComponent(cookie.split('=')[1]))
+      if (sessionData?.worldId) {
+        return {
+          worldId: sessionData.worldId,
+          isTestMode: true,
+          isolationPrefix: `test-${sessionData.worldId}`
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse world context from cookies:', error)
+    }
+    
+    return null
+  }
 
   const handleCopy = () => {
     const textContent = message.parts
@@ -88,14 +127,94 @@ const PurePreviewMessage = ({
     }
   }
 
-  const handleRegenerate = async () => {
+  const handleRegenerateAssistant = async () => {
     toast({ type: 'loading', description: 'Перегенерация ответа...' })
     try {
+      const worldContext = getWorldContextFromCookies()
       setMessages((messages) => messages.filter((m) => m.id !== message.id))
-      await regenerateAssistantResponse({ assistantMessageId: message.id })
+      await regenerateAssistantResponse({ assistantMessageId: message.id, worldContext })
       reload()
     } catch (error) {
       toast({ type: 'error', description: 'Не удалось перегенерировать ответ.' })
+    }
+  }
+
+  const handleRegenerateFromUser = async () => {
+    toast({ type: 'loading', description: 'Перегенерация с этого сообщения...' })
+    try {
+      // Найти индекс текущего user сообщения
+      const messageIndex = messages.findIndex(m => m.id === message.id)
+      if (messageIndex === -1) {
+        throw new Error('Message not found in messages array')
+      }
+      
+      // Найти следующее сообщение модели (если есть)
+      const nextMessageIndex = messageIndex + 1
+      const nextMessage = messages[nextMessageIndex]
+      
+      console.log('🔧 REGENERATE FRONTEND DEBUG:', {
+        currentMessageId: message.id,
+        currentMessageRole: message.role,
+        currentMessageContent: message.content?.slice(0, 100) + '...',
+        messageIndex,
+        nextMessageIndex,
+        nextMessageId: nextMessage?.id,
+        nextMessageRole: nextMessage?.role,
+        nextMessageContent: nextMessage?.content?.slice(0, 100) + '...',
+        totalMessages: messages.length
+      })
+      
+      if (nextMessage && nextMessage.role === 'assistant') {
+        // Получить информацию о сообщениях
+        const worldContext = getWorldContextFromCookies()
+        const result = await regenerateFromUserMessage({ userMessageId: message.id, worldContext })
+        
+        // Создать копию массива сообщений и обрезать до нужного user message
+        const contextMessages = messages.slice(0, messageIndex + 1)
+        
+        // Преобразовать в CoreMessage формат для AI
+        const coreMessages = contextMessages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+        
+        // Получить новый ответ от модели напрямую
+        const response = await fetch('/api/chat/regenerate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: coreMessages,
+            chatId: chatId,
+            replaceMessageId: nextMessage.id, // Передаем ID сообщения для замены
+            selectedChatModel: selectedChatModel // Используем ту же модель что и в основном чате
+          })
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to regenerate response')
+        }
+        
+        const newAssistantMessage = await response.json()
+        
+        // Заменить сообщение модели в оригинальном массиве, сохранив тот же ID
+        const updatedMessages = [...messages]
+        updatedMessages[nextMessageIndex] = {
+          ...newAssistantMessage,
+          id: nextMessage.id, // Сохраняем оригинальный ID
+          createdAt: nextMessage.createdAt, // Сохраняем оригинальное время
+        }
+        
+        // Обновить UI с новым массивом
+        setMessages(updatedMessages)
+        
+        toast({ type: 'success', description: 'Сообщение перегенерировано.' })
+      } else {
+        // Если нет ответа модели, просто запустить генерацию
+        reload()
+      }
+    } catch (error) {
+      console.error('Regeneration error:', error)
+      toast({ type: 'error', description: 'Не удалось перегенерировать с этого сообщения.' })
     }
   }
 
@@ -197,6 +316,12 @@ const PurePreviewMessage = ({
                                   size={14}/></Button></TooltipTrigger>
                                 <TooltipContent>Редактировать</TooltipContent>
                               </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-7"
+                                                                onClick={handleRegenerateFromUser}><RedoIcon
+                                  size={14}/></Button></TooltipTrigger>
+                                <TooltipContent>Перегенерировать</TooltipContent>
+                              </Tooltip>
                             </>
                           ) : (
                             <>
@@ -208,7 +333,7 @@ const PurePreviewMessage = ({
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-7"
-                                                                onClick={handleRegenerate}><RedoIcon
+                                                                onClick={handleRegenerateAssistant}><RedoIcon
                                   size={14}/></Button></TooltipTrigger>
                                 <TooltipContent>Перегенерировать</TooltipContent>
                               </Tooltip>

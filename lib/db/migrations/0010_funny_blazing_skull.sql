@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN "show_only_my_artifacts" boolean DEFAULT false NOT NULL;

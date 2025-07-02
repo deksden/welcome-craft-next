@@ -10,7 +10,6 @@ import { defineConfig, devices } from '@playwright/test';
 import { config as dotenvConfig } from 'dotenv';
 import { createServer } from 'node:http';
 import { getTestUrls, getTestHeaders, getChromeConfig, logTestConfig } from './tests/helpers/test-config';
-import { TestWorldAllocator } from './tests/helpers/test-world-allocator';
 
 // 1. Загружаем переменные окружения. .env.test будет иметь приоритет.
 dotenvConfig({ path: '.env.test' });

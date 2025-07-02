@@ -20,14 +20,16 @@ import { artifactTools } from '@/artifacts/kinds/artifact-tools'
 import { createLogger } from '@fab33/fab-logger'
 import { AI_TOOL_NAMES } from '@/lib/ai/tools/constants'
 import { generateAndSaveSummary } from '@/lib/ai/summarizer'
+import type { WorldContext } from '@/lib/db/world-context'
 
 const logger = createLogger('artifacts:tools:artifactUpdate')
 
 interface UpdateArtifactProps {
   session: Session;
+  worldContext?: WorldContext;
 }
 
-export const artifactUpdate = ({ session }: UpdateArtifactProps) =>
+export const artifactUpdate = ({ session, worldContext }: UpdateArtifactProps) =>
   tool({
     description: 'Updates an existing artifact (text, code, image, etc.) based on a detailed prompt describing the changes. Requires the artifact\'s unique ID.',
     parameters: z.object({
@@ -73,6 +75,7 @@ export const artifactUpdate = ({ session }: UpdateArtifactProps) =>
         kind: artifact.kind,
         userId: session.user.id,
         authorId: null, // Updated by AI
+        worldContext, // 🔧 BUG-086 FIX: Pass world context for proper world isolation
       })
 
       childLogger.info({ kind: artifact.kind, title: artifact.title }, 'Artifact updated. Starting summary generation.')

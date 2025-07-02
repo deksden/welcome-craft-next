@@ -18,8 +18,6 @@
 # - Persistent volumes для сохранения данных между рестартами
 # - Отдельные порты для избежания конфликтов с BETA/PROD
 
-version: '3.8'
-
 services:
   # PostgreSQL для LOCAL разработки
   postgres_local:

@@ -13,7 +13,7 @@
 
 import { z } from 'zod'
 import { streamObject } from 'ai'
-import { myProvider } from '@/lib/ai/providers'
+import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { codePrompt, updateDocumentPrompt } from '@/lib/ai/prompts'
 import type { ArtifactTool } from '@/artifacts/kinds/artifact-tools'
 import { getDisplayContent } from '@/lib/artifact-content-utils'
@@ -45,7 +45,7 @@ export const codeTool: ArtifactTool = {
       
       const aiCallStart = Date.now()
       const { object } = await streamObject({
-        model: myProvider.languageModel('artifact-model'),
+        model: myEnhancedProvider.languageModel('artifact-model'),
         system: systemPrompt,
         prompt: userPrompt,
         schema: z.object({
@@ -98,7 +98,7 @@ export const codeTool: ArtifactTool = {
       
       const aiCallStart = Date.now()
       const { object } = await streamObject({
-        model: myProvider.languageModel('artifact-model'),
+        model: myEnhancedProvider.languageModel('artifact-model'),
         system: systemPrompt,
         prompt: description,
         schema: z.object({
@@ -129,7 +129,7 @@ export const codeTool: ArtifactTool = {
       throw error
     }
   },
-  // UC-10 Schema-Driven операции с адаптацией metadata
+  // Spectrum Schema-Driven операции с адаптацией metadata
   save: async (artifact: Artifact, content: string, metadata?: Record<string, any>) => {
     return saveCodeArtifact(artifact, content, metadata)
   },
@@ -138,7 +138,7 @@ export const codeTool: ArtifactTool = {
 }
 
 // =============================================================================
-// UC-10 SCHEMA-DRIVEN CMS: Новые функции для работы с A_Text таблицей
+// Spectrum SCHEMA-DRIVEN CMS: Новые функции для работы с A_Text таблицей
 // =============================================================================
 
 import { db } from '@/lib/db'
