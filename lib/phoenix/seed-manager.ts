@@ -703,7 +703,8 @@ export class PhoenixSeedManager {
             world_id: worldId, // 🚀 CRITICAL: Set world_id for filtering
             createdAt: new Date(),
             deletedAt: null,
-            publication_state: []
+            publication_state: [],
+            embedding: null
           }
 
           await this.db

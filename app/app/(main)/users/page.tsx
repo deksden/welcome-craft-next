@@ -28,7 +28,6 @@ import type { User } from "@/lib/db/schema";
 import { toast } from "@/components/toast";
 import { AddUserDialog } from "@/components/add-user-dialog";
 import { PageHeader, PageHeaderPresets } from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
 
 export default function UsersPage() {
   console.log('🚨🚨🚨 PHOENIX USERS PAGE: COMPONENT FUNCTION CALLED - REACT COMPONENT IS RENDERING!')

@@ -76,16 +76,19 @@
 **Назначение:** Детерминистичные AI ответы для быстрых, стабильных тестов.
 
 **Реализация:**
-- **Provider:** `AIFixturesProvider` класс с тремя режимами
-- **Хранение:** JSON файлы в `tests/fixtures/ai/`
-- **Интеграция:** Enhanced провайдер оборачивает все AI модели
-- **Режимы:** `record` (запись), `replay` (воспроизведение), `passthrough` (прямой вызов)
+- **Provider:** `AIFixturesProvider` v2.0.0 с lossless архитектурой
+- **Хранение:** JSON файлы в `tests/fixtures/ai/` с полными объектами
+- **Интеграция:** Прокси-провайдер оборачивает все AI модели через `withAIFixtures()`
+- **Режимы:** `record`, `replay`, `passthrough`, `record-or-replay`
 
-**Возможности:**
-- Автоматическое хеширование запросов для уникальных ID
+**Ключевые возможности v2.0.0:**
+- Lossless сохранение полных `GenerateTextResult` объектов
+- Точное воспроизведение streaming через массивы `streamChunks`
+- Автоматическое разделение потоков с `stream.tee()`
 - Контекстная группировка по Use Case и World
-- Streaming support для совместимости с AI SDK
-- Cache система для производительности
+- Надежная обработка ошибок и timeout защита
+
+**Подробная документация:** `.memory-bank/testing/AIFixturesProvider.md`
 
 ---
 

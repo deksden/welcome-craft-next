@@ -1,0 +1,158 @@
+{
+  "timestamp": "2025-07-03T04-22-30-332Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "VALIDATION_0_T1751516549440_09dc80a7_0",
+      "name": "VALIDATION_0 World (T1751516549440_09dc80a7)",
+      "description": "Isolated validation testing 1",
+      "users": [
+        {
+          "name": "Validation User 0",
+          "type": "user",
+          "email": "validation-0@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:22:29.625Z",
+      "updatedAt": "2025-07-03T04:22:29.625Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516549440_09dc80a7",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_1_T1751516549440_09dc80a7_1",
+      "name": "VALIDATION_1 World (T1751516549440_09dc80a7)",
+      "description": "Isolated validation testing 2",
+      "users": [
+        {
+          "name": "Validation User 1",
+          "type": "user",
+          "email": "validation-1@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": false,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:22:29.632Z",
+      "updatedAt": "2025-07-03T04:22:29.632Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516549440_09dc80a7",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_2_T1751516549440_09dc80a7_2",
+      "name": "VALIDATION_2 World (T1751516549440_09dc80a7)",
+      "description": "Isolated validation testing 3",
+      "users": [
+        {
+          "name": "Validation User 2",
+          "type": "user",
+          "email": "validation-2@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": true,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:22:29.642Z",
+      "updatedAt": "2025-07-03T04:22:29.642Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516549440_09dc80a7",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "BACKUP_TEST_T1751516549440_d1f323c1",
+      "name": "BACKUP_TEST World (T1751516549440_d1f323c1)",
+      "description": "Isolated testing backup data integrity",
+      "users": [
+        {
+          "name": "Backup User",
+          "type": "user",
+          "email": "backup@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:22:30.223Z",
+      "updatedAt": "2025-07-03T04:22:30.223Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516549440_d1f323c1",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 4,
+    "backupSize": "3.9 KB",
+    "version": "1.0.0"
+  }
+}

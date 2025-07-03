@@ -1,0 +1,50 @@
+{
+  "id": "title-model-fsjqcg",
+  "name": "AI Fixture: title-model-fsjqcg",
+  "input": {
+    "prompt": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Опиши структуру этого сайта кратко (не более 15 слов) - какие блоки включены: \n\n{\n  \"theme\": \"default\",\n  \"blocks\": []\n}"
+          }
+        ]
+      }
+    ],
+    "model": "mock-model-id",
+    "settings": {
+      "mode": {
+        "type": "regular"
+      },
+      "temperature": 0,
+      "inputFormat": "prompt"
+    },
+    "context": {
+      "operation": "title-model",
+      "fixturePrefix": "title-model"
+    }
+  },
+  "output": {
+    "type": "full",
+    "fullResponse": {
+      "rawCall": {
+        "rawPrompt": null,
+        "rawSettings": {}
+      },
+      "finishReason": "stop",
+      "usage": {
+        "promptTokens": 10,
+        "completionTokens": 20
+      },
+      "text": "This is a test title"
+    },
+    "timestamp": "2025-07-02T19:11:59.187Z",
+    "duration": 1
+  },
+  "metadata": {
+    "createdAt": "2025-07-02T19:11:59.187Z",
+    "hash": "cz1gjo"
+  }
+}

@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
       authorId: session.user.id,
       deletedAt: null,
       publication_state: [],
-      world_id: null
+      world_id: null,
+      embedding: null
     }
     
     const dbStart = Date.now()

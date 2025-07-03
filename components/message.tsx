@@ -155,12 +155,12 @@ const PurePreviewMessage = ({
       console.log('🔧 REGENERATE FRONTEND DEBUG:', {
         currentMessageId: message.id,
         currentMessageRole: message.role,
-        currentMessageContent: message.content?.slice(0, 100) + '...',
+        currentMessageContent: `${message.content?.slice(0, 100)}...`,
         messageIndex,
         nextMessageIndex,
         nextMessageId: nextMessage?.id,
         nextMessageRole: nextMessage?.role,
-        nextMessageContent: nextMessage?.content?.slice(0, 100) + '...',
+        nextMessageContent: `${nextMessage?.content?.slice(0, 100)}...`,
         totalMessages: messages.length
       })
       

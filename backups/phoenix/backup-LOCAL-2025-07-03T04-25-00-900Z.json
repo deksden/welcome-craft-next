@@ -1,0 +1,87 @@
+{
+  "timestamp": "2025-07-03T04-25-00-900Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "BACKUP_TEST_T1751516700350_c3bb9e80",
+      "name": "BACKUP_TEST World (T1751516700350_c3bb9e80)",
+      "description": "Isolated testing backup data integrity",
+      "users": [
+        {
+          "name": "Backup User",
+          "type": "user",
+          "email": "backup@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:25:00.794Z",
+      "updatedAt": "2025-07-03T04:25:00.794Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516700350_c3bb9e80",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "LOCAL_ENV_T1751516700352_a2520313",
+      "name": "LOCAL_ENV World (T1751516700352_a2520313)",
+      "description": "Isolated testing environment isolation LOCAL",
+      "users": [
+        {
+          "name": "Local User",
+          "type": "user",
+          "email": "local@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:25:00.765Z",
+      "updatedAt": "2025-07-03T04:25:00.765Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516700352_a2520313",
+        "isolated-test",
+        "local"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 2,
+    "backupSize": "2.0 KB",
+    "version": "1.0.0"
+  }
+}

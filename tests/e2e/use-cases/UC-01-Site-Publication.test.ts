@@ -4,6 +4,7 @@
  * @version 17.4.0
  * @date 2025-06-27
  * @updated SIMPLIFIED PUBLICATION: Упрощен workflow публикации с robust URL detection и адаптацией к реальному UI поведению
+ * @e2e-project e2e-core (Use Cases - основная функциональность для HR пользователей)
  */
 
 /** HISTORY:

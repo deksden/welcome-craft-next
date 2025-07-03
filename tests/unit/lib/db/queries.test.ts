@@ -106,7 +106,8 @@ describe('Database Queries - getChatsByUserId', () => {
       userId: 'user-123',
       published_until: null,
       deletedAt: null,
-      world_id: null
+      world_id: null,
+      embedding: null
     }))
     queryChainMock.limit.mockResolvedValue(mockChats)
 
@@ -166,7 +167,8 @@ describe('Database Queries - getUser', () => {
       name: 'Test User',
       image: null,
       createdAt: new Date(),
-      world_id: null
+      world_id: null,
+      embedding: null
     }
     queryChainMock.where.mockResolvedValue([mockUser])
 
@@ -218,7 +220,8 @@ describe('Database Queries - getChatById', () => {
       userId: 'user-123',
       published_until: null,
       deletedAt: null,
-      world_id: null
+      world_id: null,
+      embedding: null
     }
     queryChainMock.where.mockResolvedValue([mockChat])
 
@@ -277,7 +280,8 @@ describe('Database Queries - getArtifactById', () => {
         deletedAt: null,
         summary: 'Version 1',
         publication_state: [],
-        world_id: null
+        world_id: null,
+      embedding: null
       },
       {
         id: 'artifact-123',
@@ -292,7 +296,8 @@ describe('Database Queries - getArtifactById', () => {
         deletedAt: null,
         summary: 'Version 2',
         publication_state: [],
-        world_id: null
+        world_id: null,
+      embedding: null
       }
     ]
 
@@ -347,7 +352,8 @@ describe('Database Queries - getArtifactById', () => {
         deletedAt: null,
         summary: 'Version 1',
         publication_state: [],
-        world_id: null
+        world_id: null,
+      embedding: null
       },
       {
         id: 'artifact-123',
@@ -362,7 +368,8 @@ describe('Database Queries - getArtifactById', () => {
         deletedAt: null,
         summary: 'Version 2',
         publication_state: [],
-        world_id: null
+        world_id: null,
+      embedding: null
       }
     ]
 
@@ -397,7 +404,8 @@ describe('Database Queries - getArtifactById', () => {
         deletedAt: null,
         summary: 'Version 1',
         publication_state: [],
-        world_id: null
+        world_id: null,
+      embedding: null
       },
       {
         id: 'artifact-123',
@@ -412,7 +420,8 @@ describe('Database Queries - getArtifactById', () => {
         deletedAt: null,
         summary: 'Version 2',
         publication_state: [],
-        world_id: null
+        world_id: null,
+      embedding: null
       }
     ]
 
@@ -458,7 +467,8 @@ describe('Database Queries - saveMessages', () => {
         attachments: [],
         chatId: 'chat-123',
         createdAt: new Date('2025-06-18T10:00:00Z'),
-        world_id: null
+        world_id: null,
+      embedding: null
       },
       {
         id: 'msg-2',
@@ -468,7 +478,8 @@ describe('Database Queries - saveMessages', () => {
         attachments: [],
         chatId: 'chat-123',
         createdAt: new Date('2025-06-18T10:01:00Z'),
-        world_id: null
+        world_id: null,
+      embedding: null
       }
     ]
 

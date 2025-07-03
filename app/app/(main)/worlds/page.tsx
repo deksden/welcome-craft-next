@@ -15,7 +15,6 @@
 import { getAuthSession } from '@/lib/test-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { WorldManagementPanel } from '@/components/phoenix/world-management-panel'

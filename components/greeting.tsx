@@ -11,9 +11,10 @@ export const Greeting = () => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.5 }}
-        className="text-2xl font-semibold"
+        className="text-2xl font-semibold flex items-center gap-2"
       >
-        Hello there!
+        <span>🚀</span>
+        <span>Добро пожаловать в WelcomeCraft!</span>
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -22,7 +23,7 @@ export const Greeting = () => {
         transition={{ delay: 0.6 }}
         className="text-2xl text-zinc-500"
       >
-        How can I help you today?
+        С чего начнем создание онбординга?
       </motion.div>
     </div>
   );

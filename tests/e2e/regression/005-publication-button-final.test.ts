@@ -4,6 +4,7 @@
  * @version 4.0.0
  * @date 2025-06-28
  * @updated BUG-042 FIX: Полная миграция на UC-01-11 паттерны - убраны устаревшие AI Fixtures, graceful degradation, добавлен graceful fallback
+ * @e2e-project e2e-core (Regression - тесты воспроизведения багов основной функциональности)
  */
 
 /** HISTORY:

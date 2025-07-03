@@ -13,7 +13,6 @@
 
 import { getAuthSession } from '@/lib/test-auth';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Download } from 'lucide-react';
 import { SeedImportTab } from '@/components/phoenix/seed-import-tab';
 import { PageHeader, PageHeaderPresets } from '@/components/page-header';

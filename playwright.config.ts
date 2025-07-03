@@ -1,9 +1,14 @@
 /**
  * @file playwright.config.ts
  * @description Playwright test configuration with World Isolation + Parallel Execution support.
- * @version 8.0.0
- * @date 2025-07-01
- * @updated WORLD ISOLATION + PARALLEL: Added support for world-based test isolation with 2-3 parallel workers
+ * @version 9.0.0
+ * @date 2025-07-03
+ * @updated E2E PROJECT NAMING: Переименованы проекты в e2e-core и e2e-admin для четкого разделения функциональности
+ */
+
+/** HISTORY:
+ * v9.0.0 (2025-07-03): E2E Project Naming - переименованы проекты согласно логической структуре
+ * v8.0.0 (2025-07-01): World Isolation + Parallel execution support
  */
 
 import { defineConfig, devices } from '@playwright/test';
@@ -105,10 +110,15 @@ export default (async () => {
       timeout: 30 * 1000,
     },
 
+    // ✅ E2E PROJECT NAMING LOGIC:
+    // - e2e-core: Основная функциональность (Use Cases + Components + Regression)
+    // - e2e-admin: Phoenix административная система
+    // - api: HTTP API тестирование через Playwright
     projects: [
       {
-        name: 'e2e-uc-tests',
-        testMatch: /e2e\/use-cases\/.*.test.ts/,
+        name: 'e2e-core',
+        // Основные пользовательские сценарии, компоненты и регрессионные тесты
+        testMatch: /e2e\/(use-cases|components|regression)\/.*.test.ts/,
         use: {
           ...devices['Desktop Chrome'],
           baseURL: urls.adminBase,
@@ -116,7 +126,8 @@ export default (async () => {
         },
       },
       {
-        name: 'e2e-phoenix-tests', 
+        name: 'e2e-admin', 
+        // Phoenix административная панель и enterprise функции
         testMatch: /e2e\/phoenix\/.*.test.ts/,
         use: {
           ...devices['Desktop Chrome'],
@@ -125,8 +136,8 @@ export default (async () => {
         },
       },
       {
-        name: 'routes',
-        testMatch: /routes\/.*.test.ts/,
+        name: 'api',
+        testMatch: /api\/.*.test.ts/,
         use: {
           ...devices['Desktop Chrome'],
           baseURL: urls.publicBase,

@@ -1,12 +1,13 @@
 /**
  * @file lib/db/schema.ts
  * @description Определения таблиц базы данных с использованием Drizzle ORM.
- * @version 4.0.0
- * @date 2025-06-29
- * @updated PHOENIX PROJECT Step 3 - Добавлена WorldMeta таблица для динамического управления тестовыми мирами
+ * @version 4.1.0
+ * @date 2025-07-02
+ * @updated TASK-AI-TOOLS-IMPLEMENTATION - Добавлено поле embedding в таблицу artifact для семантического поиска
  */
 
 /** HISTORY:
+ * v4.1.0 (2025-07-02): TASK-AI-TOOLS-IMPLEMENTATION - Добавлено поле embedding в таблицу artifact для семантического поиска артефактов
  * v4.0.0 (2025-06-29): PHOENIX PROJECT Step 3 - Добавлена WorldMeta таблица для database-driven управления тестовыми мирами с поддержкой автоочистки, версионирования и окружений
  * v3.0.0 (2025-06-20): UC-10 SCHEMA-DRIVEN CMS - Добавлены специализированные таблицы A_Text, A_Image, A_Person, A_Address, A_FaqItem, A_Link, A_SetDefinition, A_SetItems, A_Site. Обновлен ArtifactKind enum с новыми типами.
  * v2.5.0 (2025-06-20): PHASE1 UC-08 CLEANUP - Удалены поля интеллектуального поиска: metadata, quality_score, last_analyzed_at, search_vector.
@@ -20,7 +21,7 @@
 */
 
 import type { InferSelectModel } from 'drizzle-orm'
-import { boolean, decimal, foreignKey, integer, json, jsonb, pgTable, primaryKey, text, timestamp, uuid, varchar, } from 'drizzle-orm/pg-core'
+import { boolean, decimal, foreignKey, integer, json, jsonb, pgTable, primaryKey, text, timestamp, uuid, varchar, vector } from 'drizzle-orm/pg-core'
 import type { PublicationInfo } from '@/lib/types'
 // REMOVED UC-08 import: import type { ArtifactMetadata } from '@/lib/types/intelligent-search'
 
@@ -101,6 +102,11 @@ export const artifact = pgTable(
     // Phase 2: Поле для изоляции тестовых миров
     // NULL = production artifact, 'WORLD_ID' = test artifact в конкретном мире
     world_id: varchar('world_id', { length: 64 }),
+    
+    // TASK-AI-TOOLS-IMPLEMENTATION: Векторное поле для семантического поиска
+    // Хранит векторные эмбеддинги для поиска артефактов по смыслу
+    // dimensions: 1536 для модели Google text-embedding-004
+    embedding: vector('embedding', { dimensions: 1536 }),
   },
   (table) => {
     return {
@@ -390,5 +396,45 @@ export const worldMeta = pgTable('WorldMeta', {
 })
 
 export type WorldMeta = InferSelectModel<typeof worldMeta>;
+
+// =============================================================================
+// TASK-AI-TOOLS-IMPLEMENTATION: Таблица для RAG системы документации
+// =============================================================================
+
+/**
+ * SystemDocs таблица для индексирования документации проекта
+ * Используется RAG системой для поиска и предоставления контекста из документации
+ * 
+ * TASK-AI-TOOLS-IMPLEMENTATION: Поддержка семантического поиска по документации
+ */
+export const systemDocs = pgTable('SystemDocs', {
+  // Путь к файлу как первичный ключ (например, ".memory-bank/README.md")
+  id: text('id').primaryKey().notNull(),
+  
+  // Заголовок документа
+  title: text('title').notNull(),
+  
+  // Краткое описание содержимого (генерируется AI)
+  summary: text('summary').notNull(),
+  
+  // SHA256 хэш контента для отслеживания изменений
+  contentHash: varchar('contentHash', { length: 64 }).notNull(),
+  
+  // Векторное эмбеддинг для семантического поиска
+  // dimensions: 1536 для модели Google text-embedding-004
+  embedding: vector('embedding', { dimensions: 1536 }),
+  
+  // Метаданные индексации
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  
+  // Размер файла в байтах
+  fileSize: integer('fileSize'),
+  
+  // MIME тип файла
+  mimeType: varchar('mimeType', { length: 100 }).default('text/markdown'),
+})
+
+export type SystemDocs = InferSelectModel<typeof systemDocs>;
 
 // END OF: lib/db/schema.ts

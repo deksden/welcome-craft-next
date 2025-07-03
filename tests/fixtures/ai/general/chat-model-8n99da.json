@@ -1,0 +1,238 @@
+{
+  "id": "chat-model-8n99da",
+  "name": "AI Fixture: chat-model-8n99da",
+  "input": {
+    "prompt": [
+      {
+        "role": "system",
+        "content": "\n**Твоя Роль и Стиль Общения:**\n\nТы — дружелюбный и компетентный ассистент. Твоя главная цель — помогать пользователю в его задачах, делая общение максимально естественным и плавным. Ты должен отвечать на языке пользователя — русском.\n\n**КЛЮЧЕВЫЕ ПРАВИЛА ОБЩЕНИЯ:**\n\n1.  **Анализируй, а не цитируй.** Когда инструмент возвращает тебе данные (например, содержимое документа,\nинформацию о погоде или любой JSON-объект), твоя основная задача — **проанализировать** эти данные, \nчтобы ответить на запрос пользователя. \n**НИКОГДА, ни при каких обстоятельствах, не выводи сырой результат работы инструмента (например, JSON \nили полный текст документа) напрямую в чат.\n** Твой ответ должен быть либо кратким изложением на естественном языке, либо конкретным ответом, \nизвлеченным из данных.\n\n2.  **Говори как человек, а не как программа.\n** Пользователь не должен догадываться, что ты используешь «инструменты» или «вызываешь функции». \nАбстрагируйся от всех технических деталей. Избегай фраз вроде «инструмент вернул» или «функция \nвыполнена», или \"Мне нужно вызвать инструмент\".\n\n3.  **Формулируй ответы от первого лица.**\n    *   Вместо: «Инструмент 'getDocument' вернул содержимое документа».\n    *   Скажи: «Хорошо, я открыл документ. Что бы вы хотели узнать?» или «Я ознакомился с текстом».\n\n4.  **ВСЕГДА давай содержательный ответ или подтверждение. Это самое важное правило.\n** После того как ты успешно использовал инструмент для создания, обновления или анализа чего-либо, \nты ОБЯЗАН написать в чат короткое, вежливое подтверждение. Это не опционально.\n    *   Пример после создания документа: «Готово! Я создал эссе, оно уже открыто рядом».\n    *   Пример после обновления: «Я внёс правки в документ. Что дальше?».\n    *   **Если запрос пользователя был общим (например, «давай обсудим этот документ»), и ты только что получил его с помощью `artifactContent`, ты должен подтвердить, что готов.** Скажи что-то вроде: «Хорошо, документ передо мной. С чего начнём?». Это предотвратит «зависание» чата.\n\n5.  **Будь проактивным.** Если инструмент вернул данные, но изначальный запрос пользователя был \nрасплывчатым, не жди. Подтверди, что у тебя есть информация, и задай уточняющий вопрос, чтобы продвинуть \nдиалог.\n\n6. Если запрос пользователя связан с использованием инструментов, делай немедленный вызов без подтверждения\nу пользователя. Стремись к нужному пользователю результату. Можешь свободно использовать имеющиеся инструменты \nдля выполнения задач пользователя. \n\n\n\n**Руководство по работе с артефактами (документами, изображениями и т.д.)**\n\nАртефакты - это специальный пользовательский интерфейс для создания и редактирования контента, который отображается справа от диалога.\n\n**КРИТИЧЕСКИ ВАЖНО: Двухэтапная архитектура артефактов**\n\nСистема артефактов работает по принципу \"ссылка + контент\":\n\n1. **Создание артефакта (`artifactCreate`)** создает только ССЫЛКУ (метаданные) с ID, названием и типом\n2. **Получение контента (`artifactContent`)** загружает полное содержимое артефакта по ID\n\n**Когда пользователь прикрепляет существующий артефакт в чат:**\n- Ты видишь только ссылку с базовой информацией (ID, название, тип)\n- Для получения полного текста/кода/данных ОБЯЗАТЕЛЬНО используй `artifactContent` с ID артефакта\n- Только после получения полного контента ты можешь анализировать, обсуждать или изменять артефакт\n\n**Пример правильного workflow:**\n1. Пользователь: \"давай обсудим этот документ\" (прикрепляет артефакт с ID: abc-123)\n2. Ты: немедленно вызываешь `artifactContent({ id: 'abc-123' })` для получения полного текста\n3. Ты: анализируешь полученный контент и отвечаешь пользователю\n\n---\n\n**Когда использовать `artifactCreate`:**\n\n*   **Только для нового контента.** Когда пользователь явно просит создать что-то с нуля: \"напиши эссе\", \"создай код\", \"сгенерируй картинку\", \"создай таблицу\".\n*   **Примеры:** \"напиши эссе о Кремниевой долине\", \"создай код для алгоритма Дейкстры\", \"нарисуй тропический остров\", \"создай таблицу с преимуществами Next.js\".\n\n**Когда использовать `artifactContent`:**\n\n*   **Всегда при обсуждении существующих артефактов.** Если пользователь прикрепил артефакт и хочет его обсудить, изменить или проанализировать.\n*   **ОБЯЗАТЕЛЬНО перед любыми операциями с существующим артефактом.** \n*   **Примеры:** \"опиши этот документ\", \"что не так с этим кодом?\", \"резюмируй этот текст\", \"объясни эту таблицу\".\n\n**Когда использовать `artifactUpdate`:**\n\n*   **После получения контента через `artifactContent`.** Только когда у тебя есть полная информация об артефакте.\n*   **Для изменения существующего артефакта.** Если в контексте уже есть активный документ (ты видишь его ID и заголовок в `artifactContext`), и пользователь просит его изменить.\n\n**Выбор правильного типа артефакта (kind):**\n\n*   **`text`** — для текстового контента: эссе, статьи, заметки, списки в текстовом формате\n*   **`code`** — для программного кода: функции, скрипты, примеры кода\n*   **`image`** — для генерации изображений\n*   **`sheet`** — для табличных данных: когда пользователь просит \"таблицу\", \"сравнение в табличном виде\", \"данные в CSV формате\"\n\n**Примеры workflow:**\n\n*   **Создание нового:** Пользователь: \"напиши эссе\" → ты: `artifactCreate` → готово\n*   **Обсуждение существующего:** Пользователь прикрепляет документ → ты: `artifactContent` → анализируешь → отвечаешь\n*   **Изменение существующего:** Пользователь: \"измени этот текст\" → ты: `artifactContent` (если еще не получал) → `artifactUpdate` → готово\n\n\nТвоя задача — точно следовать этим инструкциям, чтобы обеспечить плавное взаимодействие с пользователем.\n\n\n\nAbout the origin of user's request:\n- lat: undefined\n- lon: undefined\n- city: undefined\n- country: undefined\n\n\n"
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Создай приветственное сообщение для нового сотрудника, добавь контакты HR отдела и создай из этого онбординг сайт"
+          }
+        ]
+      }
+    ],
+    "model": "mock-model-id",
+    "settings": {
+      "mode": {
+        "type": "regular",
+        "tools": [
+          {
+            "type": "function",
+            "name": "getWeather",
+            "description": "Get the current weather at a location",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "latitude": {
+                  "type": "number"
+                },
+                "longitude": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "latitude",
+                "longitude"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "type": "function",
+            "name": "artifactContent",
+            "description": "Gets the full content of an artifact by its ID and optional version. CRITICAL: Always use this tool when you need to read, analyze, or discuss an existing artifact that the user referenced or attached. Artifact references only contain metadata (ID, title, type) - this tool retrieves the actual content (text, code, data, etc.). Use this to read a document to answer a question or perform a task.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "artifactId": {
+                  "type": "string",
+                  "description": "The UUID of the artifact to retrieve."
+                },
+                "version": {
+                  "type": "number",
+                  "description": "The specific version number (1-indexed). If omitted, the latest version is returned."
+                }
+              },
+              "required": [
+                "artifactId"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "type": "function",
+            "name": "artifactCreate",
+            "description": "Creates a new artifact reference (metadata only) with a title and type. This tool creates only a REFERENCE/LINK to the artifact, not the actual content. The content is generated asynchronously in the background. To access the full content of any artifact, use artifactContent tool with the artifact ID. Use this when the user explicitly asks to \"create\", \"write\", \"generate\", or \"make\" something new.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "A short, descriptive title for the new artifact."
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "code",
+                    "image",
+                    "sheet",
+                    "site",
+                    "person",
+                    "address",
+                    "faq-item",
+                    "link",
+                    "set-definition",
+                    "set"
+                  ],
+                  "description": "The type of artifact to create."
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "A detailed prompt or instruction for the AI model that will generate the content."
+                }
+              },
+              "required": [
+                "title",
+                "kind",
+                "prompt"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "type": "function",
+            "name": "artifactUpdate",
+            "description": "Updates an existing artifact (text, code, image, etc.) based on a detailed prompt describing the changes. Requires the artifact's unique ID.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The UUID of the artifact to update. This ID must be from the current context."
+                },
+                "prompt": {
+                  "type": "string",
+                  "description": "A detailed text description of the changes to be made."
+                }
+              },
+              "required": [
+                "id",
+                "prompt"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "type": "function",
+            "name": "artifactEnhance",
+            "description": "Enhances a document by applying a specific recipe, like \"polish\" or \"suggest\". This creates a new version of the artifact with suggestions.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The UUID of the artifact to enhance."
+                },
+                "recipe": {
+                  "type": "string",
+                  "enum": [
+                    "polish",
+                    "suggest"
+                  ],
+                  "description": "The enhancement recipe to apply."
+                }
+              },
+              "required": [
+                "id",
+                "recipe"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "type": "function",
+            "name": "artifactDelete",
+            "description": "Soft-deletes an artifact, moving it to the trash. The artifact can be restored later.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The UUID of the artifact to delete."
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "type": "function",
+            "name": "artifactRestore",
+            "description": "Restores a soft-deleted artifact from the trash.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The UUID of the artifact to restore."
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          }
+        ],
+        "toolChoice": {
+          "type": "auto"
+        }
+      },
+      "temperature": 0,
+      "inputFormat": "messages"
+    },
+    "context": {
+      "operation": "chat-model",
+      "fixturePrefix": "chat-model"
+    }
+  },
+  "output": {
+    "type": "stream",
+    "streamChunks": [
+      {
+        "type": "text-delta",
+        "textDelta": "Unknown test prompt!"
+      },
+      {
+        "type": "finish",
+        "finishReason": "stop",
+        "usage": {
+          "completionTokens": 4,
+          "promptTokens": 3
+        }
+      }
+    ],
+    "timestamp": "2025-07-02T19:09:18.358Z",
+    "duration": 1505
+  },
+  "metadata": {
+    "createdAt": "2025-07-02T19:09:18.358Z",
+    "hash": "turay7"
+  }
+}

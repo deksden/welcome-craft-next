@@ -100,7 +100,8 @@ describe('AI Tool - artifactCreate', () => {
       summary: null as any, // Allow null for testing
       deletedAt: null,
       publication_state: [],
-      world_id: null
+      world_id: null,
+      embedding: null
     }
     vi.mocked(dbSaveArtifact).mockResolvedValue([mockSavedArtifact])
     

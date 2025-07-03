@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-07-03T04-22-29-543Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "ENVIRONMENT_TRANSITION_T1751516549440_09dc80a7",
+      "name": "ENVIRONMENT_TRANSITION World (T1751516549440_09dc80a7)",
+      "description": "Testing environment transitions",
+      "users": [
+        {
+          "name": "Integration User",
+          "type": "user",
+          "email": "integration@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:22:29.528Z",
+      "updatedAt": "2025-07-03T04:22:29.528Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516549440_09dc80a7",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 1,
+    "backupSize": "1.0 KB",
+    "version": "1.0.0"
+  }
+}

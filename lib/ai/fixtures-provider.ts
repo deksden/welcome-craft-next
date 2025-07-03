@@ -1,12 +1,13 @@
 /**
  * @file lib/ai/fixtures-provider.ts
- * @description AI Fixtures Provider - запись и воспроизведение AI взаимодействий для детерминистичных тестов
- * @version 1.0.0
- * @date 2025-06-18
- * @updated Реализация Phase 3 - AI Fixtures System
+ * @description AI Fixtures Provider - "lossless" прокси для точного воспроизведения AI взаимодействий
+ * @version 2.0.0
+ * @date 2025-07-02
+ * @updated Полная переработка в lossless архитектуру с поддержкой полных объектов и stream chunks
  */
 
 /** HISTORY:
+ * v2.0.0 (2025-07-02): Рефакторинг в lossless архитектуру - поддержка fullResponse и streamChunks, stream.tee() для записи
  * v1.0.0 (2025-06-18): Начальная реализация AI fixtures для трехуровневой системы тестирования
  */
 
@@ -23,7 +24,12 @@ import type { WorldId } from '@/tests/helpers/worlds.config'
 export type FixtureMode = 'record' | 'replay' | 'passthrough' | 'record-or-replay'
 
 /**
- * @description Зафиксированное AI взаимодействие
+ * @description Тип ответа: полный объект или стрим
+ */
+export type FixtureOutputType = 'full' | 'stream'
+
+/**
+ * @description Зафиксированное AI взаимодействие (lossless архитектура)
  */
 export interface AIFixture {
   /** Уникальный ID фикстуры */
@@ -36,27 +42,24 @@ export interface AIFixture {
   worldId?: WorldId
   /** Входные данные (prompt, settings) */
   input: {
-    prompt: string
+    prompt: string // Сериализованные messages
     model: string
     settings?: Record<string, any>
     context?: any
   }
   /** Выходные данные (response) */
   output: {
-    content: string
-    usage?: {
-      promptTokens: number
-      completionTokens: number
-      totalTokens: number
-    }
-    finishReason?: string
+    type: FixtureOutputType // 'full' для generateText, 'stream' для streamText
+    // Для generateText/generateObject - хранит полный объект GenerateTextResult
+    fullResponse?: any
+    // Для streamText/streamObject - хранит массив всех чанков LanguageModelV1StreamPart
+    streamChunks?: any[]
     timestamp: string
     duration: number
   }
   /** Метаданные */
   metadata: {
     createdAt: string
-    updatedAt?: string
     hash: string // Хеш входных данных для быстрого поиска
     tags?: string[]
   }
@@ -142,7 +145,10 @@ export class AIFixturesProvider {
           const fixture = await self.loadFixture(fixtureId, context)
           if (fixture) {
             self.log(`🔁 Replaying fixture: ${fixtureId}`)
-            return self.convertFixtureToResult(fixture)
+            if (fixture.output.type !== 'full') {
+              throw new Error(`Expected 'full' fixture type for doGenerate, got '${fixture.output.type}'`)
+            }
+            return fixture.output.fullResponse
           } else {
             throw new Error(`Fixture not found: ${fixtureId}. Run tests in 'record' mode first.`)
           }
@@ -160,7 +166,10 @@ export class AIFixturesProvider {
           if (fixture) {
             // Если фикстура найдена, воспроизводим ее (replay)
             self.log(`🔁 Replaying fixture: ${fixtureId}`)
-            return self.convertFixtureToResult(fixture)
+            if (fixture.output.type !== 'full') {
+              throw new Error(`Expected 'full' fixture type for doGenerate, got '${fixture.output.type}'`)
+            }
+            return fixture.output.fullResponse
           } else {
             // Если нет - делаем реальный вызов и записываем (record)
             self.log(`📝 Recording new fixture on-the-fly: ${fixtureId}`)
@@ -174,7 +183,7 @@ export class AIFixturesProvider {
             
             const duration = Date.now() - startTime
             
-            // Сохраняем фикстуру
+            // Сохраняем фикстуру с полным объектом
             await self.saveFixture(fixtureId, {
               input: {
                 prompt: self.extractPrompt(options),
@@ -183,9 +192,8 @@ export class AIFixturesProvider {
                 context
               },
               output: {
-                content: self.extractContent(result),
-                usage: result.usage,
-                finishReason: result.finishReason,
+                type: 'full',
+                fullResponse: result, // Сохраняем ВЕСЬ объект целиком
                 timestamp: new Date().toISOString(),
                 duration
               }
@@ -208,7 +216,7 @@ export class AIFixturesProvider {
           
           const duration = Date.now() - startTime
           
-          // Сохраняем фикстуру
+          // Сохраняем фикстуру с полным объектом
           await self.saveFixture(fixtureId, {
             input: {
               prompt: self.extractPrompt(options),
@@ -217,9 +225,8 @@ export class AIFixturesProvider {
               context
             },
             output: {
-              content: self.extractContent(result),
-              usage: result.usage,
-              finishReason: result.finishReason,
+              type: 'full',
+              fullResponse: result, // Сохраняем ВЕСЬ объект целиком
               timestamp: new Date().toISOString(),
               duration
             }
@@ -232,32 +239,53 @@ export class AIFixturesProvider {
       },
 
       async doStream(options: any) {
-        // Для streaming пока используем простую реализацию
-        // В будущем можно добавить streaming fixtures
+        const startTime = Date.now()
+        const fixtureId = self.generateFixtureId(options, context)
+        
         if (self.config.mode === 'replay') {
-          const fixtureId = self.generateFixtureId(options, context)
+          // Режим replay - загружаем фикстуру и воспроизводим stream
           const fixture = await self.loadFixture(fixtureId, context)
           if (fixture) {
-            // Эмулируем stream из фикстуры
-            return self.convertFixtureToStream(fixture)
+            self.log(`🔁 Replaying stream fixture: ${fixtureId}`)
+            if (fixture.output.type !== 'stream') {
+              throw new Error(`Expected 'stream' fixture type for doStream, got '${fixture.output.type}'`)
+            }
+            return self.createStreamFromChunks(fixture.output.streamChunks || [])
+          } else {
+            throw new Error(`Stream fixture not found: ${fixtureId}. Run tests in 'record' mode first.`)
           }
         }
         
+        if (self.config.mode === 'passthrough') {
+          // Режим passthrough - используем оригинальную модель
+          self.log(`⚡ Passthrough stream mode: ${fixtureId}`)
+          return await originalModel.doStream(options)
+        }
+        
         if (self.config.mode === 'record-or-replay') {
-          const fixtureId = self.generateFixtureId(options, context)
+          // Режим record-or-replay - проверяем фикстуру, replay или record
           const fixture = await self.loadFixture(fixtureId, context)
           if (fixture) {
             // Воспроизводим stream из фикстуры
             self.log(`🔁 Replaying stream fixture: ${fixtureId}`)
-            return self.convertFixtureToStream(fixture)
+            if (fixture.output.type !== 'stream') {
+              throw new Error(`Expected 'stream' fixture type for doStream, got '${fixture.output.type}'`)
+            }
+            return self.createStreamFromChunks(fixture.output.streamChunks || [])
           } else {
-            // Записываем новый stream (упрощенная реализация - пока passthrough)
-            self.log(`📝 Recording stream fixture not yet implemented, using passthrough: ${fixtureId}`)
-            return await originalModel.doStream(options)
+            // Записываем новый stream
+            self.log(`📝 Recording stream fixture: ${fixtureId}`)
+            return await self.recordStream(fixtureId, options, originalModel, context, startTime)
           }
         }
         
-        return await originalModel.doStream(options)
+        if (self.config.mode === 'record') {
+          // Режим record - записываем stream
+          self.log(`📝 Recording stream fixture: ${fixtureId}`)
+          return await self.recordStream(fixtureId, options, originalModel, context, startTime)
+        }
+        
+        throw new Error(`Unknown AI fixtures mode: ${self.config.mode}`)
       }
     }
   }
@@ -424,53 +452,82 @@ export class AIFixturesProvider {
   }
 
   /**
-   * @description Конвертирует фикстуру в результат AI модели
+   * @description Записывает stream с использованием stream.tee()
    */
-  private convertFixtureToResult(fixture: AIFixture): any {
-    return {
-      text: fixture.output.content,
-      finishReason: fixture.output.finishReason || 'stop',
-      usage: fixture.output.usage || {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0
+  private async recordStream(
+    fixtureId: string,
+    options: any,
+    originalModel: LanguageModelV1,
+    context: { useCaseId?: string; worldId?: WorldId; fixturePrefix?: string },
+    startTime: number
+  ): Promise<{ stream: ReadableStream<LanguageModelV1StreamPart> }> {
+    // Получаем оригинальный stream
+    const { stream } = await originalModel.doStream(options)
+    
+    // Разделяем stream на два: один для клиента, один для записи
+    const [streamForClient, streamForRecording] = stream.tee()
+    
+    // Немедленно возвращаем stream для клиента
+    const clientResult = { stream: streamForClient }
+    
+    // Асинхронно записываем stream
+    ;(async () => {
+      const recordedChunks: any[] = []
+      const reader = streamForRecording.getReader()
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          recordedChunks.push(value)
+        }
+        
+        const duration = Date.now() - startTime
+        
+        // Сохраняем фикстуру с записанными чанками
+        await this.saveFixture(fixtureId, {
+          input: {
+            prompt: this.extractPrompt(options),
+            model: originalModel.modelId,
+            settings: this.extractSettings(options),
+            context
+          },
+          output: {
+            type: 'stream',
+            streamChunks: recordedChunks, // Сохраняем все чанки
+            timestamp: new Date().toISOString(),
+            duration
+          }
+        }, context)
+        
+        this.log(`💾 Stream fixture recorded: ${fixtureId} (${recordedChunks.length} chunks)`)
+      } catch (error) {
+        this.log(`❌ Failed to record stream fixture ${fixtureId}:`, error)
+      } finally {
+        reader.releaseLock()
       }
-    }
+    })()
+    
+    return clientResult
   }
 
   /**
-   * @description Конвертирует фикстуру в stream (базовая реализация)
+   * @description Создает новый ReadableStream из массива чанков
    */
-  private async convertFixtureToStream(fixture: AIFixture): Promise<ReadableStream<LanguageModelV1StreamPart>> {
-    const content = fixture.output.content
-    
-    return new ReadableStream({
-      start(controller) {
-        // Эмулируем streaming по частям
-        const chunks = content.split(' ')
-        
-        let i = 0
-        const interval = setInterval(() => {
-          if (i < chunks.length) {
-            controller.enqueue({
-              type: 'text-delta',
-              textDelta: chunks[i] + (i < chunks.length - 1 ? ' ' : '')
-            } as LanguageModelV1StreamPart)
-            i++
-          } else {
-            controller.enqueue({
-              type: 'finish',
-              finishReason: fixture.output.finishReason || 'stop',
-              usage: fixture.output.usage
-            } as LanguageModelV1StreamPart)
-            
-            clearInterval(interval)
-            controller.close()
+  private createStreamFromChunks(chunks: any[]): { stream: ReadableStream<LanguageModelV1StreamPart> } {
+    return {
+      stream: new ReadableStream({
+        start(controller) {
+          // Проитерируем по всем записанным чанкам
+          for (const chunk of chunks) {
+            controller.enqueue(chunk)
           }
-        }, 10) // 10ms между частями для эмуляции streaming
-      }
-    })
+          controller.close()
+        }
+      })
+    }
   }
+
 
   /**
    * @description Логирование с префиксом

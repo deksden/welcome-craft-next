@@ -28,6 +28,7 @@ describe('Publication Utils', () => {
     authorId: 'test-user',
     deletedAt: null,
     publication_state: [],
+    embedding: null,
     world_id: null // Production артефакт
   }
 

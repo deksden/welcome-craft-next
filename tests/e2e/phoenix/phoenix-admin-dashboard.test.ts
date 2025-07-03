@@ -4,6 +4,7 @@
  * @version 2.3.0
  * @date 2025-06-30
  * @updated BUG-049 Complete Resolution - Fixed all strict mode violations with specific selectors for Environment and World Management tests
+ * @e2e-project e2e-admin (Phoenix - административная система для системных администраторов)
  */
 
 /** HISTORY:

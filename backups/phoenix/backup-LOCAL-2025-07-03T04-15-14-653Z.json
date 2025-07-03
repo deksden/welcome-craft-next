@@ -1,0 +1,258 @@
+{
+  "timestamp": "2025-07-03T04-15-14-653Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "API_TEST_e23a6318",
+      "name": "API Test World",
+      "description": "Created by API test",
+      "users": [],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:12.620Z",
+      "updatedAt": "2025-07-03T04:15:12.620Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "api-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "API_INDIVIDUAL_c1e40099",
+      "name": "Individual Test World",
+      "description": "For individual world API tests",
+      "users": [
+        {
+          "name": "API User",
+          "type": "user",
+          "email": "test@api.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:13.108Z",
+      "updatedAt": "2025-07-03T04:15:13.108Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "individual-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "API_INDIVIDUAL_0fd32e07",
+      "name": "Updated Individual Test World",
+      "description": "Updated by API test",
+      "users": [
+        {
+          "name": "API User",
+          "type": "user",
+          "email": "test@api.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 24
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 24,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:13.109Z",
+      "updatedAt": "2025-07-03T04:15:13.413Z",
+      "lastUsedAt": "2025-07-03T04:15:13.295Z",
+      "usageCount": 1,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "individual-test",
+        "updated"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_0_T1751516113505_2ae0f6ce_0",
+      "name": "VALIDATION_0 World (T1751516113505_2ae0f6ce)",
+      "description": "Isolated validation testing 1",
+      "users": [
+        {
+          "name": "Validation User 0",
+          "type": "user",
+          "email": "validation-0@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:13.824Z",
+      "updatedAt": "2025-07-03T04:15:13.824Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516113505_2ae0f6ce",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_1_T1751516113505_2ae0f6ce_1",
+      "name": "VALIDATION_1 World (T1751516113505_2ae0f6ce)",
+      "description": "Isolated validation testing 2",
+      "users": [
+        {
+          "name": "Validation User 1",
+          "type": "user",
+          "email": "validation-1@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": false,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:13.837Z",
+      "updatedAt": "2025-07-03T04:15:13.837Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516113505_2ae0f6ce",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "VALIDATION_2_T1751516113505_2ae0f6ce_2",
+      "name": "VALIDATION_2 World (T1751516113505_2ae0f6ce)",
+      "description": "Isolated validation testing 3",
+      "users": [
+        {
+          "name": "Validation User 2",
+          "type": "user",
+          "email": "validation-2@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": true,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:13.848Z",
+      "updatedAt": "2025-07-03T04:15:13.848Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516113505_2ae0f6ce",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    },
+    {
+      "id": "BACKUP_TEST_T1751516114325_433ce2b5",
+      "name": "BACKUP_TEST World (T1751516114325_433ce2b5)",
+      "description": "Isolated testing backup data integrity",
+      "users": [
+        {
+          "name": "Backup User",
+          "type": "user",
+          "email": "backup@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T04:15:14.538Z",
+      "updatedAt": "2025-07-03T04:15:14.538Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751516114325_433ce2b5",
+        "isolated-test"
+      ],
+      "category": "GENERAL"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 7,
+    "backupSize": "6.8 KB",
+    "version": "1.0.0"
+  }
+}

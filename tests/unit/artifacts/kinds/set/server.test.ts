@@ -90,7 +90,8 @@ describe('Set Artifact Saver', () => {
     authorId: 'user-123',
     deletedAt: null,
     publication_state: [],
-    world_id: null
+    world_id: null,
+      embedding: null
   }
 
   const mockSetData = {

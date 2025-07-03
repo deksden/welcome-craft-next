@@ -1,9 +1,9 @@
 /**
  * @file components/chat-input.tsx
  * @description Компонент для ввода сообщений, включая текст и файлы с авто-созданием артефактов.
- * @version 2.8.0
+ * @version 2.9.0
  * @date 2025-07-02
- * @updated PREFILL SUPPORT: Добавлена поддержка предзаполнения поля ввода через custom event 'prefill-chat-input' для интеграции с CreateArtifactDialog
+ * @updated TASK-AI-TOOLS-IMPLEMENTATION: Добавлена поддержка drag & drop файлов с визуальными индикаторами
  */
 
 /** HISTORY:
@@ -31,6 +31,7 @@ import type React from 'react'
 import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState, } from 'react'
 import Textarea from 'react-textarea-autosize'
 import { upload } from '@vercel/blob/client'
+import { useDropzone } from 'react-dropzone'
 
 import { ArrowUpIcon, CrossIcon, StopIcon } from './icons'
 import { PreviewAttachment } from './preview-attachment'
@@ -219,9 +220,9 @@ export function ChatInput ({
     setIsSubmitting(false)
   }, [status, handleSubmit, setInput, input, artifact, clipboardArtifact, setClipboardArtifact, isSubmitting, append])
 
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files || [])
+  // TASK-AI-TOOLS-IMPLEMENTATION: Универсальная функция для обработки файлов (drag&drop + input)
+  const processFiles = useCallback(
+    async (files: File[]) => {
       if (!files.length) return
 
       setUploadingFiles(files.map(file => file.name))
@@ -285,6 +286,29 @@ export function ChatInput ({
     [addMessageWithCustomId],
   )
 
+  const handleFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || [])
+      await processFiles(files)
+    },
+    [processFiles],
+  )
+
+  // TASK-AI-TOOLS-IMPLEMENTATION: Dropzone конфигурация для drag & drop
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    onDrop: processFiles,
+    accept: {
+      'text/*': ['.txt', '.md', '.csv'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+    },
+    maxFiles: 5,
+    disabled: status !== 'ready' || uploadingFiles.length > 0,
+    noClick: true, // Отключаем клик по зоне (используем кнопку)
+    noKeyboard: true, // Отключаем keyboard навигацию
+  })
+
   return (
     <div data-testid="chat-input-container" className="relative w-full flex flex-col gap-2">
       {messages.length === 0 &&
@@ -292,7 +316,6 @@ export function ChatInput ({
           <SuggestedActions
             append={append}
             chatId={chatId}
-            selectedVisibilityType={'private'}
           />
         )}
 
@@ -305,7 +328,35 @@ export function ChatInput ({
         tabIndex={-1}
       />
 
-      <div className="flex flex-col w-full p-2 bg-muted dark:bg-zinc-800 rounded-2xl border dark:border-zinc-700">
+      {/* TASK-AI-TOOLS-IMPLEMENTATION: Dropzone wrapper с визуальными индикаторами */}
+      <div 
+        {...getRootProps()}
+        className={`
+          flex flex-col w-full p-2 rounded-2xl border transition-all duration-200
+          ${isDragActive 
+            ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-700 border-2' 
+            : isDragReject 
+              ? 'bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700 border-2'
+              : 'bg-muted dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'
+          }
+        `}
+      >
+        {/* Скрытый input для dropzone */}
+        <input {...getInputProps()} />
+        
+        {/* Индикатор drag & drop */}
+        {isDragActive && (
+          <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/80 rounded-2xl z-10">
+            <div className="text-center">
+              <p className="text-blue-600 dark:text-blue-300 font-medium">
+                {isDragReject ? '❌ Неподдерживаемый тип файла' : '📁 Отпустите файлы для загрузки'}
+              </p>
+              <p className="text-sm text-blue-500 dark:text-blue-400 mt-1">
+                Поддерживаются: .txt, .md, .csv, .docx, .xlsx, изображения
+              </p>
+            </div>
+          </div>
+        )}
         {clipboardArtifact && (
           <div data-testid="chat-input-clipboard-artifact" className="flex items-center justify-between p-2 mb-2 rounded-md bg-background border dark:border-zinc-700">
             <span className="text-sm truncate">{clipboardArtifact.title}</span>

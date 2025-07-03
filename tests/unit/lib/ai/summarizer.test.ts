@@ -45,15 +45,16 @@ vi.mock('@/lib/ai/providers.enhanced', () => ({
   }
 }))
 
-// Мокируем generateText из AI SDK
+// Мокируем AI SDK функции
 vi.mock('ai', () => ({
-  generateText: vi.fn()
+  generateText: vi.fn(),
+  embed: vi.fn()
 }))
 
 // Импорты после моков
 import { generateAndSaveSummary } from '@/lib/ai/summarizer'
 import { AIFixturesProvider } from '@/lib/ai/fixtures-provider'
-import { generateText } from 'ai'
+import { generateText, embed } from 'ai'
 import { db } from '@/lib/db'
 import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 
@@ -77,6 +78,13 @@ describe('Summarizer with AI Fixtures (record-or-replay)', () => {
     
     // Очищаем все моки
     vi.clearAllMocks()
+    
+    // Настраиваем мок для embed функции
+    vi.mocked(embed).mockResolvedValue({
+      value: 'mock query',
+      embedding: new Array(1536).fill(0.1), // Mock embedding vector
+      usage: { tokens: 50 }
+    })
   })
 
   afterEach(() => {

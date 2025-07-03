@@ -16,7 +16,8 @@ import {
   generateSiteHolistically 
 } from '@/lib/ai/holistic-generator'
 import { getPagedArtifactsByUserId } from '@/lib/db/queries'
-import { generateObject } from 'ai'
+import { generateObject, embed } from 'ai'
+import { findSlotCandidatesSemanticSearch } from '@/lib/ai/artifact-search'
 import type { AllCandidates, HolisticGenerationContext } from '@/lib/types/holistic-generation'
 
 // Mock dependencies
@@ -24,8 +25,13 @@ vi.mock('@/lib/db/queries', () => ({
   getPagedArtifactsByUserId: vi.fn(),
 }))
 
+vi.mock('@/lib/ai/artifact-search', () => ({
+  findSlotCandidatesSemanticSearch: vi.fn(),
+}))
+
 vi.mock('ai', () => ({
   generateObject: vi.fn(),
+  embed: vi.fn(),
 }))
 
 vi.mock('@/lib/ai/providers.enhanced', () => ({
@@ -63,6 +69,16 @@ describe('UC-09 Holistic Generator', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Setup embed mock for semantic search functionality
+    vi.mocked(embed).mockResolvedValue({
+      value: 'mock query',
+      embedding: new Array(1536).fill(0.1), // Mock embedding vector
+      usage: { tokens: 50 }
+    })
+    
+    // Setup semantic search mock to return empty results (to avoid DB connections)
+    vi.mocked(findSlotCandidatesSemanticSearch).mockResolvedValue([])
   })
 
   describe('aggregateCandidatesForAllSlots', () => {
@@ -82,6 +98,7 @@ describe('UC-09 Holistic Generator', () => {
               deletedAt: null,
               publication_state: [],
               world_id: null,
+      embedding: null,
               authorId: null
             }
           ],
@@ -100,6 +117,7 @@ describe('UC-09 Holistic Generator', () => {
               deletedAt: null,
               publication_state: [],
               world_id: null,
+      embedding: null,
               authorId: null
             }
           ],
@@ -144,6 +162,7 @@ describe('UC-09 Holistic Generator', () => {
               deletedAt: null,
               publication_state: [],
               world_id: null,
+      embedding: null,
               authorId: null
             }
           ],
@@ -178,6 +197,7 @@ describe('UC-09 Holistic Generator', () => {
         deletedAt: null,
         publication_state: [],
         world_id: null,
+      embedding: null,
         authorId: null
       }))
 

@@ -129,7 +129,7 @@ function FaqItemEditor({
                 <div className="text-sm font-medium text-muted-foreground mb-2">Tags:</div>
                 <div className="flex flex-wrap gap-1">
                   {faqData.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
+                    <Badge key={`display-tag-${tag}-${index}`} variant="secondary" className="text-xs">
                       {tag}
                     </Badge>
                   ))}
@@ -178,10 +178,11 @@ function FaqItemEditor({
           <Label>Tags</Label>
           <div className="flex flex-wrap gap-1 mb-2">
             {faqData.tags.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+              <Badge key={`tag-${tag}-${index}`} variant="secondary" className="text-xs">
                 {tag}
                 {!isReadonly && (
                   <button
+                    type="button"
                     onClick={() => removeTag(tag)}
                     className="ml-1 hover:text-destructive"
                   >

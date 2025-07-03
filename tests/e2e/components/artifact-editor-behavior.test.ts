@@ -4,6 +4,7 @@
  * @version 7.0.0
  * @date 2025-06-28
  * @updated UNIFIED AUTH MIGRATION: Мигрирован на universalAuthentication и упрощен до fail-fast принципов согласно UC-01 паттернам
+ * @e2e-project e2e-core (Components - тесты отдельных компонентов основной функциональности)
  */
 
 /** HISTORY:

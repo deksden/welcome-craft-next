@@ -42,6 +42,7 @@ describe('AI Tool - artifactContent', () => {
       deletedAt: null,
       publication_state: [],
       world_id: null,
+      embedding: null,
     },
     totalVersions: 1,
   }

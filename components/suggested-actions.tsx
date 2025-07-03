@@ -1,83 +1,93 @@
 /**
  * @file components/suggested-actions.tsx
- * @description Компонент с предлагаемыми действиями для начала чата.
- * @version 1.0.0
- * @date 2025-06-06
- * @updated Исправлен импорт типа VisibilityType.
+ * @description Панель запуска онбординга с предлагаемыми действиями для HR-специалистов.
+ * @version 2.0.0
+ * @date 2025-07-02
+ * @updated Полный рефакторинг: переход от технических подсказок к HR-ориентированным действиям с Card UI.
  */
 'use client';
 
 import { motion } from 'framer-motion';
-import { Button } from './ui/button';
 import { memo } from 'react';
 import type { UseChatHelpers } from '@ai-sdk/react';
-import type { VisibilityType } from '@/lib/types';
+import { Card, CardTitle, CardDescription } from '@/components/ui/card';
+import { GlobeIcon, FileTextIcon, UserIcon, UploadIcon } from '@/components/icons';
 
 interface SuggestedActionsProps {
   chatId: string;
   append: UseChatHelpers['append'];
-  selectedVisibilityType: VisibilityType;
 }
+
+const onboardingActions = [
+  {
+    icon: <GlobeIcon className="size-6 text-blue-500" />,
+    title: 'Создать онбординг-сайт',
+    description: 'Сгенерировать полноценный сайт для новой роли',
+    action: 'Создай онбординг-сайт для нового Backend-разработчика, включая приветствие, контакты и технические ресурсы.',
+  },
+  {
+    icon: <FileTextIcon className="size-6 text-green-500" />,
+    title: 'Написать приветствие от CEO',
+    description: 'Создать персонализированное письмо для новичка',
+    action: 'Напиши приветственное письмо от CEO для нового сотрудника.',
+  },
+  {
+    icon: <UserIcon className="size-6 text-purple-500" />,
+    title: 'Составить список контактов',
+    description: 'Сформировать таблицу с ключевыми контактами',
+    action: 'Создай таблицу с контактами HR-отдела и IT-поддержки.',
+  },
+  {
+    icon: <UploadIcon className="size-6 text-orange-500" />,
+    title: 'Импортировать документ',
+    description: 'Загрузить существующий .docx или .csv файл',
+    action: 'Я хочу загрузить и импортировать документ.',
+  },
+];
 
 function PureSuggestedActions({
   chatId,
   append,
-  selectedVisibilityType,
 }: SuggestedActionsProps) {
-  const suggestedActions = [
-    {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
-    },
-    {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
-    },
-    {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
-      action: `Help me write an essay about silicon valley`,
-    },
-    {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
-    },
-  ];
-
   return (
     <div
       data-testid="suggested-actions"
-      className="grid sm:grid-cols-2 gap-2 w-full"
+      className="grid sm:grid-cols-2 gap-4 w-full"
     >
-      {suggestedActions.map((suggestedAction, index) => (
+      {onboardingActions.map((suggestedAction, index) => (
         <motion.div
+          key={suggestedAction.title}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          transition={{ delay: 0.05 * index }}
-          key={`suggested-action-${suggestedAction.title}-${index}`}
-          className={index > 1 ? 'hidden sm:block' : 'block'}
+          transition={{ delay: 0.1 * index }}
         >
-          <Button
-            variant="ghost"
+          <Card
+            role="button"
+            tabIndex={0}
             onClick={async () => {
               window.history.replaceState({}, '', `/chat/${chatId}`);
-
               append({
                 role: 'user',
                 content: suggestedAction.action,
               });
             }}
-            className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                append({ role: 'user', content: suggestedAction.action });
+              }
+            }}
+            className="p-4 h-full cursor-pointer hover:bg-muted/50 transition-colors"
           >
-            <span className="font-medium">{suggestedAction.title}</span>
-            <span className="text-muted-foreground">
-              {suggestedAction.label}
-            </span>
-          </Button>
+            <div className="flex items-start gap-3">
+              <div className="shrink-0">{suggestedAction.icon}</div>
+              <div className="flex-1">
+                <CardTitle className="text-base font-semibold">{suggestedAction.title}</CardTitle>
+                <CardDescription className="text-sm mt-1">{suggestedAction.description}</CardDescription>
+              </div>
+            </div>
+          </Card>
         </motion.div>
       ))}
     </div>
@@ -86,12 +96,6 @@ function PureSuggestedActions({
 
 export const SuggestedActions = memo(
   PureSuggestedActions,
-  (prevProps, nextProps) => {
-    if (prevProps.chatId !== nextProps.chatId) return false;
-    if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
-      return false;
-
-    return true;
-  },
+  (prevProps, nextProps) => prevProps.chatId === nextProps.chatId,
 );
 // END OF: components/suggested-actions.tsx

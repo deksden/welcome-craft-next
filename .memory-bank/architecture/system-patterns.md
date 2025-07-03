@@ -66,7 +66,7 @@
 **Ключевые компоненты:**
 1.  **Use Cases:** Спецификации бизнес-требований (`.memory-bank/specs/use-cases/`).
 2.  **Worlds:** Изолированные наборы данных для каждого Use Case (`tests/helpers/worlds.config.ts`).
-3.  **AI Fixtures:** Детерминистичные, записанные ответы AI для стабильных тестов (`tests/fixtures/ai/`).
+3.  **AI Fixtures v2.0.0:** Lossless прокси для детерминистичных AI тестов с 54% ускорением (`tests/fixtures/ai/`).
 
 ➡️ **Детальная документация:**
 -   `testing/three-level-testing-system.md` — Полное описание трехуровневой системы.

@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const worldFilter = createWorldFilter(worldContext);
   console.log('🔍 User Management API - applying world filter:', worldFilter);
 
-  let filteredUsers;
+  let filteredUsers: any[];
   
   if (worldFilter.world_id === null) {
     // Production mode - show only production users (world_id IS NULL)

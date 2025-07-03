@@ -22,7 +22,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { useArtifact } from '@/hooks/use-artifact'
 import type { ArtifactKind } from '@/lib/types'
 import {

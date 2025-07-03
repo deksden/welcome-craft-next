@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import React, { memo } from 'react';
+import React, { memo, Children, isValidElement } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './code-block';
@@ -8,6 +8,26 @@ const components: Partial<Components> = {
   // @ts-expect-error
   code: CodeBlock,
   pre: ({ children }) => <>{children}</>,
+  p: ({ node, children, ...props }) => {
+    // Check if paragraph contains only code blocks or other block elements
+    const hasBlockElements = Children.toArray(children).some((child) => {
+      if (isValidElement(child)) {
+        const type = child.type;
+        // Check if it's a CodeBlock component or other block elements
+        return type === CodeBlock || 
+               (child.props?.className && typeof child.props.className === 'string' && child.props.className.includes('not-prose'));
+      }
+      return false;
+    });
+
+    // If paragraph contains block elements, render as div instead
+    if (hasBlockElements) {
+      return <div {...props}>{children}</div>;
+    }
+
+    // Otherwise render as normal paragraph
+    return <p {...props}>{children}</p>;
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>

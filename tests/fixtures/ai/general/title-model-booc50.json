@@ -1,0 +1,54 @@
+{
+  "id": "title-model-booc50",
+  "name": "AI Fixture: title-model-booc50",
+  "input": {
+    "prompt": [
+      {
+        "role": "system",
+        "content": "\n\n    - you will generate a short title based on the first message a user begins a conversation with\n    - ensure it is not more than 80 characters long\n    - the title should be a summary of the user's message\n    - do not use quotes or colons"
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"id\":\"c03b8a24-caaf-42f3-a28e-a9c3d069a5dd\",\"createdAt\":\"2025-07-02T19:09:16.635Z\",\"role\":\"user\",\"content\":\"Создай приветственное сообщение для нового сотрудника, добавь контакты HR отдела и создай из этого онбординг сайт\",\"parts\":[{\"type\":\"text\",\"text\":\"Создай приветственное сообщение для нового сотрудника, добавь контакты HR отдела и создай из этого онбординг сайт\"}]}"
+          }
+        ]
+      }
+    ],
+    "model": "mock-model-id",
+    "settings": {
+      "mode": {
+        "type": "regular"
+      },
+      "temperature": 0,
+      "inputFormat": "prompt"
+    },
+    "context": {
+      "operation": "title-model",
+      "fixturePrefix": "title-model"
+    }
+  },
+  "output": {
+    "type": "full",
+    "fullResponse": {
+      "rawCall": {
+        "rawPrompt": null,
+        "rawSettings": {}
+      },
+      "finishReason": "stop",
+      "usage": {
+        "promptTokens": 10,
+        "completionTokens": 20
+      },
+      "text": "This is a test title"
+    },
+    "timestamp": "2025-07-02T19:09:16.693Z",
+    "duration": 0
+  },
+  "metadata": {
+    "createdAt": "2025-07-02T19:09:16.693Z",
+    "hash": "lnsiyz"
+  }
+}

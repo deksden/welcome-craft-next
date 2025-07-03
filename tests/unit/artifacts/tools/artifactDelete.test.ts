@@ -41,7 +41,8 @@ describe('AI Tool - artifactDelete', () => {
       deletedAt: null,
       summary: '...',
       publication_state: [],
-      world_id: null, // Production артефакт
+      world_id: null,
+    embedding: null // Production артефакт
     },
     totalVersions: 1,
   }

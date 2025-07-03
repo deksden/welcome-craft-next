@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-07-03T05-36-50-795Z",
+  "environment": "LOCAL",
+  "worlds": [
+    {
+      "id": "BULK_PERF_0_T1751521010394_2288809e_0",
+      "name": "BULK_PERF_0 World (T1751521010394_2288809e)",
+      "description": "Isolated performance testing world 1",
+      "users": [
+        {
+          "name": "Perf User 0",
+          "type": "user",
+          "email": "perf-0@test.com"
+        }
+      ],
+      "artifacts": [],
+      "chats": [],
+      "settings": {
+        "autoCleanup": true,
+        "cleanupAfterHours": 1
+      },
+      "dependencies": [],
+      "isActive": true,
+      "isTemplate": false,
+      "autoCleanup": true,
+      "cleanupAfterHours": 1,
+      "version": "1.0.0",
+      "createdBy": null,
+      "createdAt": "2025-07-03T05:36:50.647Z",
+      "updatedAt": "2025-07-03T05:36:50.647Z",
+      "lastUsedAt": null,
+      "usageCount": 0,
+      "environment": "LOCAL",
+      "isolationLevel": "FULL",
+      "tags": [
+        "test-run-T1751521010394_2288809e",
+        "isolated-test"
+      ],
+      "category": "PERFORMANCE"
+    }
+  ],
+  "artifacts": [],
+  "users": [],
+  "chats": [],
+  "metadata": {
+    "totalRecords": 1,
+    "backupSize": "1.0 KB",
+    "version": "1.0.0"
+  }
+}

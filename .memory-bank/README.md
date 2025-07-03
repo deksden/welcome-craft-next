@@ -1,4 +1,4 @@
-# 🧠 WelcomeCraft Memory Bank
+# 🧠 Project Memory Bank
 
 **Версия:** 3.1.0
 **Дата:** 2025-06-16

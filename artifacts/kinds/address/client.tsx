@@ -124,7 +124,7 @@ function AddressEditor({
         <CardContent className="space-y-4">
           <div className="space-y-1">
             {formattedLines.map((line, index) => (
-              <div key={index} className="text-sm">
+              <div key={`line-${index}-${line.slice(0, 10)}`} className="text-sm">
                 {line}
               </div>
             ))}
@@ -214,7 +214,7 @@ function AddressEditor({
             <div className="text-sm font-medium">Preview:</div>
             <div className="space-y-1 mt-1">
               {formatAddress().map((line, index) => (
-                <div key={index} className="text-sm text-muted-foreground">
+                <div key={`preview-${index}-${line.slice(0, 10)}`} className="text-sm text-muted-foreground">
                   {line}
                 </div>
               ))}

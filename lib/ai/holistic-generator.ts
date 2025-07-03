@@ -1,12 +1,13 @@
 /**
  * @file lib/ai/holistic-generator.ts
  * @description Core holistic site generation engine for UC-09
- * @version 1.0.0
- * @date 2025-06-20
- * @updated Initial implementation replacing UC-08 iterative approach
+ * @version 1.1.0
+ * @date 2025-07-02
+ * @updated TASK-AI-TOOLS-IMPLEMENTATION - Интегрирован семантический поиск для улучшения качества кандидатов
  */
 
 /** HISTORY:
+ * v1.1.0 (2025-07-02): TASK-AI-TOOLS-IMPLEMENTATION - Интегрирован семантический поиск артефактов для улучшения качества slot кандидатов
  * v1.0.0 (2025-06-20): Initial holistic generator with candidate aggregation and single AI call
  */
 
@@ -16,6 +17,7 @@ import { myEnhancedProvider } from '@/lib/ai/providers.enhanced'
 import { blockDefinitions } from '@/site-blocks'
 import { getPagedArtifactsByUserId } from '@/lib/db/queries'
 import { SiteDefinitionSchema } from '@/lib/ai/schemas/site-definition'
+import { findSlotCandidatesSemanticSearch } from '@/lib/ai/artifact-search'
 import type { 
   AllCandidates, 
   BlockCandidates, 
@@ -52,22 +54,49 @@ export async function aggregateCandidatesForAllSlots(
       const kindToSearch = Array.isArray(slotDef.kind) ? slotDef.kind[0] : slotDef.kind
 
       try {
-        // Get candidates for this slot
-        const { data: artifacts } = await getPagedArtifactsByUserId({
-          userId,
-          searchQuery: '', // Simple approach - no complex search queries
-          page: 1,
-          pageSize: 10, // Limit candidates per slot for AI efficiency
-          kind: kindToSearch,
-        })
-
-        // Transform to minimal candidate format
-        const candidates: ArtifactCandidate[] = artifacts.map(artifact => ({
-          artifactId: artifact.id,
-          title: artifact.title,
-          summary: artifact.summary || null,
-          kind: artifact.kind as ArtifactKind
+        // TASK-AI-TOOLS-IMPLEMENTATION: Используем семантический поиск для нахождения релевантных кандидатов
+        let candidates: ArtifactCandidate[] = []
+        
+        // Сначала пробуем семантический поиск
+        const semanticResults = await findSlotCandidatesSemanticSearch(
+          userPrompt,
+          slotDef.description || `${slotName} content for ${blockType}`,
+          kindToSearch,
+          8 // Больше кандидатов от семантического поиска
+        )
+        
+        // Преобразуем результаты семантического поиска
+        const semanticCandidates: ArtifactCandidate[] = semanticResults.map(result => ({
+          artifactId: result.id,
+          title: result.title,
+          summary: result.summary || null,
+          kind: result.kind,
+          similarity: result.similarity
         }))
+        
+        candidates = semanticCandidates
+        
+        // Если семантический поиск дал мало результатов, дополняем обычным поиском
+        if (candidates.length < 5) {
+          const { data: fallbackArtifacts } = await getPagedArtifactsByUserId({
+            userId,
+            searchQuery: '',
+            page: 1,
+            pageSize: 10 - candidates.length, // Дополняем до 10
+            kind: kindToSearch,
+          })
+
+          const fallbackCandidates: ArtifactCandidate[] = fallbackArtifacts
+            .filter(artifact => !candidates.some(c => c.artifactId === artifact.id)) // Избегаем дубликатов
+            .map(artifact => ({
+              artifactId: artifact.id,
+              title: artifact.title,
+              summary: artifact.summary || null,
+              kind: artifact.kind as ArtifactKind
+            }))
+          
+          candidates = [...candidates, ...fallbackCandidates]
+        }
 
         slotCandidates.push({
           slotName,
@@ -84,8 +113,10 @@ export async function aggregateCandidatesForAllSlots(
           blockType, 
           slotName, 
           candidatesCount: candidates.length,
+          semanticResults: semanticCandidates.length,
+          fallbackResults: candidates.length - semanticCandidates.length,
           kindToSearch
-        }, 'Aggregated candidates for slot')
+        }, 'Aggregated candidates for slot with semantic search')
 
       } catch (error) {
         childLogger.warn({ 

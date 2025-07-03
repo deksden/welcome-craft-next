@@ -34,16 +34,16 @@ test.describe('UC-11: File Import System', () => {
     
     await universalAuthentication(page, testUser)
     
-    // REAL ASSERTION: Navigation MUST work  
-    await page.goto('/artifacts')
+    // REAL ASSERTION: Navigation to import page MUST work  
+    await page.goto('/import')
     
-    // REAL ASSERTION: Page MUST load successfully
+    // REAL ASSERTION: Import page MUST load successfully
     await expect(page.locator('[data-testid="header"]')).toBeVisible({ timeout: 3000 })
-    console.log('✅ Artifacts page loaded successfully')
+    console.log('✅ Import page loaded successfully')
     
-    // REAL ASSERTION: Switch to import tab MUST work
-    await page.getByRole('tab', { name: '📁 Импорт файлов' }).click()
-    console.log('✅ Switched to file import tab')
+    // REAL ASSERTION: File import drop zone MUST be visible
+    await expect(page.getByTestId('file-drop-zone')).toBeVisible({ timeout: 3000 })
+    console.log('✅ File import drop zone is visible')
   });
 
   test('должен успешно импортировать .md файл и создать текстовый артефакт - REAL assertions', async ({ page }) => {

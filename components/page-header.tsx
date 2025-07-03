@@ -50,7 +50,7 @@ export function PageHeader({
           {/* Title with icon */}
           <div className="flex items-center gap-3 mb-2">
             {icon && (
-              <div className="flex-shrink-0 text-2xl">
+              <div className="shrink-0 text-2xl">
                 {typeof icon === 'string' ? (
                   <span className="text-2xl">{icon}</span>
                 ) : (
@@ -68,7 +68,7 @@ export function PageHeader({
             <div className="flex flex-wrap gap-2 mb-3">
               {badges.map((badge, index) => (
                 <Badge
-                  key={index}
+                  key={`${badge.text}-${index}`}
                   variant={badge.variant || 'secondary'}
                   className={badge.className}
                 >
@@ -95,7 +95,7 @@ export function PageHeader({
 
         {/* Actions */}
         {actions && (
-          <div className="flex-shrink-0 ml-6">
+          <div className="shrink-0 ml-6">
             {actions}
           </div>
         )}

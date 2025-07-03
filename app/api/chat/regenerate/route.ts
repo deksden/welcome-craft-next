@@ -6,7 +6,7 @@
  * @updated BUG-086 FIX: Enhanced tool extraction debugging and added fallback to result.steps when top-level toolCalls/toolResults are empty.
  */
 
-import { generateText, type CoreMessage, appendResponseMessages, type Message } from 'ai'
+import { generateText, type CoreMessage, type Message } from 'ai'
 import { auth } from '@/app/app/(auth)/auth'
 import { getTestSession } from '@/lib/test-auth'
 import { systemPrompt, type ArtifactContext } from '@/lib/ai/prompts'
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       modelSelected: selectedChatModel,
       messageCount: coreMessages.length,
       lastMessageRole: coreMessages[coreMessages.length - 1]?.role,
-      lastMessageContent: coreMessages[coreMessages.length - 1]?.content?.slice(0, 100) + '...',
+      lastMessageContent: `${coreMessages[coreMessages.length - 1]?.content?.slice(0, 100)}...`,
       hasArtifactContext: !!artifactContext,
       toolsAvailable: ['getWeather', 'artifactContent', 'artifactCreate', 'artifactUpdate', 'artifactEnhance', 'artifactDelete', 'artifactRestore']
     })

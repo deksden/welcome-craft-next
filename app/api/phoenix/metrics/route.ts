@@ -12,18 +12,13 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server.js'
-import { and, count, desc, eq, gte, isNotNull, sql, inArray } from 'drizzle-orm'
+import { count, desc, eq, gte, isNotNull, } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { 
   artifact, 
   chat, 
   user, 
   worldMeta, 
-  message,
-  type User,
-  type Artifact,
-  type Chat,
-  type WorldMeta 
 } from '@/lib/db/schema'
 import { getAuthSession } from '@/lib/test-auth'
 
@@ -58,7 +53,7 @@ interface SystemMetrics {
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
+    // Check authentication - ALWAYS require admin privileges for security
     const session = await getAuthSession()
     if (!session || session.user?.type !== 'admin') {
       return NextResponse.json(
